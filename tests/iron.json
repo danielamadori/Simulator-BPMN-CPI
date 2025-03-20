@@ -1,0 +1,146 @@
+{
+    "id": "start",
+    "type": "sequential",
+    "children": [
+        {
+            "id": "0",
+            "type": "sequential",
+            "children": [
+                {
+                    "id": "7",
+                    "type": "task",
+                    "label": "Cutting",
+                    "impacts": [
+                        10,
+                        1
+                    ],
+                    "duration": 1
+                },
+                {
+                    "id": "2",
+                    "type": "parallel",
+                    "label": "Parallel 1",
+                    "children": [
+                        {
+                            "id": "3",
+                            "type": "sequential",
+                            "children": [
+                                {
+                                    "id": "8",
+                                    "type": "task",
+                                    "label": "Bending",
+                                    "impacts": [
+                                        20,
+                                        1
+                                    ],
+                                    "duration": 1
+                                },
+                                {
+                                    "id": "6",
+                                    "type": "nature",
+                                    "label": "Nature polishing",
+                                    "children": [
+                                        {
+                                            "id": "9",
+                                            "type": "task",
+                                            "label": "Heavy polishing",
+                                            "impacts": [
+                                                5,
+                                                4
+                                            ],
+                                            "duration": 2
+                                        },
+                                        {
+                                            "id": "10",
+                                            "type": "task",
+                                            "label": "Light polishing",
+                                            "impacts": [
+                                                8,
+                                                1
+                                            ],
+                                            "duration": 1
+                                        }
+                                    ],
+                                    "distribution": [
+                                        0.2,
+                                        0.8
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "id": "4",
+                            "type": "sequential",
+                            "children": [
+                                {
+                                    "id": "11",
+                                    "type": "task",
+                                    "label": "Milling",
+                                    "impacts": [
+                                        50,
+                                        1
+                                    ],
+                                    "duration": 1
+                                },
+                                {
+                                    "id": "5",
+                                    "type": "choice",
+                                    "label": "Choice deposition",
+                                    "children": [
+                                        {
+                                            "id": "12",
+                                            "type": "task",
+                                            "label": "Fine depostion",
+                                            "impacts": [
+                                                30,
+                                                1
+                                            ],
+                                            "duration": 1
+                                        },
+                                        {
+                                            "id": "13",
+                                            "type": "task",
+                                            "label": "Rough depostion",
+                                            "impacts": [
+                                                10,
+                                                1
+                                            ],
+                                            "duration": 1
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": "1",
+            "type": "choice",
+            "label": "Choice painting",
+            "children": [
+                {
+                    "id": "14",
+                    "type": "task",
+                    "label": "HPHS painting",
+                    "impacts": [
+                        40,
+                        1
+                    ],
+                    "duration": 1
+                },
+                {
+                    "id": "15",
+                    "type": "task",
+                    "label": "LPLS painting",
+                    "impacts": [
+                        20,
+                        3
+                    ],
+                    "duration": 2
+                }
+            ]
+        }
+    ]
+}
