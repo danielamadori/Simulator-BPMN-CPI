@@ -55,7 +55,7 @@ class Flow:
         self.targetId = targetId
 
     def __hash__(self):
-        return self.id
+        return hash(self.id)
 
     def get_id(self):
         return self.id
