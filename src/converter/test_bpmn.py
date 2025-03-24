@@ -133,13 +133,13 @@ def get_inner_process_tags(region: Region) -> Tuple[List[IOTag], List[Flow]]:
     """
 
     start_properties = {
-        "id": "start",
+        "id": "starting_point",
         "isInterrupting": "false",
         "name": "startEvent",
         "parallelMultiple": "false",
     }
     end_properties = {
-        "id": "end",
+        "id": "endpoint",
         "name": "endEvent",
     }
 
@@ -161,7 +161,7 @@ def get_inner_process_tags(region: Region) -> Tuple[List[IOTag], List[Flow]]:
         prev_id = exit
 
     # End Event
-    tmp_flow = Flow(f"ex_flow_{prev_id}", prev_id, end_event)
+    tmp_flow = Flow(f"ex_flow_{prev_id}", prev_id, end_properties["id"])
     flows.add(tmp_flow)
     dizzionario[prev_id].add_outgoing(tmp_flow)
     dizzionario[end_properties["id"]].add_incoming(tmp_flow)
