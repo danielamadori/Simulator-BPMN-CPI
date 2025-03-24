@@ -33,18 +33,43 @@ class IOTag:
     def __init__(self, name, properties):
         self.name = name
         self.properties = properties
-        self.incoming = []
-        self.outgoing = []
+        self.incoming: List[Flow] = []
+        self.outgoing: List[Flow] = []
 
-    def add_incoming(self, flow):
+    def add_incoming(self, flow: Flow):
         self.incoming.append(flow)
 
-    def add_outgoing(self, flow):
+    def add_outgoing(self, flow: Flow):
         self.outgoing.append(flow)
 
+    # {
+    #     "id": "start",
+    #     "isInterrupting": "false",
+    #     "name": "startEvent",
+    #     "parallelMultiple": "false",
+    # }
+
     def __repr__(self):
-        result = f"<bpmn:"
+        dict_to_list = list(self.properties.items())
+        attributes = [f'{x[0]}="{x[1]}"' for x in dict_to_list]
+        result = f"<{self.name} {" ".join(attributes)}>"
+
+        incoming_tag = [
+            f"<bpmn:incoming>{flow.id}</bpmn:incoming>" for flow in self.incoming
+        ]
+        outgoing_tag = [
+            f"<bpmn:outgoing>{flow.id}</bpmn:outgoing>" for flow in self.outgoing
+        ]
+
+        result += "\n".join(incoming_tag) + "\n"
+        result += "\n".join(outgoing_tag) + "\n"
+
+        result += f"</{self.name}>"
+
         return result
+
+    def __str__(self):
+        return repr(self)
 
 
 class Flow:
@@ -57,6 +82,12 @@ class Flow:
     def __hash__(self):
         return hash(self.id)
 
+    def __repr__(self):
+        return f'<bpmn:sequenceFlow id="{self.id}" name="" sourceRef="{self.srcId}" targetRef="{self.targetId}" />'
+
+    def __str__(self):
+        return repr(self)
+
     def get_id(self):
         return self.id
 
@@ -65,12 +96,51 @@ dizzionario: Dict[str, IOTag] = {}
 flows: Set[Flow] = set()
 
 
-def translate(region: Region | Task):
+# isInterrupting, name, parallelMultiple
+def json_to_bpmn(region: Region):
+    start_properties = {
+        "id": "start",
+        "isInterrupting": "false",
+        "name": "startEvent",
+        "parallelMultiple": "false",
+    }
+    end_properties = {
+        "id": "end",
+        "name": "endEvent",
+    }
+
+    start_event = IOTag("bpmn:startEvent", start_properties)
+    end_event = IOTag("bpmn:endEvent", end_properties)
+
+    dizzionario[start_properties["id"]] = start_event
+    dizzionario[end_properties["id"]] = end_event
+
+    # Start Event viene eseguito nel ciclo
+    prev_id = start_properties["id"]
+    for child in region.children:
+        entry, exit = _translate(child)
+        flow_exit = Flow(f"ex_flow_{prev_id}", prev_id, entry)
+        dizzionario[prev_id].add_outgoing(flow_exit)
+        dizzionario[entry].add_incoming(flow_exit)
+        flows.add(flow_exit)
+
+        prev_id = exit
+
+    # End Event
+    tmp_flow = Flow(f"ex_flow_{prev_id}", prev_id, end_event)
+    flows.add(tmp_flow)
+    dizzionario[prev_id].add_outgoing(tmp_flow)
+    dizzionario[end_properties["id"]].add_incoming(tmp_flow)
+
+    return {k: str(dizzionario[k]) for k in dizzionario}
+
+
+def _translate(region: Region | Task):
     if isinstance(region, Task):
         # Creiamo il tag e ritorniamo l'id
         # Aggiungo il tag associato all'id nel dizionario
         entry_properties = {"id": region.id, "name": region.label}
-        tag = IOTag(name=region.type, properties=entry_properties)
+        tag = IOTag("bpmn:task", properties=entry_properties)
         dizzionario[region.id] = tag
         return [region.id, region.id]
 
@@ -80,7 +150,7 @@ def translate(region: Region | Task):
         prev_id = None
         first_entry = None
         for child in region.children:
-            entry, exit = translate(child)
+            entry, exit = _translate(child)
             if not first_entry:
                 first_entry = entry
             if prev_id:
@@ -121,7 +191,7 @@ def translate(region: Region | Task):
     dizzionario[exit_tag_id] = exit_tag
 
     for child in region.children:
-        entry, exit = translate(child)
+        entry, exit = _translate(child)
         entry_flow = Flow(f"{entry_tag_id}_to_{entry}", entry_tag_id, entry)
         exit_flow = Flow(f"{exit}_to_{exit_tag_id}", exit, exit_tag_id)
 
