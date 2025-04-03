@@ -1,6 +1,13 @@
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, Request, status, Response
 from fastapi.responses import RedirectResponse, HTMLResponse
-from converter import test_bpmn
+from converter.spin import create_pnml_from_region
+from converter.test_bpmn import region_to_bpmn, Region, _region_info
+from pm4py.objects.petri_net.importer.variants.pnml import import_net_from_string
+from pm4py.objects.conversion.bpmn.variants import to_petri_net
+from pm4py.objects.conversion.bpmn.variants.to_petri_net import Parameters
+from pm4py.visualization.petri_net.common.visualize import graphviz_visualization
+
+from model.region import RegionModel
 
 api = FastAPI()
 
@@ -19,5 +26,17 @@ def root(request: Request):
 
 
 @api.post("/test")
-def test(json: test_bpmn.Region):
-    return json
+def test(data: RegionModel):
+    pnml = create_pnml_from_region(data)
+    with open("iron.pnml", "w+") as f:
+        f.write(pnml)
+
+    petri_net, im, fm = import_net_from_string(pnml)
+    graph_obj = graphviz_visualization(
+        petri_net, "png", initial_marking=im, final_marking=fm
+    )
+    graph_obj.save("tests/iron_petri.dot")
+
+    # return _region_info
+    return Response(content=str(petri_net), media_type="text/plain")
+    # return Response(content=region_to_bpmn(data), media_type="application/xml")
