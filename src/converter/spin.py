@@ -1,8 +1,20 @@
-from typing import Type
+from typing import Dict, List, Type
 from pm4py.objects.petri_net.obj import PetriNet
 from model.region import RegionModel, RegionType
 from uuid import uuid4
 from collections import Counter
+
+class Prop:
+    def __init__(self, label : str | None, duration : float, impacts: List[float] |None , type : RegionType, probabilities : List[float] |None):
+        self.label=label,
+        self.duration=duration,
+        self.impacts=impacts,
+        self.type=type,
+        self.probabilities=probabilities,
+
+#dizionario delle properties
+properties: Dict[str, Prop] = {}
+
 
 places = set()
 transitions = set()
@@ -72,6 +84,9 @@ def create_task_tag(source_id, task: RegionModel):
 
 
 def from_json(region: RegionModel, source_id=None):
+    # salvo le Prop
+    # saveProp(region)
+    
     if region.type == RegionType.TASK:
         source_id = source_id or f"{region.id}_entry"
         tag, exit_place_id = create_task_tag(source_id, region)
@@ -180,7 +195,9 @@ def create_parallel_tag(region, source_id):
 
     return [tag, exit_place_id]
 
-
+def saveProp(component_id: str, region:RegionType):
+    properties.update({str(component_id) : {Prop(region.label, region.duration,region.impacts,region.type,region.distribution)}})
+    
 class TimeBasedSPIN:
 
     def __init__(self, pn: Type[PetriNet], info: dict):
