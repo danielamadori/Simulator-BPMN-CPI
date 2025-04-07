@@ -33,3 +33,18 @@ class RegionModel(BaseModel):
     children: List[RegionModel] | None = None
     distribution: List[float] | None = None
     impacts: List[float] | None = None
+
+    def isParallel(self):
+        return self.type == RegionType.PARALLEL
+
+    def isChoice(self):
+        return self.type == RegionType.CHOICE
+
+    def isSequential(self):
+        return self.type == RegionType.SEQUENTIAL
+
+    def isNature(self):
+        return self.type == RegionType.NATURE
+
+    def isTask(self):
+        return self.type == RegionType.TASK
