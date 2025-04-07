@@ -1,4 +1,4 @@
-from typing import Dict, List, Type
+from typing import Dict, List, Tuple, Type
 from pm4py.objects.petri_net.obj import PetriNet
 from model.region import RegionModel, RegionType
 from uuid import uuid4
@@ -8,22 +8,24 @@ from collections import Counter
 class Prop:
     def __init__(
         self,
+        region_id: str,
         label: str | None,
         duration: float,
         impacts: List[float] | None,
-        type: RegionType,
-        probabilities: List[float] | None,
+        _type: RegionType,
+        distribution: List[float] | None,
     ):
-        self.label = (label,)
-        self.duration = (duration,)
-        self.impacts = (impacts,)
-        self.type = (type,)
-        self.probabilities = (probabilities,)
+        self.region_id = region_id
+        self.label = label
+        self.duration = duration
+        self.impacts = impacts
+        self.type = _type
+        self.distribution = distribution
 
 
 # dizionario delle properties
 properties: Dict[str, Prop] = {}
-
+distribution_match: Dict[str, List[Tuple[float, str]]] = {}
 
 places = set()
 transitions = set()
@@ -142,8 +144,14 @@ def from_json(region: RegionModel, source_id=None):
 
         return [tag, exit_id]
 
+def add_distribution_match(place: str,p: float, sid: str):
+    if distribution_match.get(place) == None:
+        distribution_match.update({place: []})
+    
+    distribution_match.get(place).append((p, sid))
 
-def create_split(region, source_id):
+
+def create_split(region: RegionModel, source_id):
     tag = ""
     exit_id = f"{region.id}_exit"
     tag += create_place_tag(exit_id, region)
@@ -153,6 +161,11 @@ def create_split(region, source_id):
 
         child_source_id = f"{child.id}_entry"
         tag += create_place_tag(child_source_id, region)
+
+        if region.isNature():
+            add_distribution_match(source_id, region.distribution[i], child_source_id)
+        else:
+            add_distribution_match(source_id, 1 if i == 1 else 0)
 
         trans_entry_child_id = f"{region.id}_child{child.id}"
         tag += create_transition_tag(trans_entry_child_id, region)
@@ -219,3 +232,7 @@ def saveProp(component_id: str, region: RegionType):
             )
         }
     )
+
+def  getProps() -> Tuple[Dict[str, Prop], Dict[str,List[Tuple[float,str]]]]:
+    return properties, distribution_match
+
