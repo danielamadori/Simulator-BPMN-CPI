@@ -144,10 +144,11 @@ def from_json(region: RegionModel, source_id=None):
 
         return [tag, exit_id]
 
-def add_distribution_match(place: str,p: float, sid: str):
+
+def add_distribution_match(place: str, p: float, sid: str):
     if distribution_match.get(place) == None:
         distribution_match.update({place: []})
-    
+
     distribution_match.get(place).append((p, sid))
 
 
@@ -165,7 +166,7 @@ def create_split(region: RegionModel, source_id):
         if region.isNature():
             add_distribution_match(source_id, region.distribution[i], child_source_id)
         else:
-            add_distribution_match(source_id, 1 if i == 1 else 0)
+            add_distribution_match(source_id, 1 if i == 1 else 0, child_source_id)
 
         trans_entry_child_id = f"{region.id}_child{child.id}"
         tag += create_transition_tag(trans_entry_child_id, region)
@@ -219,11 +220,12 @@ def create_parallel_tag(region, source_id):
     return [tag, exit_place_id]
 
 
-def saveProp(component_id: str, region: RegionType):
+def saveProp(component_id: str, region: RegionModel):
 
     properties.update(
         {
             str(component_id): Prop(
+                region.id,
                 region.label,
                 region.duration,
                 region.impacts,
@@ -233,6 +235,6 @@ def saveProp(component_id: str, region: RegionType):
         }
     )
 
-def  getProps() -> Tuple[Dict[str, Prop], Dict[str,List[Tuple[float,str]]]]:
-    return properties, distribution_match
 
+def getProps() -> Tuple[Dict[str, Prop], Dict[str, List[Tuple[float, str]]]]:
+    return properties, distribution_match
