@@ -1,0 +1,7 @@
+(?) Manager versionamento dell'api
+Manager dei contesti
+Startegy Pattern per il Controller
+Contesto(Immutabile) che contiene DataSpin, Stack(Memento), Strategia(Controller)
+Classe DataMarking per Stack che contiene Marking(PM4PY) e age 
+Spostare age da DataSpin a DataMarking
+
