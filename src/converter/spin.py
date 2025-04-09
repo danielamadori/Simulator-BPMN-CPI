@@ -163,16 +163,18 @@ def create_split(region: RegionModel, source_id):
         child_source_id = f"{child.id}_entry"
         tag += create_place_tag(child_source_id, region)
 
-        if region.isNature():
-            add_distribution_match(source_id, region.distribution[i], child_source_id)
-        else:
-            add_distribution_match(source_id, 1 if i == 1 else 0, child_source_id)
-
         trans_entry_child_id = f"{region.id}_child{child.id}"
         tag += create_transition_tag(trans_entry_child_id, region)
 
         tag += create_arc_tag(uuid4(), source_id, trans_entry_child_id)
         tag += create_arc_tag(uuid4(), trans_entry_child_id, child_source_id)
+
+        if region.isNature():
+            add_distribution_match(
+                source_id, region.distribution[i], trans_entry_child_id
+            )
+        else:
+            add_distribution_match(source_id, 1 if i == 0 else 0, trans_entry_child_id)
 
         _tag, child_exit_id = from_json(child, child_source_id)
         tag += _tag
