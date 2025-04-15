@@ -1,11 +1,14 @@
+from enum import Enum
 from typing import Dict, List, Tuple, Type
 from pm4py.objects.petri_net.obj import PetriNet
 from model.region import RegionModel, RegionType
 from uuid import uuid4
 from collections import Counter
 
+from model.spin import Builder
 
-class Prop:
+
+class RegionProp:
     def __init__(
         self,
         region_id: str,
@@ -23,8 +26,57 @@ class Prop:
         self.distribution = distribution
 
 
+class PropertiesKeys(Enum):
+    REGION_ID = "region_id"
+    LABEL = "label"
+    TYPE = "type"
+    DURATION = "duration"
+    IMPACTS = "impacts"
+    PROBABILITY = "probability"
+
+
+def create_place(place_id: str, region: RegionModel):
+    place = PetriNet.Place(place_id)
+
+    place.properties[PropertiesKeys.REGION_ID] = region.id
+    place.properties[PropertiesKeys.LABEL] = region.label
+    place.properties[PropertiesKeys.TYPE] = region.type
+    place.properties[PropertiesKeys.DURATION] = region.duration
+
+    return place
+
+
+def create_transition(trans_id: str, probability: float, region: RegionModel):
+    trans = PetriNet.Transition(trans_id, label=region.label)
+
+    trans.properties[PropertiesKeys.REGION_ID] = region.id
+    trans.properties[PropertiesKeys.LABEL] = region.label
+    trans.properties[PropertiesKeys.TYPE] = region.type
+    trans.properties[PropertiesKeys.IMPACTS] = region.impacts
+    trans.properties[PropertiesKeys.PROBABILITY] = probability
+
+    return trans
+
+
+def from_region(region: RegionModel):
+    net = PetriNet()
+
+    source_id = "source"
+    sink_id = "sink"
+
+    source = create_place(source_id, region)
+    sink = create_place(sink_id, region)
+
+    def rec(region: RegionModel, source: PetriNet.Place, target: PetriNet.Place):
+        pass
+
+    rec()
+
+    return net
+
+
 # dizionario delle properties
-properties: Dict[str, Prop] = {}
+properties: Dict[str, RegionProp] = {}
 distribution_match: Dict[str, List[Tuple[float, str]]] = {}
 
 places = set()
@@ -226,7 +278,7 @@ def saveProp(component_id: str, region: RegionModel):
 
     properties.update(
         {
-            str(component_id): Prop(
+            str(component_id): RegionProp(
                 region.id,
                 region.label,
                 region.duration,
@@ -238,5 +290,5 @@ def saveProp(component_id: str, region: RegionModel):
     )
 
 
-def getProps() -> Tuple[Dict[str, Prop], Dict[str, List[Tuple[float, str]]]]:
+def getProps() -> Tuple[Dict[str, RegionProp], Dict[str, List[Tuple[float, str]]]]:
     return properties, distribution_match

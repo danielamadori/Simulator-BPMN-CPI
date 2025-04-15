@@ -11,3 +11,6 @@ Fare check di validità dei valori del json
 
 ## Da Correggere
 traduzione a pnml
+
+## Da controllare
+Classi inutili di conversione
