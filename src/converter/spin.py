@@ -1,6 +1,7 @@
 from enum import Enum
 from typing import Dict, List, Tuple, Type
 from pm4py.objects.petri_net.obj import PetriNet
+from pm4py.objects.petri_net.utils.petri_utils import add_arc_from_to, remove_arc
 from model.region import RegionModel, RegionType
 from uuid import uuid4
 from collections import Counter
@@ -27,18 +28,21 @@ class RegionProp:
 
 
 class PropertiesKeys(Enum):
-    REGION_ID = "region_id"
+    ENTRY_RID = "entry_rid"  # Entry Region ID
+    EXIT_RID = "exit_rid"  # Exit Region ID
     LABEL = "label"
     TYPE = "type"
     DURATION = "duration"
     IMPACTS = "impacts"
     PROBABILITY = "probability"
+    STOP = "stop"
 
 
 def create_place(place_id: str, region: RegionModel):
     place = PetriNet.Place(place_id)
 
-    place.properties[PropertiesKeys.REGION_ID] = region.id
+    place.properties[PropertiesKeys.ENTRY_RID] = region.id
+    place.properties[PropertiesKeys.EXIT_RID] = None
     place.properties[PropertiesKeys.LABEL] = region.label
     place.properties[PropertiesKeys.TYPE] = region.type
     place.properties[PropertiesKeys.DURATION] = region.duration
@@ -46,14 +50,18 @@ def create_place(place_id: str, region: RegionModel):
     return place
 
 
-def create_transition(trans_id: str, probability: float, region: RegionModel):
+def create_transition(
+    trans_id: str, region: RegionModel, probability: float = 1, stop: bool = False
+):
     trans = PetriNet.Transition(trans_id, label=region.label)
 
-    trans.properties[PropertiesKeys.REGION_ID] = region.id
+    trans.properties[PropertiesKeys.ENTRY_RID] = region.id
+    trans.properties[PropertiesKeys.EXIT_RID] = None
     trans.properties[PropertiesKeys.LABEL] = region.label
     trans.properties[PropertiesKeys.TYPE] = region.type
     trans.properties[PropertiesKeys.IMPACTS] = region.impacts
     trans.properties[PropertiesKeys.PROBABILITY] = probability
+    trans.properties[PropertiesKeys.STOP] = stop
 
     return trans
 
@@ -61,16 +69,131 @@ def create_transition(trans_id: str, probability: float, region: RegionModel):
 def from_region(region: RegionModel):
     net = PetriNet()
 
-    source_id = "source"
+    # source_id = "source"
     sink_id = "sink"
 
-    source = create_place(source_id, region)
+    # source = create_place(source_id, region)
     sink = create_place(sink_id, region)
 
-    def rec(region: RegionModel, source: PetriNet.Place, target: PetriNet.Place):
-        pass
+    def rec(region: RegionModel, source: PetriNet.Place | None):
+        if not region.hasChild():
+            # Task
+            # Entry Place
+            if not source:
+                entry_task_id = uuid4().int
+                entry_place = create_place(entry_task_id, region)
+                net.places.add(entry_place)
+            else:
+                entry_place = source
+                source.properties[PropertiesKeys.EXIT_RID] = source.properties[
+                    PropertiesKeys.ENTRY_RID
+                ]
+                source.properties[PropertiesKeys.ENTRY_RID] = region.id
 
-    rec()
+            # Exit place
+            exit_task_id = uuid4().int
+            exit_place = create_place(exit_task_id, region)
+            net.places.add(exit_place)
+
+            # Transition
+            trans_id = uuid4().int
+            trans = create_transition(trans_id, region)
+            net.transitions.add(trans)
+
+            # Arcs
+            add_arc_from_to(entry_place, trans, net)
+            add_arc_from_to(trans, exit_place, net)
+
+            return entry_place, exit_place
+
+        if region.isParallel():
+            # Parallel Gateway
+            # Entry Place
+            if not source:
+                entry_task_id = uuid4().int
+                entry_place = create_place(entry_task_id, region)
+                net.places.add(entry_place)
+            else:
+                entry_place = source
+                source.properties[PropertiesKeys.EXIT_RID] = source.properties[
+                    PropertiesKeys.ENTRY_RID
+                ]
+                source.properties[PropertiesKeys.ENTRY_RID] = region.id
+
+            # Exit place
+            exit_task_id = uuid4().int
+            exit_place = create_place(exit_task_id, region)
+            net.places.add(exit_place)
+
+            # Entry transition
+            entry_trans_id = uuid4().int
+            entry_trans = create_transition(entry_trans_id, region)
+
+            # Exit Transition
+            exit_trans_id = uuid4().int
+            exit_trans = create_transition(exit_trans_id, region)
+
+            # Add entry and exit arc
+            add_arc_from_to(entry_place, entry_trans, net)
+            add_arc_from_to(exit_trans, exit_place, net)
+
+            for child in region.children:
+                child_entry, child_exit = rec(child)
+                add_arc_from_to(entry_trans, child_entry, net)
+                add_arc_from_to(child_exit, exit_trans, net)
+
+            return entry_place, exit_place
+        elif region.isSequential():
+            if not source:
+                entry_task_id = uuid4().int
+                entry_place = create_place(entry_task_id, region)
+                net.places.add(entry_place)
+            else:
+                entry_place = source
+                source.properties[PropertiesKeys.EXIT_RID] = source.properties[
+                    PropertiesKeys.ENTRY_RID
+                ]
+                source.properties[PropertiesKeys.ENTRY_RID] = region.id
+
+            prev_child = source
+
+            for child in region.children:
+                child_entry, child_exit = rec(child, prev_child)
+                prev_child = child_exit
+
+            return source, prev_child
+        else:
+            # Nature or Choice
+            if not source:
+                entry_task_id = uuid4().int
+                entry_place = create_place(entry_task_id, region)
+                net.places.add(entry_place)
+            else:
+                entry_place = source
+                source.properties[PropertiesKeys.EXIT_RID] = source.properties[
+                    PropertiesKeys.ENTRY_RID
+                ]
+                source.properties[PropertiesKeys.ENTRY_RID] = region.id
+
+            # Exit place
+            exit_task_id = uuid4().int
+            exit_place = create_place(exit_task_id, region)
+            net.places.add(exit_place)
+
+            for i in len(region.children):
+                child = region.children[i]
+                child_entry, child_exit = rec(child, source)
+                entry_child_trans_id = uuid4().int
+                entry_child_trans = create_transition(
+                    entry_child_trans_id,
+                    region,
+                    probability=(
+                        1 if not region.distribution else region.distribution[i]
+                    ),
+                    stop=True,
+                )
+
+    rec(region)
 
     return net
 

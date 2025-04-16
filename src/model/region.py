@@ -48,3 +48,9 @@ class RegionModel(BaseModel):
 
     def isTask(self):
         return self.type == RegionType.TASK
+
+    def hasChild(self):
+        if self.children is None:
+            return False
+
+        return len(self.children) != 0
