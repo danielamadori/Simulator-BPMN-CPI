@@ -1,12 +1,11 @@
 from enum import Enum
 from typing import Dict, List, Tuple, Type
-from pm4py.objects.petri_net.obj import PetriNet
+from pm4py.objects.petri_net.obj import PetriNet, Marking
+from pm4py.objects.petri_net.data_petri_nets.data_marking import DataMarking
 from pm4py.objects.petri_net.utils.petri_utils import add_arc_from_to, remove_arc
 from model.region import RegionModel, RegionType
 from uuid import uuid4
 from collections import Counter
-
-from model.spin import Builder
 
 
 class RegionProp:
@@ -38,16 +37,35 @@ class PropertiesKeys(Enum):
     STOP = "stop"
 
 
-def create_place(place_id: str, region: RegionModel):
-    place = PetriNet.Place(place_id)
+def get_place_prop(place: PetriNet.Place):
+    return place.properties
 
-    place.properties[PropertiesKeys.ENTRY_RID] = region.id
-    place.properties[PropertiesKeys.EXIT_RID] = None
-    place.properties[PropertiesKeys.LABEL] = region.label
-    place.properties[PropertiesKeys.TYPE] = region.type
-    place.properties[PropertiesKeys.DURATION] = region.duration
+
+def get_trans_prop(trans: PetriNet.Transition):
+    return trans.properties
+
+
+def create_place(place_id: str, region: RegionModel):
+    if region.id in list(str(x) for x in range(7, 16, 1)):
+        print(f"Task\tRegion: {region.id}")
+    place = PetriNet.Place(
+        place_id,
+    )
+
+    place.properties.update(create_prop(region))
 
     return place
+
+
+def create_prop(region):
+    prop = {}
+    prop[PropertiesKeys.ENTRY_RID] = region.id
+    prop[PropertiesKeys.EXIT_RID] = None
+    prop[PropertiesKeys.LABEL] = region.label
+    prop[PropertiesKeys.TYPE] = region.type
+    prop[PropertiesKeys.DURATION] = region.duration
+
+    return prop
 
 
 def create_transition(
@@ -69,34 +87,37 @@ def create_transition(
 def from_region(region: RegionModel):
     net = PetriNet()
 
-    # source_id = "source"
-    sink_id = "sink"
-
-    # source = create_place(source_id, region)
-    sink = create_place(sink_id, region)
-
-    def rec(region: RegionModel, source: PetriNet.Place | None):
-        if not region.hasChild():
+    def rec(region: RegionModel, source: PetriNet.Place | None = None):
+        if region.isTask():
             # Task
             # Entry Place
+            # print(f"Task\tRegion: {region.id}")
             if not source:
-                entry_task_id = uuid4().int
+                entry_task_id = uuid4().hex
                 entry_place = create_place(entry_task_id, region)
                 net.places.add(entry_place)
             else:
                 entry_place = source
-                source.properties[PropertiesKeys.EXIT_RID] = source.properties[
-                    PropertiesKeys.ENTRY_RID
-                ]
-                source.properties[PropertiesKeys.ENTRY_RID] = region.id
+                _tmp_id = source.properties[PropertiesKeys.EXIT_RID]
+                entry_place.properties.update(create_prop(region))
+                entry_place.properties.update({PropertiesKeys.EXIT_RID: _tmp_id})
 
             # Exit place
-            exit_task_id = uuid4().int
+            exit_task_id = uuid4().hex
             exit_place = create_place(exit_task_id, region)
+            exit_place.properties.update(
+                {
+                    PropertiesKeys.ENTRY_RID: None,
+                    PropertiesKeys.EXIT_RID: exit_place.properties[
+                        PropertiesKeys.ENTRY_RID
+                    ],
+                    PropertiesKeys.DURATION: 0,
+                }
+            )
             net.places.add(exit_place)
 
             # Transition
-            trans_id = uuid4().int
+            trans_id = uuid4().hex
             trans = create_transition(trans_id, region)
             net.transitions.add(trans)
 
@@ -106,31 +127,39 @@ def from_region(region: RegionModel):
 
             return entry_place, exit_place
 
-        if region.isParallel():
+        elif region.isParallel():
             # Parallel Gateway
             # Entry Place
             if not source:
-                entry_task_id = uuid4().int
+                entry_task_id = uuid4().hex
                 entry_place = create_place(entry_task_id, region)
                 net.places.add(entry_place)
             else:
                 entry_place = source
-                source.properties[PropertiesKeys.EXIT_RID] = source.properties[
-                    PropertiesKeys.ENTRY_RID
-                ]
-                source.properties[PropertiesKeys.ENTRY_RID] = region.id
+                _tmp_id = source.properties[PropertiesKeys.EXIT_RID]
+                entry_place.properties.update(create_prop(region))
+                entry_place.properties.update({PropertiesKeys.EXIT_RID: _tmp_id})
 
             # Exit place
-            exit_task_id = uuid4().int
+            exit_task_id = uuid4().hex
             exit_place = create_place(exit_task_id, region)
+            exit_place.properties.update(
+                {
+                    PropertiesKeys.ENTRY_RID: None,
+                    PropertiesKeys.EXIT_RID: exit_place.properties[
+                        PropertiesKeys.ENTRY_RID
+                    ],
+                    PropertiesKeys.DURATION: 0,
+                }
+            )
             net.places.add(exit_place)
 
             # Entry transition
-            entry_trans_id = uuid4().int
+            entry_trans_id = uuid4().hex
             entry_trans = create_transition(entry_trans_id, region)
 
             # Exit Transition
-            exit_trans_id = uuid4().int
+            exit_trans_id = uuid4().hex
             exit_trans = create_transition(exit_trans_id, region)
 
             # Add entry and exit arc
@@ -145,45 +174,55 @@ def from_region(region: RegionModel):
             return entry_place, exit_place
         elif region.isSequential():
             if not source:
-                entry_task_id = uuid4().int
+                entry_task_id = uuid4().hex
                 entry_place = create_place(entry_task_id, region)
                 net.places.add(entry_place)
             else:
                 entry_place = source
-                source.properties[PropertiesKeys.EXIT_RID] = source.properties[
-                    PropertiesKeys.ENTRY_RID
-                ]
-                source.properties[PropertiesKeys.ENTRY_RID] = region.id
+                _tmp_id = source.properties[PropertiesKeys.EXIT_RID]
+                entry_place.properties.update(create_prop(region))
+                entry_place.properties.update({PropertiesKeys.EXIT_RID: _tmp_id})
 
-            prev_child = source
+            prev_child = entry_place
 
             for child in region.children:
                 child_entry, child_exit = rec(child, prev_child)
                 prev_child = child_exit
 
-            return source, prev_child
+            return entry_place, prev_child
         else:
             # Nature or Choice
             if not source:
-                entry_task_id = uuid4().int
+                entry_task_id = uuid4().hex
                 entry_place = create_place(entry_task_id, region)
                 net.places.add(entry_place)
             else:
                 entry_place = source
-                source.properties[PropertiesKeys.EXIT_RID] = source.properties[
-                    PropertiesKeys.ENTRY_RID
-                ]
-                source.properties[PropertiesKeys.ENTRY_RID] = region.id
+                _tmp_id = source.properties[PropertiesKeys.EXIT_RID]
+                entry_place.properties.update(create_prop(region))
+                entry_place.properties.update({PropertiesKeys.EXIT_RID: _tmp_id})
 
             # Exit place
-            exit_task_id = uuid4().int
+            exit_task_id = uuid4().hex
             exit_place = create_place(exit_task_id, region)
+            exit_place.properties.update(
+                {
+                    PropertiesKeys.ENTRY_RID: None,
+                    PropertiesKeys.EXIT_RID: exit_place.properties[
+                        PropertiesKeys.ENTRY_RID
+                    ],
+                    PropertiesKeys.DURATION: 0,
+                }
+            )
             net.places.add(exit_place)
 
-            for i in len(region.children):
+            for i in range(len(region.children)):
+                # print(f"Region: {region.id}\tChild: {region.children[i].id}[{i}]")
                 child = region.children[i]
-                child_entry, child_exit = rec(child, source)
-                entry_child_trans_id = uuid4().int
+                child_entry, child_exit = rec(child)
+
+                # Entry transition for a child
+                entry_child_trans_id = uuid4().hex
                 entry_child_trans = create_transition(
                     entry_child_trans_id,
                     region,
@@ -193,9 +232,33 @@ def from_region(region: RegionModel):
                     stop=True,
                 )
 
-    rec(region)
+                # Exit transition for a child
+                exit_child_trans_id = uuid4().hex
+                exit_child_trans = create_transition(
+                    exit_child_trans_id,
+                    region,
+                    1 if not region.distribution else region.distribution[i],
+                )
 
-    return net
+                add_arc_from_to(entry_place, entry_child_trans, net)
+                add_arc_from_to(entry_child_trans, child_entry, net)
+                add_arc_from_to(child_exit, exit_child_trans, net)
+                add_arc_from_to(exit_child_trans, exit_place, net)
+
+            return entry_place, exit_place
+
+    entry_place, exit_place = rec(region)
+
+    raw_im = Marking()
+    raw_fm = Marking()
+    for place in net.places:
+        raw_im[place.name] = 0 if place.name != entry_place.name else 1
+        raw_fm[place.name] = 0 if place.name != exit_place.name else 1
+
+    im = DataMarking(raw_im)
+    fm = DataMarking(raw_fm)
+
+    return net, im, fm
 
 
 # dizionario delle properties
