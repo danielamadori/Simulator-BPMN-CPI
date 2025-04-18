@@ -1,5 +1,5 @@
 from model.region import RegionModel, RegionType
-
+import math
 
 def region_validator(region: RegionModel):
     
@@ -9,6 +9,9 @@ def region_validator(region: RegionModel):
         if not region.id or not isinstance(region.type, RegionType):
             print("Id o tipo della regione è None o vuota")
             return False,None
+        
+        if region.duration is None or region.duration < 0:
+            return False, None
         
         #controllo la regione in base al suo tipo
         status, expected_impact_length = __switch_case(region, expected_impact_length)
@@ -58,7 +61,7 @@ def __switch_case(region: RegionModel, expected_impact_length: int = None):
 def __sequential_validator(region : RegionModel, expected_impact_length :int = None):
     print("Validatore Sequenziale")
     #per essere sequenziale deve almeno avere 2 children 
-    if not region.children or len(region.children) < 1:
+    if not region.children or len(region.children) < 2:
         return False,None
     
     #non devo avere impatti
@@ -91,9 +94,6 @@ def __task_validator(region: RegionModel, expected_impact_length: int = None):
         print(f"Task {region.id} ha una lunghezza di impacts diversa ({len(region.impacts)} vs {expected_impact_length})")
         return False, expected_impact_length
 
-    if region.duration is None or region.duration < 0:
-        return False, expected_impact_length
-    
     if region.children:
         return False, expected_impact_length
     
@@ -132,6 +132,11 @@ def __nature_validator(region : RegionModel, expected_impact_length : int = None
     if not region.distribution or len(region.distribution) != len(region.children or []):
         return False,None
 
+    #devo avere la somma di distibuzione delle probabilità vicina a  1
+    prob_sum = sum(region.distribution)
+    if not math.isclose(prob_sum, 1.0, rel_tol=1e-9):
+        return False,None
+
     # non devo avere impatti
     if region.impacts:
         return False,None
@@ -150,6 +155,11 @@ def __choice_validator(region : RegionModel, expected_impact_length : int = None
     if region.distribution and len(region.distribution) != len(region.children or []):
         return False,None
 
+    #se ho la distribuzione di probabilità allora deve essere vicino a 1
+    if region.distribution:
+        prob_sum = sum(region.distribution)
+        if not math.isclose(prob_sum, 1.0, rel_tol=1e-9):
+            return False, None
 
     # non devo avere impatti
     if region.impacts:
