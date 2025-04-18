@@ -1,5 +1,5 @@
 from random import random
-from model.spin import DataSPIN
+from model.time_spin import DataSPIN
 
 
 class Defaults:

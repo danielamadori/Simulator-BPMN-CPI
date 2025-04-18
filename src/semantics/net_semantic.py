@@ -3,7 +3,7 @@ from typing import override
 from pm4py.objects.petri_net.obj import PetriNet
 from pm4py.objects.petri_net.semantics import PetriNetSemantics
 
-from model.spin import DataMarking, DataSPIN
+from model.time_spin import TimeMarking, DataSPIN
 
 
 class NetSemantic:
@@ -17,7 +17,7 @@ class NetSemantic:
     # # dizionario di proprietà della rete
     # self.properties: Dict[str, Prop] = getProps()
     @override
-    def is_enabled(self, pn: DataSPIN, t: PetriNet.Transition, marking: DataMarking):
+    def is_enabled(self, pn: DataSPIN, t: PetriNet.Transition, marking: TimeMarking):
         for arc in t.in_arcs:
             p = arc.source
             p_id = p.name
@@ -29,7 +29,7 @@ class NetSemantic:
         return True
 
     @override
-    def fire(self, net: DataSPIN, t: PetriNet.Transition, marking: DataMarking):
+    def fire(self, net: DataSPIN, t: PetriNet.Transition, marking: TimeMarking):
         new_age = marking.age
         for arc in t.in_arcs:
             p = arc.source
@@ -37,17 +37,17 @@ class NetSemantic:
 
         m = PetriNetSemantics.fire(net, t, marking.marking)
 
-        return DataMarking(m, new_age)
+        return TimeMarking(m, new_age)
 
     @override
-    def execute(self, net: DataSPIN, t: PetriNet.Transition, marking: DataMarking):
+    def execute(self, net: DataSPIN, t: PetriNet.Transition, marking: TimeMarking):
         if not self.is_enabled(t):
             return marking
 
         return self.fire(net, t, marking)
 
     @override
-    def enabled_transitions(self, net: DataSPIN, marking: DataMarking):
+    def enabled_transitions(self, net: DataSPIN, marking: TimeMarking):
         enabled = set()
         for t in net.net.transitions:
             if self.is_enabled(net, t, marking):
