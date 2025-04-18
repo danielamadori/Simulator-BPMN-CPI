@@ -3,9 +3,12 @@ from typing import Dict, List, Tuple, Type
 from pm4py.objects.petri_net.obj import PetriNet, Marking
 from pm4py.objects.petri_net.data_petri_nets.data_marking import DataMarking
 from pm4py.objects.petri_net.utils.petri_utils import add_arc_from_to, remove_arc
+from converter.validator import region_validator
 from model.region import RegionModel, RegionType
 from uuid import uuid4
 from collections import Counter
+
+from utils.exceptions import ValidationError
 
 
 class RegionProp:
@@ -57,7 +60,7 @@ def create_place(place_id: str, region: RegionModel):
     return place
 
 
-def create_prop(region):
+def create_prop(region : RegionModel):
     prop = {}
     prop[PropertiesKeys.ENTRY_RID] = region.id
     prop[PropertiesKeys.EXIT_RID] = None
@@ -85,6 +88,11 @@ def create_transition(
 
 
 def from_region(region: RegionModel):
+    if not region_validator(region):
+        raise ValidationError()
+    else :
+        print("Validazione avvenuta con successo\n")
+
     net = PetriNet()
 
     def rec(region: RegionModel, source: PetriNet.Place | None = None):
