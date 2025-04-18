@@ -6,23 +6,30 @@ def region_validator(region: RegionModel):
     def explore(region : RegionModel, expected_impact_length: int = None):
         print(f"Esploro la Region: {region.id}")
         #controlli per tutti i tipi di regione
-        if not region.id or not region.type:
+        if not region.id or not isinstance(region.type, RegionType):
             print("Id o tipo della regione è None o vuota")
-            return False
+            return False,None
         
         #controllo la regione in base al suo tipo
-        if not __switch_case(region, expected_impact_length):
-            return False
+        status, expected_impact_length = __switch_case(region, expected_impact_length)
+
+        print(f"Expected_Value:{expected_impact_length}")
+
+        if status is False:
+            return False,None
         
         # se ho dei children
-        if region.children and len(region.children or []) > 0 :
+        if region.children:
+            val= expected_impact_length
             for child in region.children:
             #se il child o i children di child non sono validi
-                if not explore(child, expected_impact_length):
-                    return False
+                st,val = explore(child, val)
+                if not st:
+                    return False,None
                 
-        return True
-    return explore(region, expected_impact_length = None)
+        return True,expected_impact_length
+    
+    return explore(region, expected_impact_length = None)[0]
         
         
 
@@ -32,7 +39,7 @@ def __switch_case(region: RegionModel, expected_impact_length: int = None):
     #funzione che mappa una chiamata a funzione in base al tipo della region
     switch = {
         RegionType.SEQUENTIAL: __sequential_validator,
-        RegionType.TASK: lambda r: __task_validator(r, expected_impact_length),
+        RegionType.TASK:       __task_validator,
         RegionType.PARALLEL: __parallel_validator,
         RegionType.CHOICE: __choice_validator,
         RegionType.NATURE: __nature_validator,
@@ -42,110 +49,112 @@ def __switch_case(region: RegionModel, expected_impact_length: int = None):
 
     if not validator_fn:
         print(f"Tipo regione non supportato: {region.type}")
-        return False
+        return False,None
 
-    return validator_fn(region)
+    return validator_fn(region, expected_impact_length)
 
 
-def __sequential_validator(region : RegionModel):
+
+def __sequential_validator(region : RegionModel, expected_impact_length :int = None):
     print("Validatore Sequenziale")
     #per essere sequenziale deve almeno avere 2 children 
     if not region.children or len(region.children) < 1:
-        return False
+        return False,None
     
     #non devo avere impatti
     if region.impacts:
-        return False
+        return False,None
     
     #non devo avere distribuzioni di probabilità
     if region.distribution:
-        return False
+        return False,None
     
     #durata???
 
-    return True
+    return True, expected_impact_length
 
 def __task_validator(region: RegionModel, expected_impact_length: int = None):
     print("Validatore Task")
-    # setto il valore degli impatti se già non c'era (primo task)
-    if expected_impact_length is None:
-        expected_impact_length = len(region.impacts)
-
-    #controllo di lunghezza vettore impatti uguale per ogni task
-    if not region.impacts or len(region.impacts) != expected_impact_length:
-        print(f"Task {region.id} ha una lunghezza di impacts diversa ({len(region.impacts)} vs {expected_impact_length})")
-        return False
-    # gli impatti devono essere > 0
+    #print(f"I meiei impatti sono: {region.impacts}")
+    #print(f"expected_impact_length = {expected_impact_length}")
+    
+    if not region.impacts:
+        return False, expected_impact_length
+    
     for impact in region.impacts:
         if impact < 0:
-            return False
-        
-    #La durata deve essere >= 0
+            return False, expected_impact_length
+
+    if expected_impact_length is None:
+        expected_impact_length = len(region.impacts)
+    elif len(region.impacts) != expected_impact_length:
+        print(f"Task {region.id} ha una lunghezza di impacts diversa ({len(region.impacts)} vs {expected_impact_length})")
+        return False, expected_impact_length
+
     if region.duration is None or region.duration < 0:
-        return False
-
+        return False, expected_impact_length
     
-    # un task non ha children 
     if region.children:
-        return False
+        return False, expected_impact_length
     
-    # non deve avere distribuzione di probabilità
     if region.distribution:
-        return False
+        return False, expected_impact_length
 
-    return True
+    return True, expected_impact_length
 
-def __parallel_validator(region : RegionModel):
+
+
+def __parallel_validator(region : RegionModel, expected_impact_length:int = None):
     print("Validatore Parallelo")
     # devo avere almeno 2 children
     if not region.children or len(region.children) < 2:
-        return False
+        return False,None
 
     # non devo avere impatti
     if region.impacts:
-        return False
+        return False,None
 
     #non devo avere distribuzioni di probabilità
     if region.distribution:
-        return False  
+        return False,None
 
     #durata??  
 
-    return True
+    return True, expected_impact_length
 
-def __nature_validator(region : RegionModel):
+def __nature_validator(region : RegionModel, expected_impact_length : int = None):
     print("Validatore Natura")
     # devo avere almeno 2 children
     if not region.children or len(region.children) < 2:
-        return False
+        return False,None
     
     # devo avere la distribuzione di probabilità e  len(prob) = numero childern
     if not region.distribution or len(region.distribution) != len(region.children or []):
-        return False
+        return False,None
 
     # non devo avere impatti
     if region.impacts:
-        return False
+        return False,None
     
     #duration?
 
-    return True
+    return True, expected_impact_length
 
-def __choice_validator(region : RegionModel):
+def __choice_validator(region : RegionModel, expected_impact_length : int = None):
     print("Validatore Choice")
     # devo avere almeno 2 children
     if not region.children or len(region.children) < 2:
-        return False
+        return False,None
     
     # se ho la distribuzione di probabilità allora len(prob) = numero childern
     if region.distribution and len(region.distribution) != len(region.children or []):
-        return False
+        return False,None
 
 
     # non devo avere impatti
     if region.impacts:
-        return False
+        return False,None
     
     #duration?
 
-    return True
+    return True, expected_impact_length
