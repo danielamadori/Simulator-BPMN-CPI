@@ -1,0 +1,27 @@
+{
+  "id": "1",
+  "type": "choice",
+  "label": "Choice painting",
+  "children": [
+    {
+      "id": "14",
+      "type": "task",
+      "label": "HPHS painting",
+      "impacts": [
+        40,
+        1
+      ],
+      "duration": 1
+    },
+    {
+      "id": "15",
+      "type": "task",
+      "label": "LPLS painting",
+      "impacts": [
+        20,
+        3
+      ],
+      "duration": 2
+    }
+  ]
+}

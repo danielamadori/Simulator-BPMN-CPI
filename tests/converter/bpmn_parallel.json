@@ -1,0 +1,27 @@
+{
+  "id": "2",
+  "type": "parallel",
+  "label": "Parallel 1",
+  "children": [
+    {
+      "id": "8",
+      "type": "task",
+      "label": "Bending",
+      "impacts": [
+        20,
+        1
+      ],
+      "duration": 1
+    },
+    {
+      "id": "9",
+      "type": "task",
+      "label": "Heavy polishing",
+      "impacts": [
+        5,
+        4
+      ],
+      "duration": 2
+    }
+  ]
+}
