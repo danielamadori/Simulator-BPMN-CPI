@@ -83,10 +83,14 @@ class NetUtils:
         return node.properties.get(PropertiesKeys.LABEL)
 
     @classmethod
-    def get_duration(cls, node: P | T):
-        return node.properties.get(PropertiesKeys.DURATION, 0)
+    def get_type(cls, node: P | T):
+        return node.properties.get(PropertiesKeys.TYPE)
 
     class Place:
+
+        @classmethod
+        def get_duration(cls, node: P | T):
+            return node.properties.get(PropertiesKeys.DURATION, 0)
 
         @classmethod
         def get_entry_id(cls, place: P):
@@ -120,7 +124,7 @@ class TimeNetSematic(Generic[N]):
     def is_enabled(self, net: N, transition: T, marking: M):
         for arc in transition.in_arcs:
             p = arc.source
-            d = NetUtils.get_duration(p)
+            d = NetUtils.Place.get_duration(p)
             token, age = marking[p]
             print(
                 f"{p.name}[token={token},age={age}]\tcheck: {PetriNetSemantics.is_enabled(net, transition, marking.marking)}\t{age<d}"

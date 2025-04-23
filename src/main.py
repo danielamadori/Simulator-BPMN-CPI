@@ -2,12 +2,12 @@ from enum import Enum
 from fastapi import FastAPI, Request, status, Response
 from fastapi.responses import RedirectResponse, HTMLResponse
 from converter.spin import (
-    PropertiesKeys,
     create_pnml_from_region,
     get_place_prop,
     getProps,
     from_region,
 )
+from src.model.time_spin import PropertiesKeys
 from pm4py.objects.petri_net.importer.variants.pnml import import_net_from_string
 from pm4py.objects.conversion.bpmn.variants import to_petri_net
 from pm4py.objects.conversion.bpmn.variants.to_petri_net import Parameters
