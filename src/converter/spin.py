@@ -1,14 +1,14 @@
-from enum import Enum
-from typing import Dict, List, Tuple, Type
+from typing import Dict, List, Tuple
 from pm4py.objects.petri_net.obj import PetriNet, Marking
-from pm4py.objects.petri_net.data_petri_nets.data_marking import DataMarking
-from pm4py.objects.petri_net.utils.petri_utils import add_arc_from_to, remove_arc
+from pm4py.objects.petri_net.utils.petri_utils import add_arc_from_to
 from converter.validator import region_validator
 from model.region import RegionModel, RegionType
 from uuid import uuid4
-from collections import Counter
 
+from model.time_spin import NetUtils, TimeMarking
 from utils.exceptions import ValidationError
+
+from model.time_spin import PropertiesKeys
 
 
 class RegionProp:
@@ -27,17 +27,6 @@ class RegionProp:
         self.impacts = impacts
         self.type = _type
         self.distribution = distribution
-
-
-class PropertiesKeys(Enum):
-    ENTRY_RID = "entry_rid"  # Entry Region ID
-    EXIT_RID = "exit_rid"  # Exit Region ID
-    LABEL = "label"
-    TYPE = "type"
-    DURATION = "duration"
-    IMPACTS = "impacts"
-    PROBABILITY = "probability"
-    STOP = "stop"
 
 
 def get_place_prop(place: PetriNet.Place):
@@ -60,7 +49,7 @@ def create_place(place_id: str, region: RegionModel):
     return place
 
 
-def create_prop(region : RegionModel):
+def create_prop(region: RegionModel):
     prop = {}
     prop[PropertiesKeys.ENTRY_RID] = region.id
     prop[PropertiesKeys.EXIT_RID] = None
@@ -90,7 +79,7 @@ def create_transition(
 def from_region(region: RegionModel):
     if not region_validator(region):
         raise ValidationError()
-    else :
+    else:
         print("Validazione avvenuta con successo\n")
 
     net = PetriNet()
@@ -260,11 +249,11 @@ def from_region(region: RegionModel):
     raw_im = Marking()
     raw_fm = Marking()
     for place in net.places:
-        raw_im[place.name] = 0 if place.name != entry_place.name else 1
-        raw_fm[place.name] = 0 if place.name != exit_place.name else 1
+        raw_im[place] = 0 if place.name != entry_place.name else 1
+        raw_fm[place] = 0 if place.name != exit_place.name else 1
 
-    im = DataMarking(raw_im)
-    fm = DataMarking(raw_fm)
+    im = TimeMarking(raw_im)
+    fm = TimeMarking(raw_fm)
 
     return net, im, fm
 

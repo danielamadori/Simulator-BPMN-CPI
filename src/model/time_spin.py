@@ -1,14 +1,13 @@
 # from __future__ import annotations
+from enum import Enum
 
 # from dataclasses import dataclass
-from typing import Dict, List, Tuple, Type
+from typing import Dict, Generic, TypeVar
 
-from pm4py.objects.petri_net.obj import Marking
+from pm4py.objects.petri_net.obj import Marking, PetriNet
+from pm4py.objects.petri_net.semantics import PetriNetSemantics
 
 # from pm4py.objects.petri_net.utils.petri_utils import add_place, add_arc_from_to, add_transition
-
-# from converter.spin import RegionProp
-# from model.region import RegionModel
 
 
 class TimeMarking:
@@ -44,7 +43,7 @@ class TimeMarking:
 
     def __getitem__(self, key: str):
         if key not in self._keys:
-            raise KeyError(f"Invalid key: '{str}' does not exists.")
+            raise KeyError(f"Invalid key: '{key}' does not exists.")
         return (self.marking[key], self.age[key])
 
     def __contains__(self, el):
@@ -62,6 +61,103 @@ class TimeMarking:
                 return False
 
         return True
+
+    def __repr__(self):
+        result = {k: self[k] for k in self.keys()}
+        return repr(result)
+
+    def __str__(self):
+        return repr(self)
+
+
+N = TypeVar("N", bound=PetriNet)
+T = TypeVar("T", bound=PetriNet.Transition)
+P = TypeVar("P", bound=PetriNet.Place)
+M = TypeVar("M", bound=TimeMarking)
+
+
+class NetUtils:
+
+    @classmethod
+    def get_label(cls, node: P | T):
+        return node.properties.get(PropertiesKeys.LABEL)
+
+    @classmethod
+    def get_duration(cls, node: P | T):
+        return node.properties.get(PropertiesKeys.DURATION, 0)
+
+    class Place:
+
+        @classmethod
+        def get_entry_id(cls, place: P):
+            return place.properties.get(PropertiesKeys.ENTRY_RID)
+
+        @classmethod
+        def get_exit_id(cls, place: P):
+            return place.properties.get(PropertiesKeys.EXIT_RID)
+
+    class Transition:
+
+        @classmethod
+        def get_region_id(cls, transition: T):
+            return transition.properties.get(PropertiesKeys.ENTRY_RID)
+
+        @classmethod
+        def get_impacts(cls, transition: T):
+            return transition.properties.get(PropertiesKeys.IMPACTS)
+
+        @classmethod
+        def get_probability(cls, transition: T):
+            return transition.properties.get(PropertiesKeys.PROBABILITY)
+
+        @classmethod
+        def get_stop(cls, transition: T):
+            return transition.properties.get(PropertiesKeys.STOP)
+
+
+class TimeNetSematic(Generic[N]):
+
+    def is_enabled(self, net: N, transition: T, marking: M):
+        for arc in transition.in_arcs:
+            p = arc.source
+            d = NetUtils.get_duration(p)
+            token, age = marking[p]
+            print(
+                f"{p.name}[token={token},age={age}]\tcheck: {PetriNetSemantics.is_enabled(net, transition, marking.marking)}\t{age<d}"
+            )
+            if (
+                not PetriNetSemantics.is_enabled(net, transition, marking.marking)
+                or age < d
+            ):
+                return False
+
+        return True
+
+    def fire(self, net: N, transition: T, marking: M):
+        new_age = marking.age
+        for arc in transition.in_arcs:
+            p = arc.source
+            new_age[p] = 0
+
+        c = PetriNetSemantics.fire(net, transition, marking.marking)
+        m = Marking(c)
+
+        return TimeMarking(m, new_age)
+
+    def execute(self, net: N, transition: T, marking: M):
+        if not self.is_enabled(net, transition, marking):
+            return marking
+
+        return self.fire(net, transition, marking)
+
+    def enabled_transitions(self, net: N, marking: M):
+        enabled = set()
+
+        for t in net.transitions:
+            if self.is_enabled(net, t, marking):
+                enabled.add(t)
+
+        return enabled
 
 
 # class Builder:
@@ -149,4 +245,14 @@ class TimeMarking:
 #         if self.is_place(id):
 #             return self.places_prop[id]
 
+
 #         return self.transitions_prop[id]
+class PropertiesKeys(Enum):
+    ENTRY_RID = "entry_rid"  # Entry Region ID
+    EXIT_RID = "exit_rid"  # Exit Region ID
+    LABEL = "label"
+    TYPE = "type"
+    DURATION = "duration"
+    IMPACTS = "impacts"
+    PROBABILITY = "probability"
+    STOP = "stop"
