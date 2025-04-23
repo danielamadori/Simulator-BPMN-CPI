@@ -1,5 +1,5 @@
 import pytest
-from src.model.time_spin import TimeMarking
+from model.time_spin import TimeMarking
 from pm4py.objects.petri_net.obj import Marking
 
 

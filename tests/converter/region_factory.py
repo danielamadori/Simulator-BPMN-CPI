@@ -2,9 +2,10 @@ import random
 from uuid import uuid4
 from model.region import RegionModel, RegionType
 
+
 def region_factory(region_type: RegionType, id: str = None) -> RegionModel:
     if not id:
-        id= uuid4().hex
+        id = uuid4().hex
 
     if region_type == RegionType.TASK:
         return RegionModel(
@@ -12,8 +13,8 @@ def region_factory(region_type: RegionType, id: str = None) -> RegionModel:
             type=region_type,
             impacts=[random.randint(1, 10) for _ in range(3)],
             duration=random.randint(1, 10),
-            children=[],
-            distribution=[]
+            children=None,
+            distribution=None,
         )
 
     elif region_type == RegionType.SEQUENTIAL or region_type == RegionType.PARALLEL:
@@ -22,10 +23,10 @@ def region_factory(region_type: RegionType, id: str = None) -> RegionModel:
         return RegionModel(
             id=id,
             type=region_type,
-            impacts=[],
+            impacts=None,
             duration=0,
             children=[child1, child2],
-            distribution=[]
+            distribution=None,
         )
 
     elif region_type == RegionType.NATURE:
@@ -34,10 +35,10 @@ def region_factory(region_type: RegionType, id: str = None) -> RegionModel:
         return RegionModel(
             id=id,
             type=region_type,
-            impacts=[],
+            impacts=None,
             duration=0,
             children=[child1, child2],
-            distribution=[0.5, 0.5]
+            distribution=[0.5, 0.5],
         )
 
     elif region_type == RegionType.CHOICE:
@@ -46,10 +47,10 @@ def region_factory(region_type: RegionType, id: str = None) -> RegionModel:
         return RegionModel(
             id=id,
             type=region_type,
-            impacts=[],
+            impacts=None,
             duration=0,
             children=[child1, child2],
-            distribution=[]  # opzionale per CHOICE
+            distribution=[],  # opzionale per CHOICE
         )
 
     raise ValueError(f"Tipo di regione non supportato: {region_type}")
