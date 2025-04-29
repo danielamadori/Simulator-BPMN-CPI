@@ -1,18 +1,11 @@
-# from __future__ import annotations
-from enum import Enum
+from typing import Dict, Generic
 
-# from dataclasses import dataclass
-from typing import Dict, Generic, TypeVar
-
-from pm4py.objects.petri_net.obj import Marking, PetriNet
+from pm4py.objects.petri_net.obj import Marking
 from pm4py.objects.petri_net.semantics import PetriNetSemantics
 
-from src.utils.net_utils import NetUtils
+from utils.net_utils import NetUtils
 
-from types import N, T, P, M
-
-# from pm4py.objects.petri_net.utils.petri_utils import add_place, add_arc_from_to, add_transition
-
+from .types import N, T, M
 
 class TimeMarking:
     def __init__(self, marking: Marking, age: Dict[str, float] = None):
@@ -48,7 +41,7 @@ class TimeMarking:
     def __getitem__(self, key: str):
         if key not in self._keys:
             raise KeyError(f"Invalid key: '{key}' does not exists.")
-        return (self.marking[key], self.age[key])
+        return self.marking[key], self.age[key]
 
     def __contains__(self, el):
         return el in self._keys
@@ -207,12 +200,3 @@ class TimeNetSematic(Generic[N]):
 
 
 #         return self.transitions_prop[id]
-class PropertiesKeys(Enum):
-    ENTRY_RID = "entry_rid"  # Entry Region ID
-    EXIT_RID = "exit_rid"  # Exit Region ID
-    LABEL = "label"
-    TYPE = "type"
-    DURATION = "duration"
-    IMPACTS = "impacts"
-    PROBABILITY = "probability"
-    STOP = "stop"

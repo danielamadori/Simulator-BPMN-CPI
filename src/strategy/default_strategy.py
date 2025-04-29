@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, List, Set, TypeVar
+from typing import Dict, List, TypeVar, Collection
 
 from pm4py.objects.petri_net.obj import PetriNet
 from pm4py.objects.petri_net.semantics import ClassicSemantics
@@ -15,7 +15,7 @@ M = TypeVar("M", bound=TimeMarking)
 class StrategyInterface(ABC):
 
     @abstractmethod
-    def consume(self, net: N, marking: M, choices: List[T] | None = None):
+    def consume(self, net: N, marking: M, choices: Collection[T] | None = None):
         pass
 
     @abstractmethod
@@ -23,7 +23,7 @@ class StrategyInterface(ABC):
         pass
 
     @abstractmethod
-    def saturate(self, net: N, marking: M, choices: List[T]):
+    def saturate(self, net: N, marking: M):
         pass
 
 
@@ -85,7 +85,7 @@ class ClassicStrategy(StrategyInterface):
 
         return TimeMarking(marking.marking, new_age)
 
-    def consume(self, net, marking, choices: Set[T]):
+    def consume(self, net: N, marking: M, choices: Collection[T] | None = None):
         """
         Assumiamo che choices contenga l'insieme sincronizzato massimale di transizioni per il marking
         """

@@ -8,7 +8,7 @@ from uuid import uuid4
 from model.time_spin import NetUtils, TimeMarking
 from utils.exceptions import ValidationError
 
-from model.time_spin import PropertiesKeys
+from utils.net_utils import PropertiesKeys
 
 
 class RegionProp:
@@ -56,6 +56,7 @@ def create_prop(region: RegionModel):
     prop[PropertiesKeys.LABEL] = region.label
     prop[PropertiesKeys.TYPE] = region.type
     prop[PropertiesKeys.DURATION] = region.duration
+    prop[PropertiesKeys.IMPACTS] = region.impacts
 
     return prop
 
@@ -69,7 +70,7 @@ def create_transition(
     trans.properties[PropertiesKeys.EXIT_RID] = None
     trans.properties[PropertiesKeys.LABEL] = region.label
     trans.properties[PropertiesKeys.TYPE] = region.type
-    trans.properties[PropertiesKeys.IMPACTS] = region.impacts
+    # trans.properties[PropertiesKeys.IMPACTS] = region.impacts
     trans.properties[PropertiesKeys.PROBABILITY] = probability
     trans.properties[PropertiesKeys.STOP] = stop
 
@@ -85,7 +86,7 @@ def from_region(region: RegionModel):
     net = PetriNet()
 
     def rec(region: RegionModel, source: PetriNet.Place | None = None):
-        if region.isTask():
+        if region.is_task():
             # Task
             # Entry Place
             # print(f"Task\tRegion: {region.id}")
@@ -124,7 +125,7 @@ def from_region(region: RegionModel):
 
             return entry_place, exit_place
 
-        elif region.isParallel():
+        elif region.is_parallel():
             # Parallel Gateway
             # Entry Place
             if not source:
@@ -169,7 +170,7 @@ def from_region(region: RegionModel):
                 add_arc_from_to(child_exit, exit_trans, net)
 
             return entry_place, exit_place
-        elif region.isSequential():
+        elif region.is_sequential():
             if not source:
                 entry_task_id = uuid4().hex
                 entry_place = create_place(entry_task_id, region)
@@ -334,12 +335,12 @@ def create_task_tag(source_id, task: RegionModel):
 
 def from_json(region: RegionModel, source_id=None):
 
-    if region.isTask():
+    if region.is_task():
         source_id = source_id or f"{region.id}_entry"
         tag, exit_place_id = create_task_tag(source_id, region)
 
         return [tag, exit_place_id]
-    elif region.isSequential():
+    elif region.is_sequential():
         tag = ""
         prev_exit_id = source_id
         first_entry_id = source_id
@@ -357,7 +358,7 @@ def from_json(region: RegionModel, source_id=None):
             source_id = prev_exit_id
 
         return [tag, prev_exit_id]
-    elif region.isParallel():
+    elif region.is_parallel():
         tag = ""
 
         # Place di entrata
@@ -404,7 +405,7 @@ def create_split(region: RegionModel, source_id):
         tag += create_arc_tag(uuid4(), source_id, trans_entry_child_id)
         tag += create_arc_tag(uuid4(), trans_entry_child_id, child_source_id)
 
-        if region.isNature():
+        if region.is_nature():
             add_distribution_match(
                 source_id, region.distribution[i], trans_entry_child_id
             )

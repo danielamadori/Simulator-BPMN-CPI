@@ -1,9 +1,7 @@
-from typing import TypeVar
+from enum import Enum
 
-from pm4py import PetriNet
 
-from src.model.time_spin import TimeMarking, PropertiesKeys
-from src.model.types import P, T
+from model.types import P, T
 
 
 class NetUtils:
@@ -30,15 +28,16 @@ class NetUtils:
         def get_exit_id(cls, place: P):
             return place.properties.get(PropertiesKeys.EXIT_RID)
 
+        @classmethod
+        def get_impacts(cls, place: T):
+            return place.properties.get(PropertiesKeys.IMPACTS)
+
     class Transition:
 
         @classmethod
         def get_region_id(cls, transition: T):
             return transition.properties.get(PropertiesKeys.ENTRY_RID)
 
-        @classmethod
-        def get_impacts(cls, transition: T):
-            return transition.properties.get(PropertiesKeys.IMPACTS)
 
         @classmethod
         def get_probability(cls, transition: T):
@@ -47,3 +46,14 @@ class NetUtils:
         @classmethod
         def get_stop(cls, transition: T):
             return transition.properties.get(PropertiesKeys.STOP)
+
+
+class PropertiesKeys(Enum):
+    ENTRY_RID = "entry_rid"  # Entry Region ID
+    EXIT_RID = "exit_rid"  # Exit Region ID
+    LABEL = "label"
+    TYPE = "type"
+    DURATION = "duration"
+    IMPACTS = "impacts"
+    PROBABILITY = "probability"
+    STOP = "stop"

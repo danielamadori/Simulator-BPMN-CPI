@@ -4,18 +4,18 @@ import math
 
 def region_validator(region: RegionModel):
 
-    def explore(region: RegionModel, expected_impact_length: int = None):
-        print(f"Esploro la Region: {region.id}")
+    def explore(_r: RegionModel, expected_impact_length: int = None):
+        print(f"Esploro la Region: {_r.id}")
         # controlli per tutti i tipi di regione
-        if not region.id or not isinstance(region.type, RegionType):
+        if not _r.id or not isinstance(_r.type, RegionType):
             print("Id o tipo della regione è None o vuota")
             return False, None
 
-        if region.duration is None or region.duration < 0:
+        if _r.duration is None or _r.duration < 0:
             return False, None
 
         # controllo la regione in base al suo tipo
-        status, expected_impact_length = __switch_case(region, expected_impact_length)
+        status, expected_impact_length = __switch_case(_r, expected_impact_length)
 
         print(f"Expected_Value:{expected_impact_length}")
 
@@ -23,9 +23,9 @@ def region_validator(region: RegionModel):
             return False, None
 
         # se ho dei children
-        if region.children:
+        if _r.children:
             val = expected_impact_length
-            for child in region.children:
+            for child in _r.children:
                 # se il child o i children di child non sono validi
                 st, val = explore(child, val)
                 if not st:

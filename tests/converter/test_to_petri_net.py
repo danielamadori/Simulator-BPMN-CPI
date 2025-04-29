@@ -4,7 +4,8 @@ import pytest
 from pm4py import PetriNet
 from tests.converter.region_factory import region_factory
 
-from converter.spin import PropertiesKeys, from_region
+from converter.spin import from_region
+from utils.net_utils import PropertiesKeys
 from model.region import RegionModel, RegionType
 
 
@@ -56,7 +57,7 @@ def get_region_ids(region: RegionModel, *types: RegionType):
         ]
 
     def __apply(_r: RegionModel):
-        if _r.isTask() and RegionType.TASK in types:
+        if _r.is_task() and RegionType.TASK in types:
             _ids.add(_r.id)
             return
 

@@ -34,22 +34,22 @@ class RegionModel(BaseModel):
     distribution: List[float] | None = None
     impacts: List[float] | None = None
 
-    def isParallel(self):
+    def is_parallel(self):
         return self.type == RegionType.PARALLEL
 
-    def isChoice(self):
+    def is_choice(self):
         return self.type == RegionType.CHOICE
 
-    def isSequential(self):
+    def is_sequential(self):
         return self.type == RegionType.SEQUENTIAL
 
-    def isNature(self):
+    def is_nature(self):
         return self.type == RegionType.NATURE
 
-    def isTask(self):
+    def is_task(self):
         return self.type == RegionType.TASK
 
-    def hasChild(self):
+    def has_child(self):
         if self.children is None:
             return False
 
