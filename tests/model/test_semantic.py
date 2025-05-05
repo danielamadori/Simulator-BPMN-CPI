@@ -72,6 +72,6 @@ class TestTimeSemantic:
         expected_time_marking = TimeMarking(_m)
         real_time_marking = semantic.execute(net, t, marking)
 
-        print(f"Current: {real_time_marking}")
-        print(f"Expected: {expected_time_marking}")
+        # print(f"Current: {real_time_marking}")
+        # print(f"Expected: {expected_time_marking}")
         assert real_time_marking == expected_time_marking

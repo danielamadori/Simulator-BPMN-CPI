@@ -7,6 +7,7 @@ from utils.net_utils import NetUtils
 
 from .types import N, T, M
 
+
 class TimeMarking:
     def __init__(self, marking: Marking, age: Dict[str, float] = None):
         if age is None:
@@ -67,7 +68,6 @@ class TimeMarking:
         return repr(self)
 
 
-
 class TimeNetSematic(Generic[N]):
 
     def is_enabled(self, net: N, transition: T, marking: M):
@@ -75,9 +75,9 @@ class TimeNetSematic(Generic[N]):
             p = arc.source
             d = NetUtils.Place.get_duration(p)
             token, age = marking[p]
-            print(
-                f"{p.name}[token={token},age={age}]\tcheck: {PetriNetSemantics.is_enabled(net, transition, marking.marking)}\t{age<d}"
-            )
+            # print(
+            #     f"{p.name}[token={token},age={age}]\tcheck: {PetriNetSemantics.is_enabled(net, transition, marking.marking)}\t{age<d}"
+            # )
             if (
                 not PetriNetSemantics.is_enabled(net, transition, marking.marking)
                 or age < d

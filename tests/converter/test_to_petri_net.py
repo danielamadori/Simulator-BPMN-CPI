@@ -11,7 +11,7 @@ from model.region import RegionModel, RegionType
 
 @pytest.fixture()
 def task():
-    with open("tests/converter/bpmn_task.json") as f:
+    with open("tests/input_data/bpmn_task.json") as f:
         _json = f.read()
     _t = RegionModel.model_validate_json(_json)
     yield _t
@@ -20,7 +20,7 @@ def task():
 
 @pytest.fixture()
 def parallel():
-    with open("tests/converter/bpmn_parallel.json") as f:
+    with open("tests/input_data/bpmn_parallel.json") as f:
         _json = f.read()
     _t = RegionModel.model_validate_json(_json)
     yield _t
@@ -29,7 +29,7 @@ def parallel():
 
 @pytest.fixture()
 def choice():
-    with open("tests/converter/bpmn_choice.json") as f:
+    with open("tests/input_data/bpmn_choice.json") as f:
         _json = f.read()
     _t = RegionModel.model_validate_json(_json)
     yield _t
@@ -38,7 +38,7 @@ def choice():
 
 @pytest.fixture()
 def nature():
-    with open("tests/converter/bpmn_nature.json") as f:
+    with open("tests/input_data/bpmn_nature.json") as f:
         _json = f.read()
     _t = RegionModel.model_validate_json(_json)
     yield _t

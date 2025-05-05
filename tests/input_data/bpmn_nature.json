@@ -2,31 +2,21 @@
   "id": "6",
   "type": "nature",
   "label": "Nature polishing",
-  "duration": 2.5,
   "children": [
     {
       "id": "9",
       "type": "task",
       "label": "Heavy polishing",
-      "impacts": [
-        5,
-        4
-      ],
+      "impacts": [5, 4],
       "duration": 2
     },
     {
       "id": "10",
       "type": "task",
       "label": "Light polishing",
-      "impacts": [
-        8,
-        1
-      ],
+      "impacts": [8, 1],
       "duration": 1
     }
   ],
-  "distribution": [
-    0.2,
-    0.8
-  ]
+  "distribution": [0.2, 0.8]
 }
