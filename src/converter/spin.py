@@ -238,7 +238,7 @@ def from_region(region: RegionModel):
                 exit_child_trans = create_transition(
                     exit_child_trans_id,
                     region,
-                    1 if not region.distribution else region.distribution[i],
+                    1,
                 )
                 net.transitions.add(exit_child_trans)
 
