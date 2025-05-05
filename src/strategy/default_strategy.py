@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import copy
 from abc import ABC, abstractmethod
 from typing import Dict, List, TypeVar, Collection
 
@@ -5,6 +8,7 @@ from pm4py.objects.petri_net.obj import PetriNet
 from pm4py.objects.petri_net.semantics import ClassicSemantics
 
 from model.time_spin import NetUtils, TimeMarking, TimeNetSematic
+from utils.net_utils import PropertiesKeys
 
 N = TypeVar("N", bound=PetriNet)
 T = TypeVar("T", bound=PetriNet.Transition)
@@ -55,8 +59,8 @@ class ClassicStrategy(StrategyInterface):
         return groups
 
     def saturate(self, net, marking):
-        if self.semantic.enabled_transitions():
-            return marking
+        if self.semantic.enabled_transitions(net, marking):
+            return marking, 0
 
         raw_semantic = ClassicSemantics()
         saturable_trans = raw_semantic.enabled_transitions(net, marking)
@@ -83,24 +87,35 @@ class ClassicStrategy(StrategyInterface):
                 continue
             new_age[p] = age + min_delta
 
-        return TimeMarking(marking.marking, new_age)
+        return TimeMarking(marking.marking, new_age), min_delta
 
     def consume(self, net: N, marking: M, choices: Collection[T] | None = None):
         """
         Assumiamo che choices contenga l'insieme sincronizzato massimale di transizioni per il marking
         """
-        saturated_marking = self.saturate(net, marking)
+        saturated_marking, time_passed = self.saturate(net, marking)
 
         raw_semantic = ClassicSemantics()
-        all_active_transition = raw_semantic.enabled_transitions()
+        all_active_transition = raw_semantic.enabled_transitions(net, saturated_marking)
         active_and_stoppable_transition = self.get_stoppable_active_transitions(
             net, saturated_marking
         )
+
+        all_choices = set(copy.deepcopy(choices))
         # Aggiunto tutte le transizioni eseguibili senza stop
         for el in all_active_transition - active_and_stoppable_transition:
-            choices.append(el)
+            all_choices.add(el)
 
-        # Set default per scelte non specificate
-        for at in active_and_stoppable_transition:
-            if not at in choices:
-                pass
+        _m = copy.deepcopy(saturated_marking)
+        len_impacts = len(NetUtils.Place.get_impacts(list(_m.keys())[0]))
+
+        total_impacts = [0] * len_impacts
+        for c in all_choices:
+            _m = self.semantic.fire(net, c, _m)
+            curr_impact = NetUtils.Place.get_impacts(list(c.in_arcs)[0].source)
+            if curr_impact is None:
+                continue
+            for i in range(len_impacts):
+                total_impacts[i] += curr_impact[i]
+
+
