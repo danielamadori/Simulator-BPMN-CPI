@@ -38,8 +38,6 @@ def get_trans_prop(trans: PetriNet.Transition):
 
 
 def create_place(place_id: str, region: RegionModel):
-    if region.id in list(str(x) for x in range(7, 16, 1)):
-        print(f"Task\tRegion: {region.id}")
     place = PetriNet.Place(
         place_id,
     )
@@ -70,7 +68,6 @@ def create_transition(
     trans.properties[PropertiesKeys.EXIT_RID] = None
     trans.properties[PropertiesKeys.LABEL] = region.label
     trans.properties[PropertiesKeys.TYPE] = region.type
-    # trans.properties[PropertiesKeys.IMPACTS] = region.impacts
     trans.properties[PropertiesKeys.PROBABILITY] = probability
     trans.properties[PropertiesKeys.STOP] = stop
 
@@ -110,6 +107,7 @@ def from_region(region: RegionModel):
                         PropertiesKeys.ENTRY_RID
                     ],
                     PropertiesKeys.DURATION: 0,
+                    PropertiesKeys.IMPACTS: None
                 }
             )
             net.places.add(exit_place)

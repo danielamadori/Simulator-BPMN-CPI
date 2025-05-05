@@ -201,7 +201,7 @@ class ClassicExecution(ExecutionInterface):
 
         for t in sem.enabled_transitions(net, marking):
             if not NetUtils.Transition.get_stop(t) or t in choices:
-                new_marking = sem.fire(net, t, marking)
+                new_marking = sem.fire(net, t, new_marking)
                 probability *= NetUtils.Transition.get_probability(t)
 
                 parent = list(t.in_arcs)[0].source

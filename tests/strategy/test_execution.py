@@ -4,7 +4,7 @@ import pytest
 
 from converter.spin import from_region
 from model.region import RegionModel
-from model.time_spin import TimeNetSematic
+from model.time_spin import TimeNetSematic, TimeMarking
 from strategy.execution import ClassicExecution
 from utils.net_utils import NetUtils, PropertiesKeys
 import math
@@ -23,10 +23,13 @@ def net():
 def marking(net):
     _net, im, fm = net
 
-    strategy = ClassicExecution()
-    sat_m, _ = strategy.saturate(_net, im)
+    new_base_marking = {k:0 for k in im.keys()}
+    for p in _net.places:
+        if NetUtils.Place.get_entry_id(p) in ['5','6']:
+            print("FOUND")
+            new_base_marking[p] = 1
 
-    return sat_m
+    return TimeMarking(new_base_marking)
 
 
 @pytest.fixture
@@ -84,5 +87,5 @@ def test_consume(net, marking):
     consumed_m, _p, _i, _t = strategy.consume(_net, marking, fm, choices)
 
     assert math.isclose(_p, 0.8)
-    # assert _i == [38, 2]
+    assert _i == [38, 2]
     assert math.isclose(_t, 1)
