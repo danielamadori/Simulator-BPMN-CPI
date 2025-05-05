@@ -29,7 +29,7 @@ class NetUtils:
             return place.properties.get(PropertiesKeys.EXIT_RID)
 
         @classmethod
-        def get_impacts(cls, place: T):
+        def get_impacts(cls, place: P):
             return place.properties.get(PropertiesKeys.IMPACTS)
 
     class Transition:
@@ -37,7 +37,6 @@ class NetUtils:
         @classmethod
         def get_region_id(cls, transition: T):
             return transition.properties.get(PropertiesKeys.ENTRY_RID)
-
 
         @classmethod
         def get_probability(cls, transition: T):

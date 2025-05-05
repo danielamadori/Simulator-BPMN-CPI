@@ -22,7 +22,7 @@ Le regioni sono SESE, pertanto il MEMENTO nel Client dovrà gestire un marking d
 Domanda -> esiste la possibilità che la rete faccia una consume e non cambi nulla dal pdv del bpmn?
 Risposta -> Teoricamente no, poichè è sese.
 Ergo si può fare un memento con id regioni se attive o meno e costo complessivo accumulato e tempo trascorso.
--> creare unn LOG 
+-> creare un LOG 
 
 Problema: Se gestisco il memento con id regioni associa ad ogni regione la sua age?
 -> 1 regione = 1 place.

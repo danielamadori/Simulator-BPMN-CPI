@@ -9,14 +9,10 @@ from pm4py.objects.petri_net.semantics import ClassicSemantics
 
 from model.time_spin import NetUtils, TimeMarking, TimeNetSematic
 from utils.net_utils import PropertiesKeys
-
-N = TypeVar("N", bound=PetriNet)
-T = TypeVar("T", bound=PetriNet.Transition)
-P = TypeVar("P", bound=PetriNet.Place)
-M = TypeVar("M", bound=TimeMarking)
+from model.types import N, T, P, M
 
 
-class StrategyInterface(ABC):
+class ExecutionInterface(ABC):
 
     @abstractmethod
     def consume(self, net: N, marking: M, choices: Collection[T] | None = None):
@@ -31,7 +27,7 @@ class StrategyInterface(ABC):
         pass
 
 
-class ClassicStrategy(StrategyInterface):
+class ClassicExecution(ExecutionInterface):
 
     def __init__(self, semantic=None):
         self.semantic = semantic if semantic else TimeNetSematic()
@@ -89,33 +85,36 @@ class ClassicStrategy(StrategyInterface):
 
         return TimeMarking(marking.marking, new_age), min_delta
 
-    def consume(self, net: N, marking: M, choices: Collection[T] | None = None):
+    def consume(self, net: N, marking: M, fm: M, choices: Collection[T] | None = None):
         """
-        Assumiamo che choices contenga l'insieme sincronizzato massimale di transizioni per il marking
+        Assumiamo che choices contenga l'insieme sincronizzato massimale di transizioni con stop per il marking
         """
-        saturated_marking, time_passed = self.saturate(net, marking)
+        # check final_marking (fine esecuzione della rete)
+        if marking.marking == fm.marking:
+            return marking, 1, 0, 0
 
-        raw_semantic = ClassicSemantics()
-        all_active_transition = raw_semantic.enabled_transitions(net, saturated_marking)
-        active_and_stoppable_transition = self.get_stoppable_active_transitions(
-            net, saturated_marking
-        )
+        # Default
+        tm = marking
+        probability = 1
+        _time = 0
+        trans_iter = iter(net.places)
+        first_place = next(trans_iter)
+        impacts = [0] * len(NetUtils.Place.get_impacts(first_place))
 
-        all_choices = set(copy.deepcopy(choices))
-        # Aggiunto tutte le transizioni eseguibili senza stop
-        for el in all_active_transition - active_and_stoppable_transition:
-            all_choices.add(el)
+        # saturazione
+        active_stop_trans = self.get_stoppable_active_transitions()
+        while active_stop_trans.intersection(choices) == active_stop_trans:
+            tm, delta = self.saturate(net, tm)
+            for t in self.semantic.enabled_transitions(net, tm):
+                tm = self.semantic.fire(net, t, marking)
+                # Calcolo probabilità
+                probability *= NetUtils.Transition.get_probability(t) or 1
+                # Calcolo Impatti
+                parent = list(t.in_arcs)[0].source
+                parent_impacts = NetUtils.Place.get_impacts(parent) or []
+                for i in len(parent_impacts):
+                    impacts[i] += parent_impacts[i]
 
-        _m = copy.deepcopy(saturated_marking)
-        len_impacts = len(NetUtils.Place.get_impacts(list(_m.keys())[0]))
+            _time += delta
 
-        total_impacts = [0] * len_impacts
-        for c in all_choices:
-            _m = self.semantic.fire(net, c, _m)
-            curr_impact = NetUtils.Place.get_impacts(list(c.in_arcs)[0].source)
-            if curr_impact is None:
-                continue
-            for i in range(len_impacts):
-                total_impacts[i] += curr_impact[i]
-
-
+        return tm, probability, impacts, _time
