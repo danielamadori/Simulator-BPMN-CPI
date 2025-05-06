@@ -9,6 +9,7 @@ from strategy.execution import ClassicExecution
 from converter.spin import from_region
 from pm4py.objects.petri_net.obj import PetriNet
 
+from utils.default import Defaults
 from utils.net_utils import NetUtils
 
 
@@ -57,6 +58,11 @@ class NetContext:
         """
         TODO:Scegliere i default ed eseguire la consume
         """
+        if not choices:
+            choices = []
+        else:
+            choices = list(choices)
+
         all_choices = self.get_choices(tree)
         place_choosen = {p:None for p in all_choices.keys()}
         for t in choices:
@@ -68,16 +74,26 @@ class NetContext:
 
             place_choosen[parent] = t
 
+
         for p in place_choosen:
             if place_choosen[p]:
                 continue
+            default_choice = Defaults.get_default_by_region(self.region, NetUtils.Place.get_entry_id(p))
+            if not default_choice:
+                continue
 
-
+            for arc in p.out_arcs:
+                t = arc.target
+                next_p = list(t.out_arcs)[0].target
+                if NetUtils.Place.get_entry_id(next_p) == default_choice.id:
+                    choices.append(t)
+                    break
 
 
         new_marking, probability, impacts, delta = self.strategy.consume(
             self.net, tree.current_node.snapshot, self.final_marking, choices
         )
+
         return ExTree(Snapshot(new_marking, probability, impacts, delta))
 
     def get_choices(self, tree: ExTree) -> Dict[P, List[T]]:

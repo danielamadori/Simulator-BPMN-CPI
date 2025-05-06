@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import copy
 from abc import ABC, abstractmethod
-from typing import Dict, List, Collection
+from typing import Dict, List, Collection, Set
 
 from pm4py.objects.petri_net.semantics import ClassicSemantics
 
@@ -31,7 +30,7 @@ class ClassicExecution(ExecutionInterface):
         self.semantic = semantic if semantic else TimeNetSematic()
         self.raw_semantic = ClassicSemantics()
 
-    def get_stoppable_active_transitions(self, net, marking):
+    def get_stoppable_active_transitions(self, net, marking) -> Set[T]:
         enabled_transitions = self.semantic.enabled_transitions(net, marking)
         print(f"ENABLED: {enabled_transitions}")
         # Filtro per transizoni con stop attivo
@@ -54,7 +53,7 @@ class ClassicExecution(ExecutionInterface):
 
         return groups
 
-    def saturate(self, net, marking):
+    def saturate(self, net, marking) -> tuple[M, float]:
         if len(self.semantic.enabled_transitions(net, marking)) > 0:
             return marking, 0
 
@@ -67,8 +66,8 @@ class ClassicExecution(ExecutionInterface):
             for arc in t.in_arcs:
                 parent_place = arc.source
                 curr_delta = (
-                    NetUtils.Place.get_duration(parent_place)
-                    - marking.age[parent_place]
+                        NetUtils.Place.get_duration(parent_place)
+                        - marking.age[parent_place]
                 )
                 _max = max(curr_delta, _max)
 
@@ -84,111 +83,8 @@ class ClassicExecution(ExecutionInterface):
 
         return TimeMarking(marking.marking, new_age), min_delta
 
-    def consume(
-        self,
-        net: N,
-        marking: M,
-        fm: M,
-        choices: Collection[T] | None = None,
-    ):
-        """
-        Assumiamo che choices contenga l'insieme sincronizzato massimale di transizioni con stop per il marking
-        """
-        return self._consume(net, marking, choices)
-        # default
-        # probability = 1
-        # _time = 0
-        # for p in net.places:
-        #     if NetUtils.Place.get_impacts(p):
-        #         first_place = p
-        #         break
-        # impacts = [0] * len(NetUtils.Place.get_impacts(first_place))
-
-        # # saturo
-        # if marking != fm:
-        #     tm, delta = self.saturate(net, marking)
-
-        # # check final_marking (fine esecuzione della rete)
-        # if marking.marking == fm.marking:
-        #     return marking, 1, impacts, 0
-
-        # active_stop_trans = self.get_stoppable_active_transitions(net, marking)
-
-        # # caso base
-        # if choices is None:
-        #     choices = []
-
-        # bho = True
-        # for t in self.get_stoppable_active_transitions(net, marking):
-        #     if t not in choices:
-        #         bho = False
-
-        # if len(active_stop_trans) != 0 and not bho:
-        #     print("BASE CASE\n")
-        #     return marking, probability, impacts, _time
-
-        # # esecuzione
-        # for t in self.semantic.enabled_transitions(net, tm):
-        #     if NetUtils.Transition.get_stop(t) and t not in choices:
-        #         continue
-        #     tm = self.semantic.fire(net, t, marking)
-        #     print(f"FIRE OF {t}\n")
-        #     # Calcolo probabilità
-        #     probability *= NetUtils.Transition.get_probability(t) or 1.0
-
-        #     # Calcolo Impatti
-        #     parent = list(t.in_arcs)[0].source
-        #     parent_impacts = NetUtils.Place.get_impacts(parent) or []
-        #     for i in range(len(parent_impacts)):
-        #         impacts[i] += parent_impacts[i]
-        #     _time += delta
-        #     print("RECURSIVE CALL\n")
-
-        # new_marking, p, new_impacts, new_time = self.consume(net, tm, fm, choices)
-
-        # for i in range(len(new_impacts)):
-        #     impacts[i] += new_impacts[i]
-
-        # return new_marking, probability * p, impacts, _time + new_time
-
-        # Default
-        # tm = marking
-        # probability = 1
-        # _time = 0
-        # first_place = None
-        # for p in net.places:
-        #     if NetUtils.Place.get_impacts(p):
-        #         first_place = p
-        #         break
-        # impacts = [0] * len(NetUtils.Place.get_impacts(first_place))
-
-        # saturazione
-        # active_stop_trans = self.get_stoppable_active_transitions(net, tm)
-        # coutn = 100
-        # while active_stop_trans.intersection(choices) == choices and coutn > 0:
-        #     coutn -= 1
-        #     print("ENTRAAAA")
-        #     # print(f"ITER: {active_stop_trans}")
-        #     # print(f"CHOICES: {choices}")
-        #     # print(f"INTERSECTION: {active_stop_trans.intersection(choices)}")
-        #     # print(f" remake= {active_stop_trans}")
-        #     tm, delta = self.saturate(net, tm)
-        #     for t in self.semantic.enabled_transitions(net, tm):
-        #         tm = self.semantic.fire(net, t, marking)
-        #         # Calcolo probabilità
-        #         probability *= NetUtils.Transition.get_probability(t) or 1
-        #         # Calcolo Impatti
-        #         parent = list(t.in_arcs)[0].source
-        #         parent_impacts = NetUtils.Place.get_impacts(parent) or []
-        #         for i in range(len(parent_impacts)):
-        #             impacts[i] += parent_impacts[i]
-
-        #     _time += delta
-        #     active_stop_trans = self.get_stoppable_active_transitions(net, tm)
-
-        # return tm, probability, impacts, _time
-
-    def _consume(self, net, marking, choices):
+    def consume(self, net: N, marking: M, choices: Collection[T] | None = None) -> tuple[
+        TimeMarking, int, list[int], float]:
         new_marking, delta = self.saturate(net, marking)
         probability = 1
         sem = self.semantic
@@ -211,7 +107,7 @@ class ClassicExecution(ExecutionInterface):
         if new_marking == marking:
             return new_marking, probability, impacts, delta
         else:
-            new_marking, next_p, next_i, next_delta = self._consume(
+            new_marking, next_p, next_i, next_delta = self.consume(
                 net, new_marking, choices
             )
             for i in range(len(next_i)):

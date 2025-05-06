@@ -85,6 +85,7 @@ class ExTree:
         nodes = self.get_nodes()
         return len(nodes)
 
+
 def is_equal(node1: Node, node2: Node):
     if node1.parent != node2.parent:
         return False

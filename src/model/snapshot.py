@@ -1,5 +1,8 @@
-from .types import N, P, T, M
 from model.time_spin import TimeMarking
+
+'''
+Secondo me si può spostare anche dentro extree
+'''
 
 
 # Snapshot è la struttura del nodo dell'albero
@@ -9,13 +12,7 @@ class Snapshot:
     impacts: list[float]
     exec_time: float
 
-    def __init__(
-        self,
-        marking: TimeMarking,
-        probability: float,
-        impacts: list[float],
-        time: float,
-    ):
+    def __init__(self, marking: TimeMarking, probability: float, impacts: list[float], time: float):
         self.marking = marking
         self.probability = probability
         self.impacts = impacts

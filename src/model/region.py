@@ -1,10 +1,9 @@
 from __future__ import annotations
+
 from enum import Enum
 from typing import List
 
 from pydantic import BaseModel
-
-from utils.net_utils import NetUtils
 
 
 class RegionType(Enum):
@@ -36,28 +35,29 @@ class RegionModel(BaseModel):
     distribution: List[float] | None = None
     impacts: List[float] | None = None
 
-    def is_parallel(self):
+    def is_parallel(self) -> bool:
         return self.type == RegionType.PARALLEL
 
-    def is_choice(self):
+    def is_choice(self) -> bool:
         return self.type == RegionType.CHOICE
 
-    def is_sequential(self):
+    def is_sequential(self) -> bool:
         return self.type == RegionType.SEQUENTIAL
 
-    def is_nature(self):
+    def is_nature(self) -> bool:
         return self.type == RegionType.NATURE
 
-    def is_task(self):
+    def is_task(self) -> bool:
         return self.type == RegionType.TASK
 
-    def has_child(self):
+    def has_child(self) -> bool:
         if self.children is None:
             return False
 
         return len(self.children) != 0
 
-def find_region_by_id(root: RegionModel, _id: str):
+
+def find_region_by_id(root: RegionModel, _id: str) -> RegionModel | None:
     if root.id == _id:
         return root
 

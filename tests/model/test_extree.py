@@ -1,5 +1,4 @@
 import pytest
-from fontTools.misc.psOperators import ps_array
 from pm4py import Marking
 
 from model.extree import ExTree
@@ -9,16 +8,18 @@ from model.time_spin import TimeMarking
 
 @pytest.fixture
 def snapshot():
-    tm = TimeMarking(Marking(a=1,b=0,c=0,d=0,e=0))
-    _snapshot = Snapshot(tm, 0.8, [5,2], 2)
+    tm = TimeMarking(Marking(a=1, b=0, c=0, d=0, e=0))
+    _snapshot = Snapshot(tm, 0.8, [5, 2], 2)
 
     return _snapshot
+
 
 @pytest.fixture
 def extree(snapshot):
     tree = ExTree(snapshot)
 
     return tree
+
 
 def test_add(extree, snapshot):
     assert len(extree.get_nodes()) == 1
