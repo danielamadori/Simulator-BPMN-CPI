@@ -8,10 +8,15 @@ def region_validator(region: RegionModel):
         # print(f"Esploro la Region: {_r.id}")
         # controlli per tutti i tipi di regione
         if not _r.id or not isinstance(_r.type, RegionType):
-            print("Id o tipo della regione è None o vuota")
+            print(
+                f"Id o tipo della regione {region.label} id:{region.id} è None o vuota"
+            )
             return False, None
 
         if _r.duration is None or _r.duration < 0:
+            print(
+                f"Regione {region.label} id:{region.id} ha durata {region.duration} (< 0 o None)"
+            )
             return False, None
 
         # controllo la regione in base al suo tipo
@@ -49,7 +54,9 @@ def __switch_case(region: RegionModel, expected_impact_length: int = None):
     validator_fn = switch.get(region.type)
 
     if not validator_fn:
-        print(f"Tipo regione non supportato: {region.type}")
+        print(
+            f"Tipo regione non supportato: {region.type} nella regione {region.label} di id: {region.id}"
+        )
         return False, None
 
     return validator_fn(region, expected_impact_length)
@@ -59,14 +66,21 @@ def __sequential_validator(region: RegionModel, expected_impact_length: int = No
     # print("Validatore Sequenziale")
     # per essere sequenziale deve almeno avere 2 children
     if not region.children or len(region.children) < 2:
+        print(
+            f"Regione Sequenziale {region.label} di id:{region.id} ha meno di 2 children: {len(region.children or [])}"
+        )
         return False, None
 
     # non devo avere impatti
     if region.impacts:
+        print(
+            f"Regione Sequenziale {region.label} di id:{region.id} ha impatti: {region.impacts}"
+        )
         return False, None
 
     # non devo avere distribuzioni di probabilità
     if region.distribution:
+        f"Regione Sequenziale {region.label} di id:{region.id} ha distribuzione di probabilità: {region.distribution}"
         return False, None
 
     # durata???
@@ -80,24 +94,36 @@ def __task_validator(region: RegionModel, expected_impact_length: int = None):
     # print(f"expected_impact_length = {expected_impact_length}")
 
     if not region.impacts:
+        print(
+            f"Regione Task {region.label} di id:{region.id} non ha impatti: {region.impacts}"
+        )
         return False, expected_impact_length
 
     for impact in region.impacts:
         if impact < 0:
+            print(
+                f"Regione Task {region.label} di id:{region.id} ha impatti negativi: {region.impacts}"
+            )
             return False, expected_impact_length
 
     if expected_impact_length is None:
         expected_impact_length = len(region.impacts)
     elif len(region.impacts) != expected_impact_length:
         print(
-            f"Task {region.id} ha una lunghezza di impacts diversa ({len(region.impacts)} vs {expected_impact_length})"
+            f"Regione Task {region.label} di id:{region.id} ha una lunghezza di impacts diversa ({len(region.impacts or [])} vs {expected_impact_length})"
         )
         return False, expected_impact_length
 
     if region.children:
+        print(
+            f"Regione Task {region.label} di id:{region.id} ha figli: {region.children}"
+        )
         return False, expected_impact_length
 
     if region.distribution:
+        print(
+            f"Regione Task {region.label} di id:{region.id} ha distribuzione di probabilità: {region.distribution}"
+        )
         return False, expected_impact_length
 
     return True, expected_impact_length
@@ -107,14 +133,23 @@ def __parallel_validator(region: RegionModel, expected_impact_length: int = None
     # print("Validatore Parallelo")
     # devo avere almeno 2 children
     if not region.children or len(region.children) < 2:
+        print(
+            f"Regione Parallela {region.label} di id:{region.id} non ha almeno 2 children: {len(region.children or [])}"
+        )
         return False, None
 
     # non devo avere impatti
     if region.impacts:
+        print(
+            f"Regione Parallela {region.label} di id:{region.id} ha impatti: {region.impacts}"
+        )
         return False, None
 
     # non devo avere distribuzioni di probabilità
     if region.distribution:
+        print(
+            f"Regione Parallela {region.label} di id:{region.id} ha distribuzione: {region.distribution}"
+        )
         return False, None
 
     # durata??
@@ -126,21 +161,33 @@ def __nature_validator(region: RegionModel, expected_impact_length: int = None):
     # print("Validatore Natura")
     # devo avere almeno 2 children
     if not region.children or len(region.children) < 2:
+        print(
+            f"Regione Natura {region.label} di id:{region.id} non ha almeno 2 figli: {len(region.children or [])}"
+        )
         return False, None
 
     # devo avere la distribuzione di probabilità e  len(prob) = numero childern
     if not region.distribution or len(region.distribution) != len(
         region.children or []
     ):
+        print(
+            f"Regione Natura {region.label} di id:{region.id} non ha distribuzione di probabilità oppure: len(prob) != numero childern"
+        )
         return False, None
 
     # devo avere la somma di distibuzione delle probabilità vicina a  1
     prob_sum = sum(region.distribution)
     if not math.isclose(prob_sum, 1.0, rel_tol=1e-9):
+        print(
+            f"Regione Natura {region.label} di id:{region.id} non somma a 1 la sua probabilità: {prob_sum}"
+        )
         return False, None
 
     # non devo avere impatti
     if region.impacts:
+        print(
+            f"Regione Natura {region.label} di id:{region.id} ha impatti: {region.impacts}"
+        )
         return False, None
 
     # duration?
@@ -152,20 +199,32 @@ def __choice_validator(region: RegionModel, expected_impact_length: int = None):
     # print("Validatore Choice")
     # devo avere almeno 2 children
     if not region.children or len(region.children) < 2:
+        print(
+            f"Regione Scelta {region.label} di id:{region.id} non ha alemeno 2 figli: {len(region.children or [])}"
+        )
         return False, None
 
     # se ho la distribuzione di probabilità allora len(prob) = numero childern
     if region.distribution and len(region.distribution) != len(region.children or []):
+        print(
+            f"Regione Scelta {region.label} di id:{region.id} ha len(prob) != numero childern"
+        )
         return False, None
 
     # se ho la distribuzione di probabilità allora deve essere vicino a 1
     if region.distribution:
         prob_sum = sum(region.distribution)
         if not math.isclose(prob_sum, 1.0, rel_tol=1e-9):
+            print(
+                f"Regione Scelta {region.label} di id:{region.id} la cui somma delle probabilità non corrisponde a 1: {prob_sum}"
+            )
             return False, None
 
     # non devo avere impatti
     if region.impacts:
+        print(
+            f"Regione Scelta {region.label} di id:{region.id} ha impatti: {region.impacts}"
+        )
         return False, None
 
     # duration?
