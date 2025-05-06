@@ -2,13 +2,11 @@ from __future__ import annotations
 
 import copy
 from abc import ABC, abstractmethod
-from typing import Dict, List, TypeVar, Collection
+from typing import Dict, List, Collection
 
-from pm4py.objects.petri_net.obj import PetriNet
 from pm4py.objects.petri_net.semantics import ClassicSemantics
 
 from model.time_spin import NetUtils, TimeMarking, TimeNetSematic
-from utils.net_utils import PropertiesKeys
 from model.types import N, T, P, M
 
 
@@ -31,6 +29,7 @@ class ClassicExecution(ExecutionInterface):
 
     def __init__(self, semantic=None):
         self.semantic = semantic if semantic else TimeNetSematic()
+        self.raw_semantic = ClassicSemantics()
 
     def get_stoppable_active_transitions(self, net, marking):
         enabled_transitions = self.semantic.enabled_transitions(net, marking)
@@ -59,7 +58,7 @@ class ClassicExecution(ExecutionInterface):
         if len(self.semantic.enabled_transitions(net, marking)) > 0:
             return marking, 0
 
-        raw_semantic = ClassicSemantics()
+        raw_semantic = self.raw_semantic
         _saturable_trans = raw_semantic.enabled_transitions(net, marking.marking)
         saturable_trans = [t for t in net.transitions if t in _saturable_trans]
         k = {}
@@ -192,7 +191,7 @@ class ClassicExecution(ExecutionInterface):
     def _consume(self, net, marking, choices):
         new_marking, delta = self.saturate(net, marking)
         probability = 1
-        sem = TimeNetSematic()
+        sem = self.semantic
         for p in net.places:
             if NetUtils.Place.get_impacts(p):
                 first_place = p
