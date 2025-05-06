@@ -1,4 +1,4 @@
-from types import N, P, T, M
+from .types import N, P, T, M
 from model.time_spin import TimeMarking
 
 
@@ -32,3 +32,18 @@ class Snapshot:
 
     def get_time(self):
         return self.exec_time
+
+    def __eq__(self, other):
+        if not isinstance(other, Snapshot):
+            return False
+
+        if other.marking != self.marking:
+            return False
+        if other.impacts != self.impacts:
+            return False
+        if other.probability != self.probability:
+            return False
+        if other.exec_time != self.exec_time:
+            return False
+
+        return True
