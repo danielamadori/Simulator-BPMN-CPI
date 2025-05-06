@@ -4,6 +4,8 @@ from typing import List
 
 from pydantic import BaseModel
 
+from utils.net_utils import NetUtils
+
 
 class RegionType(Enum):
     SEQUENTIAL = "sequential"
@@ -54,3 +56,17 @@ class RegionModel(BaseModel):
             return False
 
         return len(self.children) != 0
+
+def find_region_by_id(root: RegionModel, _id: str):
+    if root.id == _id:
+        return root
+
+    if not root.children:
+        return None
+
+    for c in root.children:
+        _next = find_region_by_id(c, _id)
+        if _next:
+            return _next
+
+    return None

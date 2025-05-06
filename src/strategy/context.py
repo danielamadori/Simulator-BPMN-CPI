@@ -1,10 +1,10 @@
-from typing import Collection
+from typing import Collection, Dict, List
 import uuid
 from model.extree import ExTree
 from model.region import RegionModel
 from model.snapshot import Snapshot
 from model.time_spin import TimeMarking, TimeNetSematic
-from model.types import T
+from model.types import T, P
 from strategy.execution import ClassicExecution
 from converter.spin import from_region
 from pm4py.objects.petri_net.obj import PetriNet
@@ -13,7 +13,7 @@ from utils.net_utils import NetUtils
 
 
 class NetContext:
-    id: str
+    _id: str
     semantic: TimeNetSematic
     net: PetriNet
     inital_marking: TimeMarking
@@ -35,7 +35,7 @@ class NetContext:
     #     self.init_tree = ExTree(Snapshot(self.inital_marking, 1, None, 0))
 
     def __init__(self, region, net, im, fm, strategy, id=None):
-        self.id = id or str(uuid.uuid4())
+        self._id = id or str(uuid.uuid4())
         self.region = region
         self.net = net
         self.im = im
@@ -57,13 +57,31 @@ class NetContext:
         """
         TODO:Scegliere i default ed eseguire la consume
         """
+        all_choices = self.get_choices(tree)
+        place_choosen = {p:None for p in all_choices.keys()}
+        for t in choices:
+            parent = list(t.in_arcs)[0].source
+            if parent not in all_choices:
+                continue
+            if place_choosen[parent]:
+                raise ValueError(f"{place_choosen[parent]} and {parent} can't be both choosen")
+
+            place_choosen[parent] = t
+
+        for p in place_choosen:
+            if place_choosen[p]:
+                continue
+
+
+
+
         new_marking, probability, impacts, delta = self.strategy.consume(
             self.net, tree.current_node.snapshot, self.final_marking, choices
         )
         return ExTree(Snapshot(new_marking, probability, impacts, delta))
 
-    def get_choices(self, tree: ExTree):
-        return self.strategy.get_choices(self.net, tree.current_node.snapshot)
+    def get_choices(self, tree: ExTree) -> Dict[P, List[T]]:
+        return self.strategy.get_choices(self.net, tree.current_node.snapshot.marking)
 
     def __eq__(self, value):
-        return isinstance(value, NetContext) and value.id == self.id
+        return isinstance(value, NetContext) and value._id == self._id

@@ -20,7 +20,7 @@ class ExTree:
 
     def find_by_id(self, node_id: str):
         for node in PreOrderIter(self.__root):
-            if node.id == node_id:
+            if node._id == node_id:
                 return node
         return None
 
@@ -57,7 +57,7 @@ class ExTree:
     # Visualizzazione Albero
     def print_tree(self):
         for pre, fill, node in RenderTree(self.__root):
-            if self.current_node.id == node.id:
+            if self.current_node.id == node._id:
                 print("X" + f"{pre}{node.name}" + "X")
             else:
                 print(f"{pre}{node.name}")

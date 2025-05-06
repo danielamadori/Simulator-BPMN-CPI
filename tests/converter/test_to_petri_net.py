@@ -149,7 +149,7 @@ class TestBaseRegion:
 
         done = False
         for rid, data in props.items():
-            if self.region.id != rid:
+            if self.region._id != rid:
                 continue
             else:
                 done = True
@@ -164,8 +164,8 @@ class TestBaseRegion:
         if not self.region.children:
             assert True
 
-        child_ids = {r.id for r in self.region.children}
-        child_ids.add(self.region.id)
+        child_ids = {r._id for r in self.region.children}
+        child_ids.add(self.region._id)
         place_child_rids = (
             a.target.properties[PropertiesKeys.ENTRY_RID]
             for a in self.first_place.out_arcs
@@ -178,11 +178,11 @@ class TestBaseRegion:
         keys = [PropertiesKeys.DURATION]
         props = get_region_props_from_net(self.net, self.region, keys=keys)
 
-        assert props[self.region.id][PropertiesKeys.DURATION] == self.region.duration
+        assert props[self.region._id][PropertiesKeys.DURATION] == self.region.duration
         assert (
             list(
                 filter(
-                    lambda p: p.properties[PropertiesKeys.EXIT_RID] == self.region.id,
+                    lambda p: p.properties[PropertiesKeys.EXIT_RID] == self.region._id,
                     self.net.places,
                 )
             )[0].properties[PropertiesKeys.DURATION]
