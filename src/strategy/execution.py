@@ -9,7 +9,7 @@ from model.extree import ExTree
 from model.snapshot import Snapshot
 from model.time_spin import NetUtils, TimeMarking, TimeNetSematic
 from model.types import N, T, P, M
-from strategy.context import NetContext
+from model.context import NetContext
 from utils.default import Defaults
 
 
