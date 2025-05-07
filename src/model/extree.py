@@ -21,8 +21,17 @@ class ExTree:
 
     @classmethod
     def from_context(cls, ctx):
-        impacts = [0] * len(NetUtils.Place.get_impacts(list(ctx.im.keys())[0]))
-        return ExTree(Snapshot(ctx.im, 1, impacts, 0))
+        places = ctx.initial_marking.keys()
+
+        place = None
+        for _p in places:
+            if NetUtils.Place.get_impacts(_p):
+                place = _p
+                break
+
+        place_impacts = NetUtils.Place.get_impacts(place)
+        impacts = [0] * len(place_impacts)
+        return ExTree(Snapshot(ctx.initial_marking, 1, impacts, 0))
 
     def find_by_id(self, node_id: str):
         for node in PreOrderIter(self.__root):

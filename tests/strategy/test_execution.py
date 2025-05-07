@@ -1,31 +1,28 @@
-from enum import Enum
-import json
+import math
+
 import pytest
 
-from converter.spin import from_region
+from model.context import NetContext
 from model.region import RegionModel
-from model.time_spin import TimeNetSematic, TimeMarking
-from strategy.execution import ClassicExecution
-from utils.net_utils import NetUtils, PropertiesKeys
-import math
+from model.time_spin import TimeMarking
+from utils.net_utils import NetUtils
 
 
 @pytest.fixture
-def net():
+def ctx():
     with open("tests/iron.json") as f:
         model = RegionModel.model_validate_json(f.read())
 
-    _net, im, fm = from_region(model)
-    return _net, im, fm
+    return NetContext.from_region(model)
 
 
 @pytest.fixture
-def marking(net):
-    _net, im, fm = net
+def marking(ctx):
+    _net, im, fm = ctx.net, ctx.initial_marking, ctx.final_marking
 
-    new_base_marking = {k:0 for k in im.keys()}
+    new_base_marking = {k: 0 for k in im.keys()}
     for p in _net.places:
-        if NetUtils.Place.get_entry_id(p) in ['5','6']:
+        if NetUtils.Place.get_entry_id(p) in ['5', '6']:
             print("FOUND")
             new_base_marking[p] = 1
 
@@ -33,58 +30,53 @@ def marking(net):
 
 
 @pytest.fixture
-def nature():
+def nature_ctx():
     with open("tests/input_data/bpmn_nature.json") as f:
         model = RegionModel.model_validate_json(f.read())
 
-    return from_region(model)
+    return NetContext.from_region(model)
 
 
-def test_saturate(nature):
-    strategy = ClassicExecution()
-    net, im, fm = nature
-    sat_m, delta = strategy.saturate(net, im)
+def test_saturate(nature_ctx):
+    strategy = nature_ctx.strategy
+    net, im, fm = nature_ctx.net, nature_ctx.initial_marking, nature_ctx.final_marking
+    sat_m, delta = strategy.saturate(nature_ctx, im)
 
     assert sat_m == im
     assert delta == 0
 
-    sem = TimeNetSematic()
+    sem = nature_ctx.semantic
     for t in sem.enabled_transitions(net, sat_m):
         sat_m = sem.fire(net, t, sat_m)
         break
 
-    sat_m, delta = strategy.saturate(net, sat_m)
+    sat_m, delta = strategy.saturate(nature_ctx, sat_m)
 
     assert sat_m != im
     assert delta != 0
 
 
-def test_consume(net, marking):
-    _net, _, fm = net
+def test_consume(ctx, marking):
+    _net, _, fm = ctx.net, ctx.initial_marking, ctx.final_marking
 
-    strategy = ClassicExecution()
+    strategy = ctx.strategy
     choices = []
     for t in _net.transitions:
         if NetUtils.Transition.get_region_id(t) == "6":
             if (
-                NetUtils.Transition.get_probability(t) == 0.8
-                and NetUtils.Transition.get_stop(t) == True
+                    NetUtils.Transition.get_probability(t) == 0.8
+                    and NetUtils.Transition.get_stop(t) == True
             ):
                 choices.append(t)
         if (
-            NetUtils.Transition.get_region_id(t) == "5"
-            and NetUtils.Transition.get_stop(t) == True
+                NetUtils.Transition.get_region_id(t) == "5"
+                and NetUtils.Transition.get_stop(t) == True
         ):
             if NetUtils.Place.get_entry_id(list(t.out_arcs)[0].target) == "12":
                 choices.append(t)
 
-    final_place = None
-    for p in _net.places:
-        if NetUtils.Place.get_entry_id(p) == "1":
-            final_place = p
-            break
-
-    consumed_m, _p, _i, _t = strategy.__consume(_net, marking, choices)
+    bho = strategy.consume(ctx, marking, choices)
+    consumed_m, _p, _i, _t = bho
 
     assert math.isclose(_p, 0.8)
     assert _i == [38, 2]

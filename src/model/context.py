@@ -1,32 +1,29 @@
-from typing import Collection, Dict, List
 import uuid
-from model.extree import ExTree
-from model.region import RegionModel
-from model.snapshot import Snapshot
-from model.time_spin import TimeMarking, TimeNetSematic
-from model.types import T, P
-from strategy.execution import ClassicExecution
-from converter.spin import from_region
+
 from pm4py.objects.petri_net.obj import PetriNet
 
-from utils.default import Defaults
-from utils.net_utils import NetUtils
+from converter.spin import from_region
+from model.region import RegionModel
+from model.time_spin import TimeMarking, TimeNetSematic
+from strategy.execution import ExecutionInterface, ClassicExecution
 
 
 class NetContext:
     _id: str
+    region: RegionModel
     semantic: TimeNetSematic
     net: PetriNet
     initial_marking: TimeMarking
     final_marking: TimeMarking
-    strategy: ClassicExecution
+    strategy: ExecutionInterface
 
-    def __init__(self, region, net, im, fm, strategy, id=None):
+    def __init__(self, region, net, im, fm, strategy, id=None, semantic = None):
         self._id = id or str(uuid.uuid4())
+        self.semantic = semantic or TimeNetSematic()
         self.region = region
         self.net = net
-        self.im = im
-        self.fm = fm
+        self.initial_marking = im
+        self.final_marking = fm
         self.strategy = strategy
 
     @classmethod

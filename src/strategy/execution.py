@@ -1,16 +1,15 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Dict, List, Collection, Set
+from typing import Dict, List, Collection, Set, TypeVar
 
 from pm4py.objects.petri_net.semantics import ClassicSemantics
 
-from model.extree import ExTree
-from model.snapshot import Snapshot
-from model.time_spin import NetUtils, TimeMarking, TimeNetSematic
+from model.time_spin import NetUtils, TimeMarking
 from model.types import N, T, P, M
-from model.context import NetContext
 from utils.default import Defaults
+
+ContextType = TypeVar("ContextType", bound="NetContext")
 
 
 class ExecutionInterface(ABC):
@@ -30,13 +29,8 @@ class ExecutionInterface(ABC):
 
 class ClassicExecution(ExecutionInterface):
 
-    def __init__(self, semantic=None):
-        self.semantic = semantic if semantic else TimeNetSematic()
-        self.raw_semantic = ClassicSemantics()
-
-    def get_stoppable_active_transitions(self, net, marking) -> Set[T]:
-        enabled_transitions = self.semantic.enabled_transitions(net, marking)
-        print(f"ENABLED: {enabled_transitions}")
+    def get_stoppable_active_transitions(self, ctx: ContextType, marking: M) -> Set[T]:
+        enabled_transitions = ctx.semantic.enabled_transitions(ctx.net, marking)
         # Filtro per transizoni con stop attivo
         enabled_transitions = filter(
             lambda x: NetUtils.Transition.get_stop(x), enabled_transitions
@@ -44,11 +38,11 @@ class ClassicExecution(ExecutionInterface):
 
         return set(enabled_transitions)
 
-    def get_choices(self, ctx: NetContext, tree: ExTree):
-        return self.__get_choices(ctx.net, tree.current_node.snapshot.marking)
+    def get_choices(self, ctx: ContextType, marking: M):
+        return self.__get_choices(ctx, marking)
 
-    def __get_choices(self, net: N, marking: M) -> Dict[P, List[T]]:
-        enabled_transitions = self.get_stoppable_active_transitions(net, marking)
+    def __get_choices(self, ctx: ContextType, marking: M) -> Dict[P, List[T]]:
+        enabled_transitions = self.get_stoppable_active_transitions(ctx, marking)
 
         groups = {}
         for t in enabled_transitions:
@@ -60,11 +54,12 @@ class ClassicExecution(ExecutionInterface):
 
         return groups
 
-    def saturate(self, net, marking) -> tuple[M, float]:
-        if len(self.semantic.enabled_transitions(net, marking)) > 0:
+    def saturate(self, ctx: ContextType, marking: M) -> tuple[M, float]:
+        net = ctx.net
+        if len(ctx.semantic.enabled_transitions(net, marking)) > 0:
             return marking, 0
 
-        raw_semantic = self.raw_semantic
+        raw_semantic = ClassicSemantics()
         _saturable_trans = raw_semantic.enabled_transitions(net, marking.marking)
         saturable_trans = [t for t in net.transitions if t in _saturable_trans]
         k = {}
@@ -90,7 +85,7 @@ class ClassicExecution(ExecutionInterface):
 
         return TimeMarking(marking.marking, new_age), min_delta
 
-    def consume(self, ctx: NetContext, tree: ExTree, choices: Collection[T] | None = None):
+    def consume(self, ctx: ContextType, marking: M, choices: Collection[T] | None = None):
         """
                 TODO:Scegliere i default ed eseguire la consume
                 """
@@ -99,7 +94,7 @@ class ClassicExecution(ExecutionInterface):
         else:
             choices = list(choices)
 
-        all_choices = self.__get_choices(tree)
+        all_choices = self.get_choices(ctx, marking)
         place_choosen = {p: None for p in all_choices.keys()}
         for t in choices:
             parent = list(t.in_arcs)[0].source
@@ -125,22 +120,22 @@ class ClassicExecution(ExecutionInterface):
                     break
 
         new_marking, probability, impacts, delta = self.__consume(
-            ctx.net, tree.current_node.snapshot.marking, choices
+            ctx, marking, choices
         )
 
-        tree.add_snapshot(Snapshot(new_marking, probability, impacts, delta))
+        return new_marking, probability, impacts, delta
 
-        return tree
-
-    def __consume(self, net: N, marking: M, choices: Collection[T] | None = None) -> tuple[
+    def __consume(self, ctx: ContextType, marking: M, choices: Collection[T] | None = None) -> tuple[
         TimeMarking, int, list[int], float]:
-        new_marking, delta = self.saturate(net, marking)
+        net = ctx.net
+        new_marking, delta = self.saturate(ctx, marking)
         probability = 1
-        sem = self.semantic
+        sem = ctx.semantic
         for p in net.places:
             if NetUtils.Place.get_impacts(p):
                 first_place = p
                 break
+
         impacts = [0] * len(NetUtils.Place.get_impacts(first_place))
 
         for t in sem.enabled_transitions(net, marking):
@@ -157,7 +152,7 @@ class ClassicExecution(ExecutionInterface):
             return new_marking, probability, impacts, delta
         else:
             new_marking, next_p, next_i, next_delta = self.__consume(
-                net, new_marking, choices
+                ctx, new_marking, choices
             )
             for i in range(len(next_i)):
                 impacts[i] += next_i[i]
