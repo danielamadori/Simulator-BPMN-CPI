@@ -2,6 +2,7 @@ import uuid
 
 from anytree import Node, PreOrderIter, RenderTree
 
+from utils.net_utils import NetUtils
 from .snapshot import Snapshot
 
 
@@ -17,6 +18,11 @@ class ExTree:
         _root = Node(name="Root", id=str(uuid.uuid4()), snapshot=root)
         self.__root = _root
         self.current_node = _root
+
+    @classmethod
+    def from_context(cls, ctx):
+        impacts = [0] * len(NetUtils.Place.get_impacts(list(ctx.im.keys())[0]))
+        return ExTree(Snapshot(ctx.im, 1, impacts, 0))
 
     def find_by_id(self, node_id: str):
         for node in PreOrderIter(self.__root):

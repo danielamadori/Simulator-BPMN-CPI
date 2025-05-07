@@ -5,8 +5,12 @@ from typing import Dict, List, Collection, Set
 
 from pm4py.objects.petri_net.semantics import ClassicSemantics
 
+from model.extree import ExTree
+from model.snapshot import Snapshot
 from model.time_spin import NetUtils, TimeMarking, TimeNetSematic
 from model.types import N, T, P, M
+from strategy.context import NetContext
+from utils.default import Defaults
 
 
 class ExecutionInterface(ABC):
@@ -40,7 +44,10 @@ class ClassicExecution(ExecutionInterface):
 
         return set(enabled_transitions)
 
-    def get_choices(self, net: N, marking: M) -> Dict[P, List[T]]:
+    def get_choices(self, ctx: NetContext, tree: ExTree):
+        return self.__get_choices(ctx.net, tree.current_node.snapshot.marking)
+
+    def __get_choices(self, net: N, marking: M) -> Dict[P, List[T]]:
         enabled_transitions = self.get_stoppable_active_transitions(net, marking)
 
         groups = {}
@@ -83,7 +90,49 @@ class ClassicExecution(ExecutionInterface):
 
         return TimeMarking(marking.marking, new_age), min_delta
 
-    def consume(self, net: N, marking: M, choices: Collection[T] | None = None) -> tuple[
+    def consume(self, ctx: NetContext, tree: ExTree, choices: Collection[T] | None = None):
+        """
+                TODO:Scegliere i default ed eseguire la consume
+                """
+        if not choices:
+            choices = []
+        else:
+            choices = list(choices)
+
+        all_choices = self.__get_choices(tree)
+        place_choosen = {p: None for p in all_choices.keys()}
+        for t in choices:
+            parent = list(t.in_arcs)[0].source
+            if parent not in all_choices:
+                continue
+            if place_choosen[parent]:
+                raise ValueError(f"{place_choosen[parent]} and {parent} can't be both choosen")
+
+            place_choosen[parent] = t
+
+        for p in place_choosen:
+            if place_choosen[p]:
+                continue
+            default_choice = Defaults.get_default_by_region(ctx.region, NetUtils.Place.get_entry_id(p))
+            if not default_choice:
+                continue
+
+            for arc in p.out_arcs:
+                t = arc.target
+                next_p = list(t.out_arcs)[0].target
+                if NetUtils.Place.get_entry_id(next_p) == default_choice.id:
+                    choices.append(t)
+                    break
+
+        new_marking, probability, impacts, delta = self.__consume(
+            ctx.net, tree.current_node.snapshot.marking, choices
+        )
+
+        tree.add_snapshot(Snapshot(new_marking, probability, impacts, delta))
+
+        return tree
+
+    def __consume(self, net: N, marking: M, choices: Collection[T] | None = None) -> tuple[
         TimeMarking, int, list[int], float]:
         new_marking, delta = self.saturate(net, marking)
         probability = 1
@@ -107,7 +156,7 @@ class ClassicExecution(ExecutionInterface):
         if new_marking == marking:
             return new_marking, probability, impacts, delta
         else:
-            new_marking, next_p, next_i, next_delta = self.consume(
+            new_marking, next_p, next_i, next_delta = self.__consume(
                 net, new_marking, choices
             )
             for i in range(len(next_i)):

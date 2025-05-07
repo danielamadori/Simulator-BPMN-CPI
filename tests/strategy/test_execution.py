@@ -84,7 +84,7 @@ def test_consume(net, marking):
             final_place = p
             break
 
-    consumed_m, _p, _i, _t = strategy.consume(_net, marking, choices)
+    consumed_m, _p, _i, _t = strategy.__consume(_net, marking, choices)
 
     assert math.isclose(_p, 0.8)
     assert _i == [38, 2]
