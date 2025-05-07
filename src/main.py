@@ -1,9 +1,20 @@
+from typing import Collection
 from fastapi import FastAPI, status, Response
 from fastapi.responses import RedirectResponse, HTMLResponse
 from converter.spin import from_region
 from pm4py.visualization.petri_net.common.visualize import graphviz_visualization
 
+from model.extree import ExTree
 from model.region import RegionModel
+from model.types import T
+from strategy.context import NetContext
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(levelname)s - %(message)s - %(name)s - %(funcName)s - %(lineno)d - %(filename)s",
+)
+
 
 api = FastAPI()
 

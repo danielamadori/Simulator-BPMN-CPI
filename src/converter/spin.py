@@ -4,11 +4,13 @@ from pm4py.objects.petri_net.utils.petri_utils import add_arc_from_to
 from converter.validator import region_validator
 from model.region import RegionModel, RegionType
 from uuid import uuid4
-
+import logging
 from model.time_spin import NetUtils, TimeMarking
 from utils.exceptions import ValidationError
 
 from utils.net_utils import PropertiesKeys
+
+logger = logging.getLogger(__name__)
 
 
 class RegionProp:
@@ -76,9 +78,10 @@ def create_transition(
 
 def from_region(region: RegionModel):
     if not region_validator(region):
+        logger.error("Lancio eccezzione perchè i dati forniti non sono validi")
         raise ValidationError()
     else:
-        print("Validazione avvenuta con successo\n")
+        logger.info("Validazione avvenuta con successo\n")
 
     net = PetriNet()
 
@@ -86,7 +89,7 @@ def from_region(region: RegionModel):
         if region.is_task():
             # Task
             # Entry Place
-            # print(f"Task\tRegion: {region.id}")
+            logger.debug(f"Task\tRegion: {region.id}")
             if not source:
                 entry_task_id = uuid4().hex
                 entry_place = create_place(entry_task_id, region)
@@ -107,7 +110,7 @@ def from_region(region: RegionModel):
                         PropertiesKeys.ENTRY_RID
                     ],
                     PropertiesKeys.DURATION: 0,
-                    PropertiesKeys.IMPACTS: None
+                    PropertiesKeys.IMPACTS: None,
                 }
             )
             net.places.add(exit_place)
@@ -126,6 +129,7 @@ def from_region(region: RegionModel):
         elif region.is_parallel():
             # Parallel Gateway
             # Entry Place
+            logger.debug(f"Parallel\tRegion: {region.id}")
             if not source:
                 entry_task_id = uuid4().hex
                 entry_place = create_place(entry_task_id, region)
@@ -171,6 +175,7 @@ def from_region(region: RegionModel):
 
             return entry_place, exit_place
         elif region.is_sequential():
+            logger.debug(f"Sequential\tRegion: {region.id}")
             if not source:
                 entry_task_id = uuid4().hex
                 entry_place = create_place(entry_task_id, region)
@@ -189,6 +194,7 @@ def from_region(region: RegionModel):
 
             return entry_place, prev_child
         else:
+            logger.debug(f"Nature or Choice\tRegion: {region.id}")
             # Nature or Choice
             if not source:
                 entry_task_id = uuid4().hex
@@ -215,7 +221,10 @@ def from_region(region: RegionModel):
             net.places.add(exit_place)
 
             for i in range(len(region.children)):
-                # print(f"Region: {region.id}\tChild: {region.children[i].id}[{i}]")
+                logger.debug(
+                    f"Region: {region.id}\tChild: {region.children[i].id}[{i}]"
+                )
+
                 child = region.children[i]
                 child_entry, child_exit = rec(child)
 
@@ -259,6 +268,7 @@ def from_region(region: RegionModel):
     fm = TimeMarking(raw_fm)
 
     return net, im, fm
+
 
 #
 # # dizionario delle properties

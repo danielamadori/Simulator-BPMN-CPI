@@ -1,20 +1,23 @@
 from model.region import RegionModel, RegionType
 import math
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def region_validator(region: RegionModel):
 
     def explore(_r: RegionModel, expected_impact_length: int = None):
-        # print(f"Esploro la Region: {_r.id}")
+        logger.debug(f"Esploro la Region: {_r.label} id:{_r.id}")
         # controlli per tutti i tipi di regione
         if not _r.id or not isinstance(_r.type, RegionType):
-            print(
+            logger.error(
                 f"Id o tipo della regione {region.label} id:{region.id} è None o vuota"
             )
             return False, None
 
         if _r.duration is None or _r.duration < 0:
-            print(
+            logger.error(
                 f"Regione {region.label} id:{region.id} ha durata {region.duration} (< 0 o None)"
             )
             return False, None
@@ -22,7 +25,7 @@ def region_validator(region: RegionModel):
         # controllo la regione in base al suo tipo
         status, expected_impact_length = __switch_case(_r, expected_impact_length)
 
-        # print(f"Expected_Value:{expected_impact_length}")
+        logger.debug(f"Expected_Value:{expected_impact_length}")
 
         if status is False:
             return False, None
@@ -63,24 +66,26 @@ def __switch_case(region: RegionModel, expected_impact_length: int = None):
 
 
 def __sequential_validator(region: RegionModel, expected_impact_length: int = None):
-    # print("Validatore Sequenziale")
+    logger.debug("Validatore Sequenziale")
     # per essere sequenziale deve almeno avere 2 children
     if not region.children or len(region.children) < 2:
-        print(
+        logger.error(
             f"Regione Sequenziale {region.label} di id:{region.id} ha meno di 2 children: {len(region.children or [])}"
         )
         return False, None
 
     # non devo avere impatti
     if region.impacts:
-        print(
+        logger.error(
             f"Regione Sequenziale {region.label} di id:{region.id} ha impatti: {region.impacts}"
         )
         return False, None
 
     # non devo avere distribuzioni di probabilità
     if region.distribution:
-        f"Regione Sequenziale {region.label} di id:{region.id} ha distribuzione di probabilità: {region.distribution}"
+        logger.error(
+            f"Regione Sequenziale {region.label} di id:{region.id} ha distribuzione di probabilità: {region.distribution}"
+        )
         return False, None
 
     # durata???
@@ -89,39 +94,42 @@ def __sequential_validator(region: RegionModel, expected_impact_length: int = No
 
 
 def __task_validator(region: RegionModel, expected_impact_length: int = None):
-    # print("Validatore Task")
-    # print(f"I meiei impatti sono: {region.impacts}")
-    # print(f"expected_impact_length = {expected_impact_length}")
+    logger.debug("Validatore Task")
+    logger.debug(f"I meiei impatti sono: {region.impacts}")
+    logger.debug(f"expected_impact_length = {expected_impact_length}")
 
     if not region.impacts:
-        print(
+        logger.error(
             f"Regione Task {region.label} di id:{region.id} non ha impatti: {region.impacts}"
         )
         return False, expected_impact_length
 
     for impact in region.impacts:
         if impact < 0:
-            print(
+            logger.error(
                 f"Regione Task {region.label} di id:{region.id} ha impatti negativi: {region.impacts}"
             )
             return False, expected_impact_length
 
     if expected_impact_length is None:
         expected_impact_length = len(region.impacts)
+        logger.debug(
+            f"Set della lunghezza degli impatti da {region.label} di id: {region.id} fa set a {expected_impact_length}"
+        )
     elif len(region.impacts) != expected_impact_length:
-        print(
+        logger.error(
             f"Regione Task {region.label} di id:{region.id} ha una lunghezza di impacts diversa ({len(region.impacts or [])} vs {expected_impact_length})"
         )
         return False, expected_impact_length
 
     if region.children:
-        print(
+        logger.error(
             f"Regione Task {region.label} di id:{region.id} ha figli: {region.children}"
         )
         return False, expected_impact_length
 
     if region.distribution:
-        print(
+        logger.error(
             f"Regione Task {region.label} di id:{region.id} ha distribuzione di probabilità: {region.distribution}"
         )
         return False, expected_impact_length
@@ -130,24 +138,24 @@ def __task_validator(region: RegionModel, expected_impact_length: int = None):
 
 
 def __parallel_validator(region: RegionModel, expected_impact_length: int = None):
-    # print("Validatore Parallelo")
+    logger.debug("Validatore Parallelo")
     # devo avere almeno 2 children
     if not region.children or len(region.children) < 2:
-        print(
+        logger.error(
             f"Regione Parallela {region.label} di id:{region.id} non ha almeno 2 children: {len(region.children or [])}"
         )
         return False, None
 
     # non devo avere impatti
     if region.impacts:
-        print(
+        logger.error(
             f"Regione Parallela {region.label} di id:{region.id} ha impatti: {region.impacts}"
         )
         return False, None
 
     # non devo avere distribuzioni di probabilità
     if region.distribution:
-        print(
+        logger.error(
             f"Regione Parallela {region.label} di id:{region.id} ha distribuzione: {region.distribution}"
         )
         return False, None
@@ -158,10 +166,10 @@ def __parallel_validator(region: RegionModel, expected_impact_length: int = None
 
 
 def __nature_validator(region: RegionModel, expected_impact_length: int = None):
-    # print("Validatore Natura")
+    logger.debug("Validatore Natura")
     # devo avere almeno 2 children
     if not region.children or len(region.children) < 2:
-        print(
+        logger.error(
             f"Regione Natura {region.label} di id:{region.id} non ha almeno 2 figli: {len(region.children or [])}"
         )
         return False, None
@@ -170,7 +178,7 @@ def __nature_validator(region: RegionModel, expected_impact_length: int = None):
     if not region.distribution or len(region.distribution) != len(
         region.children or []
     ):
-        print(
+        logger.error(
             f"Regione Natura {region.label} di id:{region.id} non ha distribuzione di probabilità oppure: len(prob) != numero childern"
         )
         return False, None
@@ -178,14 +186,14 @@ def __nature_validator(region: RegionModel, expected_impact_length: int = None):
     # devo avere la somma di distibuzione delle probabilità vicina a  1
     prob_sum = sum(region.distribution)
     if not math.isclose(prob_sum, 1.0, rel_tol=1e-9):
-        print(
+        logger.error(
             f"Regione Natura {region.label} di id:{region.id} non somma a 1 la sua probabilità: {prob_sum}"
         )
         return False, None
 
     # non devo avere impatti
     if region.impacts:
-        print(
+        logger.error(
             f"Regione Natura {region.label} di id:{region.id} ha impatti: {region.impacts}"
         )
         return False, None
@@ -196,17 +204,17 @@ def __nature_validator(region: RegionModel, expected_impact_length: int = None):
 
 
 def __choice_validator(region: RegionModel, expected_impact_length: int = None):
-    # print("Validatore Choice")
+    logger.debug("Validatore Choice")
     # devo avere almeno 2 children
     if not region.children or len(region.children) < 2:
-        print(
+        logger.error(
             f"Regione Scelta {region.label} di id:{region.id} non ha alemeno 2 figli: {len(region.children or [])}"
         )
         return False, None
 
     # se ho la distribuzione di probabilità allora len(prob) = numero childern
     if region.distribution and len(region.distribution) != len(region.children or []):
-        print(
+        logger.error(
             f"Regione Scelta {region.label} di id:{region.id} ha len(prob) != numero childern"
         )
         return False, None
@@ -215,14 +223,14 @@ def __choice_validator(region: RegionModel, expected_impact_length: int = None):
     if region.distribution:
         prob_sum = sum(region.distribution)
         if not math.isclose(prob_sum, 1.0, rel_tol=1e-9):
-            print(
+            logger.error(
                 f"Regione Scelta {region.label} di id:{region.id} la cui somma delle probabilità non corrisponde a 1: {prob_sum}"
             )
             return False, None
 
     # non devo avere impatti
     if region.impacts:
-        print(
+        logger.error(
             f"Regione Scelta {region.label} di id:{region.id} ha impatti: {region.impacts}"
         )
         return False, None
