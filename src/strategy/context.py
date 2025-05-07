@@ -91,7 +91,7 @@ class NetContext:
 
 
         new_marking, probability, impacts, delta = self.strategy.consume(
-            self.net, tree.current_node.snapshot, self.final_marking, choices
+            self.net, tree.current_node.snapshot, choices
         )
 
         return ExTree(Snapshot(new_marking, probability, impacts, delta))
