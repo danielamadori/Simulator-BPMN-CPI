@@ -6,6 +6,9 @@ from pm4py.objects.petri_net.semantics import PetriNetSemantics
 from utils.net_utils import NetUtils
 
 from .types import N, T, M
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class TimeMarking:
@@ -19,6 +22,9 @@ class TimeMarking:
 
         # Verifica che le chiavi di `marking` siano un superset delle chiavi di `age`
         if not self._keys.issuperset(age.keys()):
+            logger.error(
+                "le chiavi di `marking` non sono un superset delle chiavi di `age`"
+            )
             raise ValueError(f"Invalid keys in 'age': {age.keys() - self._keys}")
 
         # Aggiungi le chiavi di default a `_age` se non sono presenti
@@ -87,6 +93,7 @@ class TimeNetSematic(Generic[N]):
         return True
 
     def fire(self, net: N, transition: T, marking: M):
+        logger.debug(f"Sparo la transazione{transition.label} di id:{transition.id}")
         new_age = marking.age
         for arc in transition.in_arcs:
             p = arc.source
@@ -98,6 +105,7 @@ class TimeNetSematic(Generic[N]):
         return TimeMarking(m, new_age)
 
     def execute(self, net: N, transition: T, marking: M):
+        logger.debug(f"Eseguo la transazione{transition.label} di id:{transition.id}")
         if not self.is_enabled(net, transition, marking):
             return marking
 
@@ -107,6 +115,7 @@ class TimeNetSematic(Generic[N]):
         enabled = set()
 
         for t in net.transitions:
+            logger.debug(f"Transizione{t.label} di id:{t.id} è abitilata")
             if self.is_enabled(net, t, marking):
                 enabled.add(t)
 

@@ -4,6 +4,9 @@ from anytree import Node, PreOrderIter, RenderTree
 
 from utils.net_utils import NetUtils
 from .snapshot import Snapshot
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class ExTree:
@@ -12,7 +15,9 @@ class ExTree:
 
     # Struttura Node: name[facoltativo],id,snapshot[oggetto di interesse]
     def __init__(self, root: Snapshot):
+        logger.info("Inizializzazione ExTree")
         if root is None:
+            logger.error("Lo Snapshot Root è None")
             raise ValueError("Root Snapshot can't be None")
 
         _root = Node(name="Root", id=str(uuid.uuid4()), snapshot=root)
