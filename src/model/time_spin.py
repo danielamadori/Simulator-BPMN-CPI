@@ -93,7 +93,7 @@ class TimeNetSematic(Generic[N]):
         return True
 
     def fire(self, net: N, transition: T, marking: M):
-        logger.debug(f"Sparo la transazione{transition.label} di id:{transition.id}")
+        logger.debug(f"Sparo la transazione{transition.label}")
         new_age = marking.age
         for arc in transition.in_arcs:
             p = arc.source
@@ -105,7 +105,7 @@ class TimeNetSematic(Generic[N]):
         return TimeMarking(m, new_age)
 
     def execute(self, net: N, transition: T, marking: M):
-        logger.debug(f"Eseguo la transazione{transition.label} di id:{transition.id}")
+        logger.debug(f"Eseguo la transazione{transition.label}")
         if not self.is_enabled(net, transition, marking):
             return marking
 
@@ -115,7 +115,7 @@ class TimeNetSematic(Generic[N]):
         enabled = set()
 
         for t in net.transitions:
-            logger.debug(f"Transizione{t.label} di id:{t.id} è abitilata")
+            logger.debug(f"Transizione{t.label} è abitilata")
             if self.is_enabled(net, t, marking):
                 enabled.add(t)
 

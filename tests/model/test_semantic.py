@@ -25,11 +25,11 @@ def iron_net():
 def marking(iron_net):
     _m = iron_net[1]
     age = _m.age
-    for p in _m.tree:
+    for p in _m.marking:
         if len(p.in_arcs) == 0:
             age[p] = 1
 
-    return TimeMarking(_m.tree, age)
+    return TimeMarking(_m.marking, age)
 
 
 class TestTimeSemantic:
