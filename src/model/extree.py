@@ -56,12 +56,21 @@ class ExTree:
 
         idx = add_exec_inorder(ctx, self, snapshot)
         _id = parent.name + ExTree.__separator + idx
-        child_node = Node(
-            name=str(_id), id=str(_id), snapshot=snapshot, parent=parent
-        )
 
-        if set_as_current:
-            self.current_node = child_node
+        found = None
+        for c in parent.children:
+            if c.snapshot == snapshot:
+                found = c
+                child_node = c
+                break
+
+        if not found:
+            child_node = Node(
+                name=str(_id), id=str(_id), snapshot=snapshot, parent=parent
+            )
+
+            if set_as_current:
+                self.current_node = child_node
 
         return child_node
 
