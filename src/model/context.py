@@ -1,11 +1,19 @@
-import uuid
-
 from pm4py.objects.petri_net.obj import PetriNet
 
 from converter.spin import from_region
 from model.region import RegionModel
 from model.time_spin import TimeMarking, TimeNetSematic
 from strategy.execution import ExecutionInterface, ClassicExecution
+
+
+# id
+class IDGenerator:
+    counter = 0
+
+    @classmethod
+    def next_id(cls):
+        cls.counter += 1
+        return f"{cls.counter}"
 
 
 class NetContext:
@@ -17,8 +25,8 @@ class NetContext:
     final_marking: TimeMarking
     strategy: ExecutionInterface
 
-    def __init__(self, region, net, im, fm, strategy, id=None, semantic = None):
-        self._id = id or str(uuid.uuid4())
+    def __init__(self, region, net, im, fm, strategy, id=None, semantic=None):
+        self._id = id or IDGenerator.next_id()
         self.semantic = semantic or TimeNetSematic()
         self.region = region
         self.net = net
