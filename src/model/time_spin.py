@@ -1,12 +1,11 @@
+import logging
 from typing import Dict, Generic
 
 from pm4py.objects.petri_net.obj import Marking
 from pm4py.objects.petri_net.semantics import PetriNetSemantics
 
 from utils.net_utils import NetUtils
-
 from .types import N, T, M
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +72,9 @@ class TimeMarking:
     def __str__(self):
         return repr(self)
 
+    def __copy__(self):
+        return TimeMarking(self.marking.copy(), self.age.copy())
+
 
 class TimeNetSematic(Generic[N]):
 
@@ -85,8 +87,8 @@ class TimeNetSematic(Generic[N]):
             #     f"{p.name}[token={token},age={age}]\tcheck: {PetriNetSemantics.is_enabled(net, transition, marking.marking)}\t{age<d}"
             # )
             if (
-                not PetriNetSemantics.is_enabled(net, transition, marking.marking)
-                or age < d
+                    not PetriNetSemantics.is_enabled(net, transition, marking.marking)
+                    or age < d
             ):
                 return False
 
@@ -120,7 +122,6 @@ class TimeNetSematic(Generic[N]):
                 enabled.add(t)
 
         return enabled
-
 
 # class Builder:
 #     def __init__(self):
