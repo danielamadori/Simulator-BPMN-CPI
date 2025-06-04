@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "node.schema.json",
+  "title": "Execution Node",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string"
+    },
+    "marking": {
+      "$ref": "../petrinet/marking.schema.json"
+    },
+    "execution_time": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Time taken for this execution"
+    },
+    "impacts": {
+      "type": "array",
+      "items": {
+        "type": "number",
+        "minimum": 0
+      },
+      "description": "List of impacts associated with this execution node"
+    },
+    "probability": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Probability of this execution node occurring, if applicable."
+    },
+    "children": {
+      "type": "array",
+      "items": { "$ref": "#" },
+      "description": "List of child execution nodes"
+    }
+  },
+  "required": [
+    "id",
+    "marking",
+    "execution_time",
+    "impacts",
+    "probability"
+  ],
+  "additionalProperties": false
+}

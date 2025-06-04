@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "region.schema.json",
+  "title": "Region tree representing BPMN elements",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for region"
+    },
+    "type": {
+      "type": "string",
+      "enum": ["choice", "parallel", "sequence", "loop", "nature"]
+    },
+    "label": {
+      "type": "string",
+      "description": "Label for the region, used for display purposes."
+    },
+    "duration": {
+      "type": "number",
+      "description": "Duration associated with the region, if applicable."
+    },
+    "impacts": {
+      "type": "array",
+      "items": {
+        "type": "number",
+        "description": "Identifier of the impact associated with this region.",
+        "minimum": 0
+      },
+      "description": "Vector of impacts associated with the region."
+    },
+    "children": {
+      "type": "array",
+      "items": { "$ref": "#" },
+      "description": "List of child regions or tasks within this region."
+    },
+    "distribution": {
+      "type": "array",
+      "items": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      }
+    }
+  },
+  "required": [
+    "id",
+    "type"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "enum": ["natural", "parallel", "choice"]
+          }
+        }
+      },
+      "then": {
+        "required": ["children"]
+      },
+      "else": {
+        "not": {
+          "required": ["children"]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "task"
+          }
+        }
+      },
+      "then": {
+        "required": ["impacts"]
+      },
+      "else": {
+        "not": {
+          "required": ["impacts"]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "nature"
+          }
+        }
+      },
+      "then": {
+        "required": ["distribution"]
+      },
+      "else": {
+        "not": {
+          "required": ["distribution"]
+        }
+      }
+    }
+  ],
+  "additionalProperties": false
+}

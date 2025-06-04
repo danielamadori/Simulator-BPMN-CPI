@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "marking.schema.json",
+  "title": "Marking",
+  "type": "object",
+  "description": "Mapping of place IDs to token counts.",
+  "patternProperties": {
+    "^[a-zA-Z0-9-_]+$": {
+      "type": "object",
+      "properties": {
+        "tokens": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of tokens in the place."
+        },
+        "duration": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Duration associated with the marking, if applicable."
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}
