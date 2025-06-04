@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "node.schema.json",
+  "title": "Response body execution",
+  "type": "object",
+  "properties": {
+    "bpmn": {
+      "$ref": "../../general/bpmn/region.schema.json"
+    },
+    "net": {
+        "$ref": "../../general/petrinet/petri-net.schema.json"
+    },
+    "extree": {
+      "$ref": "../../general/extree/node.schema.json"
+    },
+    "extree_pointer": {
+        "type": "string",
+        "description": "Pointer to the execution tree node in the format 'extree_id/node_id'."
+    },
+    "petri_net_dot": {
+      "type": "string",
+        "description": "A string representation of the Petri net in DOT format, used for visualization."
+    },
+    "bpmn_dot": {
+      "type": "string",
+        "description": "A string representation of the BPMN in DOT format, used for visualization."
+    },
+    "extree_dot": {
+      "type": "string",
+        "description": "A string representation of the execution tree in DOT format, used for visualization."
+    }
+  },
+  "required": [
+    "bpmn",
+    "net",
+    "extree",
+    "extree_pointer",
+    "bpmn_dot",
+    "petri_net_dot",
+    "extree_dot"
+  ],
+  "additionalProperties": false
+}

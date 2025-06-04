@@ -5,13 +5,13 @@
   "type": "object",
   "properties": {
     "bpmn": {
-      "$ref": "../general/bpmn/region.schema.json"
+      "$ref": "../../general/bpmn/region.schema.json"
     },
     "net": {
-        "$ref": "../general/petrinet/petri-net.schema.json"
+        "$ref": "../../general/petrinet/petri-net.schema.json"
     },
     "extree": {
-      "$ref": "../general/extree/node.schema.json"
+      "$ref": "../../general/extree/node.schema.json"
     },
     "extree_pointer": {
         "type": "string",
@@ -24,7 +24,6 @@
   "dependentRequired": {
     "net": ["extree_pointer", "extree"],
     "extree": ["extree_pointer", "net"],
-    "extree_pointer": ["net", "extree"]
-  },
+    "extree_pointer": ["net", "extree"]  },
   "additionalProperties": false
 }
