@@ -14,15 +14,15 @@ ContextType = TypeVar("ContextType", bound="NetContext")
 class ExecutionInterface(ABC):
 
     @abstractmethod
-    def consume(self, net: N, marking: M, choices: Collection[T] | None = None):
+    def consume(self, ctx: ContextType, marking: M, choices: Collection[T] | None = None):
         pass
 
     @abstractmethod
-    def get_choices(self, net: N, marking: M):
+    def get_choices(self, ctx: ContextType, marking: M):
         pass
 
     @abstractmethod
-    def saturate(self, net: N, marking: M):
+    def saturate(self, ctx: ContextType, marking: M):
         pass
 
 

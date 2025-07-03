@@ -55,7 +55,7 @@ class ExTree:
                 return node
 
         idx = add_exec_inorder(ctx, self, snapshot)
-        _id = parent.name + ExTree.__separator + idx
+        _id = "{}{}{}".format(parent.name, ExTree.__separator, idx)
 
         found = None
         for c in parent.children:
@@ -125,7 +125,6 @@ def is_equal(node1: Node, node2: Node):
 def add_exec_inorder(ctx, tree: ExTree, new_snapshot):
     sorted_child = get_current_sorted_children(ctx, tree.current_node.snapshot.marking)
     idx_child = sorted_child.index(new_snapshot.marking)
-    tree.add_snapshot(new_snapshot)
 
     return idx_child
 

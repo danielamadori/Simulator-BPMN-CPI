@@ -37,4 +37,4 @@ class Defaults:
         if not region:
             return None
 
-        return np.random.choice(region.children, region.distribution)
+        return np.random.choice(region.children, p=region.distribution)
