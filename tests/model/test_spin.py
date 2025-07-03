@@ -1,7 +1,21 @@
 import pytest
+
+from model.context import NetContext
 from model.time_spin import TimeMarking
 from pm4py.objects.petri_net.obj import Marking
 
+@pytest.fixture
+def region_model():
+    """Fixture per caricare il modello di regione"""
+    with open("tests/input_data/bpmn_nature.json") as f:
+        from model.region import RegionModel
+        model = RegionModel.model_validate_json(f.read())
+    return model
+
+@pytest.fixture
+def ctx(region_model):
+    context = NetContext.from_region(region_model)
+    return context
 
 @pytest.fixture
 def marking():
@@ -42,10 +56,13 @@ class TestTimeMarking:
         with pytest.raises(KeyError):
             time_marking["d"]
 
-    def test_contains(self, time_marking):
+    def test_contains(self, ctx, time_marking):
         """Test per verificare l'operatore __contains__"""
-        assert "a" in time_marking
-        assert "d" not in time_marking
+        places = list(ctx.net.places)
+
+        assert places[0].name in ctx.initial_marking
+        assert places[0] in ctx.initial_marking
+        assert "-489651" not in ctx.initial_marking
 
     def test_eq(self, time_marking):
         """Test per verificare l'uguaglianza tra due oggetti TimeMarking"""
@@ -81,3 +98,15 @@ class TestTimeMarking:
         copy_keys.add("dd")
 
         assert copy_keys != time_marking.keys()
+
+    def test_add_time(self, time_marking):
+        im = time_marking
+        time_added = 1.0
+        new_marking = im.add_time(time_added)
+
+        tmp = im.age
+        for k in tmp:
+            if im.marking[k] > 0:
+                tmp[k] += time_added
+        assert new_marking.age == tmp, "Age should be updated correctly after adding time"
+
