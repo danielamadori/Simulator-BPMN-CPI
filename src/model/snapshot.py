@@ -1,3 +1,5 @@
+from copy import copy
+
 from model.time_spin import TimeMarking
 
 '''
@@ -7,28 +9,32 @@ Secondo me si può spostare anche dentro extree
 
 # Snapshot è la struttura del nodo dell'albero
 class Snapshot:
-    marking: TimeMarking
-    probability: float
-    impacts: list[float]
-    exec_time: float
+    __marking: TimeMarking
+    __probability: float
+    __impacts: list[float]
+    __exec_time: float
 
     def __init__(self, marking: TimeMarking, probability: float, impacts: list[float], time: float):
-        self.marking = marking
-        self.probability = probability
-        self.impacts = impacts
-        self.exec_time = time
+        self.__marking = marking
+        self.__probability = probability
+        self.__impacts = impacts
+        self.__exec_time = time
 
-    def get_marking(self):
-        return self.marking
+    @property
+    def marking(self):
+        return copy(self.__marking)
 
-    def get_probability(self):
-        return self.probability
+    @property
+    def probability(self):
+        return self.__probability
 
-    def get_impacts(self):
-        return self.impacts
+    @property
+    def impacts(self):
+        return copy(self.__impacts)
 
-    def get_time(self):
-        return self.exec_time
+    @property
+    def execution_time(self):
+        return self.__exec_time
 
     def __eq__(self, other):
         if not isinstance(other, Snapshot):
@@ -36,11 +42,11 @@ class Snapshot:
 
         if other.marking != self.marking:
             return False
-        if other.impacts != self.impacts:
+        if other.__impacts != self.__impacts:
             return False
-        if other.probability != self.probability:
+        if other.__probability != self.__probability:
             return False
-        if other.exec_time != self.exec_time:
+        if other.__exec_time != self.__exec_time:
             return False
 
         return True
