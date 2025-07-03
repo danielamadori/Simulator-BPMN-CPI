@@ -1,7 +1,7 @@
 import logging
 from typing import Dict, Generic
 
-from pm4py.objects.petri_net.obj import Marking
+from pm4py.objects.petri_net.obj import Marking, PetriNet
 from pm4py.objects.petri_net.semantics import PetriNetSemantics
 
 from utils.net_utils import NetUtils
@@ -11,46 +11,70 @@ logger = logging.getLogger(__name__)
 
 
 class TimeMarking:
-    def __init__(self, marking: Marking, age: Dict[str, float] = None):
+    __marking: Marking
+    __age: dict[PetriNet.Place, float]
+    __keys: set[PetriNet.Place]
+
+    def __init__(self, marking: Marking, age: Dict[PetriNet.Place, float] = None):
         if age is None:
             age = {}
 
-        self._marking = marking.copy()
-        self._age = age.copy()
-        self._keys = set(marking.keys())
+        self.__marking = marking.copy()
+        self.__age = age.copy()
+        self.__keys = set(marking.keys())
 
         # Verifica che le chiavi di `marking` siano un superset delle chiavi di `age`
-        if not self._keys.issuperset(age.keys()):
+        if not self.__keys.issuperset(age.keys()):
             logger.error(
                 "le chiavi di `marking` non sono un superset delle chiavi di `age`"
             )
-            raise ValueError(f"Invalid keys in 'age': {age.keys() - self._keys}")
+            raise ValueError(f"Invalid keys in 'age': {age.keys() - self.__keys}")
 
         # Aggiungi le chiavi di default a `_age` se non sono presenti
-        for x in self._keys:
-            if x not in self._age:
-                self._age[x] = 0
+        for x in self.__keys:
+            if x not in self.__age:
+                self.__age[x] = 0
 
     @property
-    def marking(self):
+    def marking(self) -> Marking:
         return (
-            self._marking.copy()
+            self.__marking.copy()
         )  # Restituisce una copia per mantenere l'immutabilità
 
     @property
-    def age(self):
-        return self._age.copy()  # Restituisce una copia per mantenere l'immutabilità
+    def age(self) -> Dict[PetriNet.Place, float]:
+        return self.__age.copy()  # Restituisce una copia per mantenere l'immutabilità
 
-    def keys(self):
-        return self._keys.copy()
+    def keys(self) -> set[PetriNet.Place]:
+        return self.__keys.copy()
+
+    def add_time(self, time):
+        """
+        Aggiunge un tempo specificato a tutte le età dei posti nel marking.
+        Ritorna una nuova istanza di TimeMarkign con le età aggiornate.
+        """
+        new_age = {k: v + time for k, v in self.__age.items() if self.__marking[k] > 0}
+        return TimeMarking(self.marking, new_age)
 
     def __getitem__(self, key: str):
-        if key not in self._keys:
+        # Se `key` è una stringa, cerca la corrispondenza tra le chiavi(place)
+        if isinstance(key, str):
+            for place in self.__keys:
+                if place == key:
+                    key = place
+
+        if key not in self.__keys:
             raise KeyError(f"Invalid key: '{key}' does not exists.")
         return self.marking[key], self.age[key]
 
     def __contains__(self, el):
-        return el in self._keys
+        # Se `el` è una stringa, cerca la corrispondenza tra le chiavi(place)
+        if isinstance(el, str):
+            for place in self.__keys:
+                if place.name == el:
+                    el = place
+
+        return el in self.__keys
 
     def __eq__(self, other):
         if not isinstance(other, TimeMarking):
@@ -59,7 +83,7 @@ class TimeMarking:
         if self.keys() != other.keys():
             return False
 
-        for key in self._keys:
+        for key in self.__keys:
             if self[key] != other[key]:
                 return False
 

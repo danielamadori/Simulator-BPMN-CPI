@@ -3,7 +3,6 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Dict, List, Collection, Set, TypeVar
 
-from pm4py.objects.petri_net.semantics import ClassicSemantics
 
 from model.time_spin import NetUtils, TimeMarking
 from model.types import N, T, P, M
@@ -59,36 +58,53 @@ class ClassicExecution(ExecutionInterface):
         if len(ctx.semantic.enabled_transitions(net, marking)) > 0:
             return marking, 0
 
-        raw_semantic = ClassicSemantics()
-        _saturable_trans = raw_semantic.enabled_transitions(net, marking.marking)
-        saturable_trans = [t for t in net.transitions if t in _saturable_trans]
-        k = {}
-        for t in saturable_trans:
-            _max = 0
-            for arc in t.in_arcs:
-                parent_place = arc.source
-                curr_delta = (
-                        NetUtils.Place.get_duration(parent_place)
-                        - marking.age[parent_place]
-                )
-                _max = max(curr_delta, _max)
+        # Get current place with tokens
+        current_places = list(filter(lambda x: marking.marking[x] > 0, marking.keys()))
+        min_delta = float("inf")
+        for p in current_places:
+            # Get the duration of the place
+            duration = NetUtils.Place.get_duration(p)
+            min_delta = min(min_delta, duration - marking.age[p])
 
-            k.update({t: _max})
-        min_delta = min(k.values())
+        if min_delta == float("inf"):
+            # No places with tokens, return the current marking and 0 delta
+            return marking, 0
 
-        new_age = {}
-        for p in marking.marking:
-            token, age = marking[p]
-            if token == 0:
-                continue
-            new_age[p] = age + min_delta
+        # Return the current marking with updated ages
+        return marking.add_time(min_delta), min_delta
 
-        return TimeMarking(marking.marking, new_age), min_delta
+
+
+        # raw_semantic = ctx.semantic
+        # _saturable_trans = raw_semantic.enabled_transitions(net, marking.marking)
+        # saturable_trans = [t for t in net.transitions if t in _saturable_trans]
+        # k = {}
+        # for t in saturable_trans:
+        #     _max = 0
+        #     for arc in t.in_arcs:
+        #         parent_place = arc.source
+        #         curr_delta = (
+        #                 NetUtils.Place.get_duration(parent_place)
+        #                 - marking.age[parent_place]
+        #         )
+        #         _max = max(curr_delta, _max)
+        #
+        #     k.update({t: _max})
+        # min_delta = min(k.values())
+        #
+        # new_age = {}
+        # for p in marking.marking:
+        #     token, age = marking[p]
+        #     if token == 0:
+        #         continue
+        #     new_age[p] = age + min_delta
+
+        # return TimeMarking(marking.marking, new_age), min_delta
 
     def consume(self, ctx: ContextType, marking: M, choices: Collection[T] | None = None):
         """
-                TODO:Scegliere i default ed eseguire la consume
-                """
+        TODO:Scegliere i default ed eseguire la consume
+        """
         if not choices:
             choices = []
         else:

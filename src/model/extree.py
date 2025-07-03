@@ -123,28 +123,30 @@ def is_equal(node1: Node, node2: Node):
 
 
 def add_exec_inorder(ctx, tree: ExTree, new_snapshot):
-    sorted_child = get_current_sorted_child(ctx, tree.current_node.snapshot.marking)
+    sorted_child = get_current_sorted_children(ctx, tree.current_node.snapshot.marking)
     idx_child = sorted_child.index(new_snapshot.marking)
     tree.add_snapshot(new_snapshot)
 
     return idx_child
 
 
-def get_current_sorted_child(ctx: NetContext, marking) -> list[T]:
+def get_current_sorted_children(ctx: NetContext, marking) -> list[T]:
     net = ctx.net
     curr_time_marking = marking
     exec_strategy = ctx.strategy
 
-    choices = exec_strategy.get_choices(net, curr_time_marking)
+    choices = exec_strategy.get_choices(ctx, curr_time_marking)
     m = [choices[choice] for choice in choices]
     perms = itertools.product(*m)
     key_to_time_marking = {}
 
     for perm in perms:
-        temp, *_ = exec_strategy.consume(net, curr_time_marking, perm)
+        temp, *_ = exec_strategy.consume(ctx, curr_time_marking, perm)
         key_of_time_marking = []
-        for k in sorted(temp.keys()):
-            token, age = temp[k]
+        temp_str = {x.name: x for x in temp.keys()}
+        for place_name in sorted(temp_str.keys()):
+            place = temp_str[place_name]
+            token, age = temp[place]
             if token == 0:
                 key_of_time_marking.append(-1)
             else:
