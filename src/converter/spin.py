@@ -1,12 +1,13 @@
-from typing import Dict, List, Tuple
+import logging
+from typing import List
+
 from pm4py.objects.petri_net.obj import PetriNet, Marking
 from pm4py.objects.petri_net.utils.petri_utils import add_arc_from_to
+
 from converter.validator import region_validator
 from model.region import RegionModel, RegionType
-import logging
-from model.time_spin import NetUtils, TimeMarking
+from model.time_spin import TimeMarking
 from utils.exceptions import ValidationError
-
 from utils.net_utils import PropertiesKeys
 
 logger = logging.getLogger(__name__)
@@ -24,13 +25,13 @@ class IDGenerator:
 
 class RegionProp:
     def __init__(
-        self,
-        region_id: str,
-        label: str | None,
-        duration: float,
-        impacts: List[float] | None,
-        _type: RegionType,
-        distribution: List[float] | None,
+            self,
+            region_id: str,
+            label: str | None,
+            duration: float,
+            impacts: List[float] | None,
+            _type: RegionType,
+            distribution: List[float] | None,
     ):
         self.region_id = region_id
         self.label = label
@@ -59,19 +60,15 @@ def create_place(place_id: str, region: RegionModel):
 
 
 def create_prop(region: RegionModel):
-    prop = {}
-    prop[PropertiesKeys.ENTRY_RID] = region.id
-    prop[PropertiesKeys.EXIT_RID] = None
-    prop[PropertiesKeys.LABEL] = region.label
-    prop[PropertiesKeys.TYPE] = region.type
-    prop[PropertiesKeys.DURATION] = region.duration
-    prop[PropertiesKeys.IMPACTS] = region.impacts
+    prop = {PropertiesKeys.ENTRY_RID: region.id, PropertiesKeys.EXIT_RID: None, PropertiesKeys.LABEL: region.label,
+            PropertiesKeys.TYPE: region.type, PropertiesKeys.DURATION: region.duration,
+            PropertiesKeys.IMPACTS: region.impacts}
 
     return prop
 
 
 def create_transition(
-    trans_id: str, region: RegionModel, probability: float = 1, stop: bool = False
+        trans_id: str, region: RegionModel, probability: float = 1, stop: bool = False
 ):
     trans = PetriNet.Transition(trans_id, label=region.label)
 
@@ -277,7 +274,6 @@ def from_region(region: RegionModel):
     fm = TimeMarking(raw_fm)
 
     return net, im, fm
-
 
 #
 # # dizionario delle properties

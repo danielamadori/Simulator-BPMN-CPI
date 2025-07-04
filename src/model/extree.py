@@ -41,6 +41,10 @@ class ExTree:
         impacts = [0] * len(place_impacts)
         return ExTree(Snapshot(ctx.initial_marking, 1, impacts, 0))
 
+    @property
+    def root(self):
+        return self.__root
+
     def get_nodes(self):
         return list(PreOrderIter(self.__root))
 
@@ -57,20 +61,12 @@ class ExTree:
         idx = add_exec_inorder(ctx, self, snapshot)
         _id = "{}{}{}".format(parent.name, ExTree.__separator, idx)
 
-        found = None
-        for c in parent.children:
-            if c.snapshot == snapshot:
-                found = c
-                child_node = c
-                break
+        child_node = Node(
+            name=str(_id), id=str(_id), snapshot=snapshot, parent=parent
+        )
 
-        if not found:
-            child_node = Node(
-                name=str(_id), id=str(_id), snapshot=snapshot, parent=parent
-            )
-
-            if set_as_current:
-                self.current_node = child_node
+        if set_as_current:
+            self.current_node = child_node
 
         return child_node
 
@@ -84,7 +80,7 @@ class ExTree:
     # Visualizzazione Albero
     def print_tree(self):
         for pre, fill, node in RenderTree(self.__root):
-            if self.current_node.id == node._id:
+            if self.current_node.id == node.id:
                 print("X" + f"{pre}{node.name}" + "X")
             else:
                 print(f"{pre}{node.name}")

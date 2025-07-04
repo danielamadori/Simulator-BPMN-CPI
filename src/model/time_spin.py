@@ -10,6 +10,16 @@ from .types import N, T, M
 logger = logging.getLogger(__name__)
 
 
+def get_place_by_name(net, place_name):
+    """
+    Trova un posto nel Petri net per nome.
+    """
+    for place in net.places:
+        if place.name == place_name:
+            return place
+    return None
+
+
 class TimeMarking:
     __marking: Marking
     __age: dict[PetriNet.Place, float]

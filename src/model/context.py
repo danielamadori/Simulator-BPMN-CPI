@@ -25,14 +25,14 @@ class NetContext:
     final_marking: TimeMarking
     strategy: ExecutionInterface
 
-    def __init__(self, region, net, im, fm, strategy, id=None, semantic=None):
-        self._id = id or IDGenerator.next_id()
+    def __init__(self, region, net, im, fm, strategy=None, _id=None, semantic=None):
+        self._id = _id or IDGenerator.next_id()
         self.semantic = semantic or TimeNetSematic()
         self.region = region
         self.net = net
         self.initial_marking = im
         self.final_marking = fm
-        self.strategy = strategy
+        self.strategy = strategy or ClassicExecution()
 
     @classmethod
     def from_region(cls, region, strategy=ClassicExecution()):
