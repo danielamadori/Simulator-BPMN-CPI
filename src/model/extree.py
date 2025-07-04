@@ -39,7 +39,10 @@ class ExTree:
 
         place_impacts = NetUtils.Place.get_impacts(place)
         impacts = [0] * len(place_impacts)
-        return ExTree(Snapshot(ctx.initial_marking, 1, impacts, 0))
+
+        extree = ExTree(Snapshot(marking=ctx.initial_marking, probability=1, impacts=impacts, time=0))
+
+        return extree
 
     @property
     def root(self):

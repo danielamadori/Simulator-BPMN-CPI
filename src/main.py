@@ -1,14 +1,14 @@
-import json
 import logging
 
 from fastapi import FastAPI, status
 from fastapi.responses import RedirectResponse, HTMLResponse
+from pm4py.objects.petri_net.utils.petri_utils import get_transition_by_name
 
 from model.context import NetContext
 from model.endpoints.execute.request import ExecuteRequest
 from model.endpoints.execute.response import create_response
 from model.extree import ExTree
-from model.region import RegionModel
+from model.snapshot import Snapshot
 
 logging.basicConfig(
     level=logging.INFO,
@@ -19,39 +19,42 @@ api = FastAPI()
 
 
 @api.exception_handler(404)
-async def error_to_docs(_, __):
-    data = ""
-    with open("static/404.html") as f:
-        data = f.read()
-    return HTMLResponse(data, status_code=status.HTTP_404_NOT_FOUND)
-
-
 @api.get("/")
 def root():
     return RedirectResponse("/docs/", status_code=status.HTTP_303_SEE_OTHER)
 
 
-@api.post("/step")
-def step():
-    return ""
+@api.post("/execute")
+def execute(data: ExecuteRequest):
+    try:
+        region, net, im, fm, extree, choices = data.to_object()
+        if not net:
+            ctx = NetContext.from_region(region)
+            net = ctx.net
+            im = ctx.initial_marking
+            fm = ctx.final_marking
+            extree = ExTree.from_context(ctx)
+        else:
+            ctx = NetContext(region=region, net=net, im=im, fm=fm)
+            current_marking = extree.current_node.snapshot.marking
+            choices_transitions = [get_transition_by_name(ctx.net, choice) for choice in choices]
+            if not all(choices_transitions):
+                raise ValueError("One or more choices are not valid transitions in the Petri net.")
+
+            new_marking, probability, impacts, execution_time = ctx.strategy.consume(ctx, current_marking, choices_transitions)
+            new_snapshot = Snapshot(marking=new_marking, probability=probability, impacts=impacts, time=execution_time)
+            extree.add_snapshot(ctx, new_snapshot)
+
+        return create_response(region, net, extree.current_node.snapshot.marking, fm, extree).model_dump(exclude_unset=True, exclude_none=True, exclude_defaults=True)
+    except Exception as e:
+        logging.error(f"Error processing request: {e}")
+        return {
+            "type": "error",
+            "message": str(e),
+            "traceback": str(e.__traceback__),
+        }
 
 
-@api.post("/start")
-def test(data: ExecuteRequest):
-    # raw_petri_net, im, fm = from_region(data)
-    #
-    # graph_obj = graphviz_visualization(
-    #     raw_petri_net, "png", initial_marking=im, final_marking=fm
-    # )
-    # graph_obj.save("tests/iron_petri.dot")
-    #
-    # return Response(content=str(raw_petri_net), media_type="text/plain")
-
-
-    region, net, im, fm, extree, choices = data.to_object()
-
-    return create_response(region, net, im, fm, extree).model_dump(exclude_unset=True, exclude_none=True, exclude_defaults=True)
-
-if __name__ == '__main__':
-    import uvicorn
-    uvicorn.run(api, port=8001)
+# if __name__ == '__main__':
+#     import uvicorn
+#     uvicorn.run(api, port=8001)
