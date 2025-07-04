@@ -1,7 +1,7 @@
 import itertools
 import logging
 
-from anytree import Node, PreOrderIter, RenderTree
+from anytree import Node, PreOrderIter, RenderTree, findall_by_attr
 
 from utils.net_utils import NetUtils
 from .context import NetContext
@@ -51,6 +51,13 @@ class ExTree:
     def exists(self, node: Node):
         return node in self
 
+    def get_node_by_id(self, node_id: str):
+        """
+        Restituisce il nodo con l'ID specificato.
+        """
+        result = findall_by_attr(self.root, name='id', value=node_id)
+        return list(result)[0] if len(list(result)) == 1 else None
+
     # Costruzione dell'albero
     def add_snapshot(self, ctx, snapshot: Snapshot, set_as_current: bool = True):
         parent = self.current_node
@@ -70,8 +77,11 @@ class ExTree:
 
         return child_node
 
-    def set_current(self, node: Node):
-        if node not in self:
+    def set_current(self, node: Node | str):
+        if isinstance(node, str):
+            node = self.get_node_by_id(node)
+
+        if node is None or node not in self:
             return False
 
         self.current_node = node

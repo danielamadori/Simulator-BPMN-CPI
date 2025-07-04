@@ -277,13 +277,13 @@ class ExecuteRequest(pydantic.BaseModel):
                     time=child.snapshot.execution_time
                 )
                 child_node = Node(name=child.name, id=child.id, snapshot=snapshot, parent=parent_node)
-                child_node.name = child.name
-                child_node.id = child.id
-                child_node.parent = parent_node
                 add_nodes(child, child_node)
 
         root_node = Node(name=self.execution_tree.root.name, id=self.execution_tree.root.id, snapshot=root_snapshot,
                          parent=None)
         add_nodes(self.execution_tree.root, root_node)
+
+        if not ex_tree.set_current(self.execution_tree.current_node):
+            raise ValueError("Current node not found in the execution tree.")
 
         return ex_tree
