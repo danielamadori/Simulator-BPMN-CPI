@@ -1,6 +1,6 @@
 import pytest
 
-from model.extree import ExTree
+from model.extree import ExTree, get_current_sorted_children
 from model.snapshot import Snapshot
 
 PWD = "/home/matthewexe/Documents/Uni/Tirocinio/code"
@@ -9,7 +9,7 @@ PWD = "/home/matthewexe/Documents/Uni/Tirocinio/code"
 def region_model():
     """Fixture to load the region model"""
     import os
-    with open(os.path.join(PWD, "tests/input_data/bpmn_nature.json")) as f:
+    with open("/home/matthewexe/Documents/Uni/Tirocinio/code/tests/input_data/bpmn_choice.json") as f:
         from model.region import RegionModel
         model = RegionModel.model_validate_json(f.read())
     return model
@@ -50,6 +50,8 @@ def test_add(ctx, extree, saturated_snapshot):
 
     parent_node = extree.current_node
     new_node = extree.add_snapshot(ctx, saturated_snapshot)
+    sat_marking, _ = ctx.strategy.saturate(ctx, ctx.initial_marking)
+
     assert new_node in extree
     assert len(extree) == 2
 

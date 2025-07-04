@@ -6,7 +6,7 @@ from anytree import Node, PreOrderIter, RenderTree, findall_by_attr
 from utils.net_utils import NetUtils
 from .context import NetContext
 from .snapshot import Snapshot
-from .types import T
+from .types import T, M
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +65,7 @@ class ExTree:
             if node.parent == parent and node.snapshot.marking == snapshot.marking:
                 return node
 
-        idx = add_exec_inorder(ctx, self, snapshot)
+        idx = get_sorted_id(ctx, self.current_node.snapshot.marking, snapshot.marking)
         _id = "{}{}{}".format(parent.name, ExTree.__separator, idx)
 
         child_node = Node(
@@ -128,35 +128,28 @@ def is_equal(node1: Node, node2: Node):
     return True
 
 
-def add_exec_inorder(ctx, tree: ExTree, new_snapshot):
-    sorted_child = get_current_sorted_children(ctx, tree.current_node.snapshot.marking)
-    idx_child = sorted_child.index(new_snapshot.marking)
+def get_sorted_id(ctx, current_marking, new_marking):
+    sorted_child = get_current_sorted_children(ctx, current_marking)
+    idx_child = sorted_child.index(new_marking)
+
+    if idx_child == -1:
+        raise ValueError("The new snapshot can't be reached from the current node")
 
     return idx_child
 
 
-def get_current_sorted_children(ctx: NetContext, marking) -> list[T]:
-    net = ctx.net
+def get_current_sorted_children(ctx: NetContext, marking) -> list[M]:
     curr_time_marking = marking
     exec_strategy = ctx.strategy
 
     choices = exec_strategy.get_choices(ctx, curr_time_marking)
-    m = [choices[choice] for choice in choices]
-    perms = itertools.product(*m)
+    transition_groups = list(choices.values())
+    transition_combinations = list(itertools.product(*transition_groups))
     key_to_time_marking = {}
 
-    for perm in perms:
-        temp, *_ = exec_strategy.consume(ctx, curr_time_marking, perm)
-        key_of_time_marking = []
-        temp_str = {x.name: x for x in temp.keys()}
-        for place_name in sorted(temp_str.keys()):
-            place = temp_str[place_name]
-            token, age = temp[place]
-            if token == 0:
-                key_of_time_marking.append(-1)
-            else:
-                key_of_time_marking.append(age)
-
+    for combination in transition_combinations:
+        key_of_time_marking = [t.name for t in combination if t is not None]
+        temp, *_ = exec_strategy.consume(ctx, curr_time_marking, combination)
         key_to_time_marking.update({tuple(key_of_time_marking): temp})
 
     children = []
