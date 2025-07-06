@@ -199,7 +199,7 @@ def from_region(region: RegionModel):
                 prev_child = child_exit
 
             return entry_place, prev_child
-        else:
+        elif region.is_choice() or region.is_nature():
             logger.debug(f"Nature or Choice\tRegion: {region.id}")
             # Nature or Choice
             if not source:
@@ -261,6 +261,69 @@ def from_region(region: RegionModel):
                 add_arc_from_to(exit_child_trans, exit_place, net)
 
             return entry_place, exit_place
+        elif region.is_loop():
+            logger.debug(f"Loop\tRegion: {region.id}")
+            # Loop
+            if not source:
+                entry_task_id = IDGenerator.next_id()
+                entry_place = create_place(entry_task_id, region)
+                net.places.add(entry_place)
+            else:
+                entry_place = source
+                _tmp_id = source.properties[PropertiesKeys.EXIT_RID]
+                entry_place.properties.update(create_prop(region))
+                entry_place.properties.update({PropertiesKeys.EXIT_RID: _tmp_id})
+
+            # Exit place
+            exit_task_id = IDGenerator.next_id()
+            exit_place = create_place(exit_task_id, region)
+            exit_place.properties.update(
+                {
+                    PropertiesKeys.ENTRY_RID: None,
+                    PropertiesKeys.EXIT_RID: exit_place.properties[
+                        PropertiesKeys.ENTRY_RID
+                    ],
+                    PropertiesKeys.DURATION: 0,
+                }
+            )
+            net.places.add(exit_place)
+
+            # Entry transition
+            entry_trans_id = IDGenerator.next_id()
+            entry_trans = create_transition(entry_trans_id, region)
+            # entry_trans.label = "Entry " + region.label
+            entry_trans.properties[PropertiesKeys.LABEL] = "Entry " + region.label
+            net.transitions.add(entry_trans)
+
+            # Children region
+            child_entry_place, child_exit_place = rec(region.children[0])
+
+            # Loop transition
+            loop_trans_id = IDGenerator.next_id()
+            loop_trans = create_transition(loop_trans_id, region, probability=region.distribution, stop=True)
+            # loop_trans.label = "Loop " + region.label
+            loop_trans.properties[PropertiesKeys.LABEL] = "Loop " + region.label
+            net.transitions.add(loop_trans)
+
+            # Exit transition
+            exit_trans_id = IDGenerator.next_id()
+            exit_trans = create_transition(exit_trans_id, region, probability=1-region.distribution, stop=True)
+            # exit_trans.label = "Exit " + region.label
+            exit_trans.properties[PropertiesKeys.LABEL] = "Exit " + region.label
+            net.transitions.add(exit_trans)
+
+            # Add arcs
+            add_arc_from_to(entry_place, entry_trans, net)
+            add_arc_from_to(entry_trans, child_entry_place, net)
+            add_arc_from_to(child_exit_place, loop_trans, net)
+            add_arc_from_to(loop_trans, child_entry_place, net)
+            add_arc_from_to(child_exit_place, exit_trans, net)
+            add_arc_from_to(exit_trans, exit_place, net)
+
+            return entry_place, exit_place
+
+
+
 
     entry_place, exit_place = rec(region)
 

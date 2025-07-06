@@ -20,14 +20,17 @@ class ExecuteResponse(BaseModel):
     execution_tree: ExecutionTreeModel
 
 
-def create_response(region: RegionModel, petri_net: PetriNet, im: TimeMarking, fm: TimeMarking, extree: ExTree) -> ExecuteResponse:
+def create_response(region: RegionModel, petri_net: PetriNet, im: TimeMarking, fm: TimeMarking,
+                    extree: ExTree) -> ExecuteResponse:
     """
     Creates a response object containing the BPMN region, Petri net model, and execution tree.
     """
     petri_net_model = petri_net_to_model(petri_net, im, fm)
     execution_tree_model = extree_to_model(extree)
 
-    return ExecuteResponse(bpmn=region, petri_net=petri_net_model, petri_net_dot=petri_net_to_dot(petri_net, im, fm),execution_tree=execution_tree_model)
+    return ExecuteResponse(bpmn=region, petri_net=petri_net_model, petri_net_dot=petri_net_to_dot(petri_net, extree.current_node.snapshot.marking, fm.marking),
+                           execution_tree=execution_tree_model)
+
 
 def petri_net_to_model(petri_net: PetriNet, im, fm) -> PetriNetModel:
     transitions = []
@@ -60,7 +63,9 @@ def petri_net_to_model(petri_net: PetriNet, im, fm) -> PetriNetModel:
     model_im = marking_to_model(im)
     model_fm = marking_to_model(fm)
 
-    return PetriNetModel(name=petri_net.name, transitions=transitions, places=places, arcs=arcs, initial_marking=model_im, final_marking=model_fm)
+    return PetriNetModel(name=petri_net.name, transitions=transitions, places=places, arcs=arcs,
+                         initial_marking=model_im, final_marking=model_fm)
+
 
 def petri_net_to_dot(petri_net: PetriNet, im, fm) -> str:
     """
@@ -70,18 +75,24 @@ def petri_net_to_dot(petri_net: PetriNet, im, fm) -> str:
     gviz = pn_visualizer.apply(petri_net, im, fm)
     dot_string = gviz.pipe(format="dot").decode()
 
+    gviz.view()
+
     return dot_string
+
 
 def marking_to_model(marking: TimeMarking) -> dict[str, dict[str, float]]:
     """
     Converts a marking to a model representation.
     """
-    return {place.name: {"token": marking.marking.get(place, 0), "age": marking.age.get(place, 0.0)} for place in marking.keys()}
+    return {place.name: {"token": marking.marking.get(place, 0), "age": marking.age.get(place, 0.0)} for place in
+            marking.keys()}
+
 
 def extree_to_model(extree: ExTree) -> ExecutionTreeModel:
     """
     Converts an execution tree to a model representation.
     """
+
     def attriter(attrs):
         result = []
         for k, v in attrs:
@@ -101,10 +112,10 @@ def extree_to_model(extree: ExTree) -> ExecutionTreeModel:
 
 
 def snapshot_to_model(snapshot: Snapshot) -> ExecutionTreeModel.NodeModel.SnapshotModel:
-        """
-        Converts a snapshot to a model representation.
-        """
-        return ExecutionTreeModel.NodeModel.SnapshotModel(marking=marking_to_model(snapshot.marking),
-                                                          probability=snapshot.probability,
-                                                          impacts=snapshot.impacts,
-                                                          execution_time=snapshot.execution_time)
+    """
+    Converts a snapshot to a model representation.
+    """
+    return ExecutionTreeModel.NodeModel.SnapshotModel(marking=marking_to_model(snapshot.marking),
+                                                      probability=snapshot.probability,
+                                                      impacts=snapshot.impacts,
+                                                      execution_time=snapshot.execution_time)

@@ -4,12 +4,14 @@ import pm4py
 import pydantic
 from anytree import Node
 from pm4py import PetriNet
+from pm4py.objects.petri_net.utils.petri_utils import add_arc_from_to, add_transition, get_transition_by_name
 from pydantic import model_validator, BaseModel
 
 from model.extree import ExTree
 from model.region import RegionModel, RegionType
 from model.snapshot import Snapshot
 from model.time_spin import TimeMarking, get_place_by_name
+from model.types import T
 from utils.net_utils import PropertiesKeys
 
 # Marking
@@ -140,7 +142,7 @@ class ExecuteRequest(pydantic.BaseModel):
 
         return self
 
-    def to_object(self) -> Tuple[RegionModel, PetriNet, TimeMarking, TimeMarking, ExTree, list[str]]:
+    def to_object(self) -> Tuple[RegionModel, PetriNet, TimeMarking, TimeMarking, ExTree, list[T]]:
         """
         Converts the ExecuteRequest to its component objects.
         """
@@ -157,7 +159,7 @@ class ExecuteRequest(pydantic.BaseModel):
         if execution_tree_model is not None and not isinstance(execution_tree_model, ExecutionTreeModel):
             raise TypeError("Expected 'execution_tree' to be of type 'ExecutionTreeModel'.")
 
-        return self.bpmn, self.petri_net_obj, self.initial_marking, self.final_marking, self.execution_tree_obj, self.choices
+        return self.bpmn, self.petri_net_obj, self.initial_marking, self.final_marking, self.execution_tree_obj, self.choices_obj
 
     @property
     def petri_net_obj(self):
@@ -166,6 +168,8 @@ class ExecuteRequest(pydantic.BaseModel):
         """
         if self.petri_net is None:
             return None
+
+        petri_net = PetriNet(name=self.petri_net.name)
 
         transitions = {}
         for transition in self.petri_net.transitions:
@@ -176,11 +180,9 @@ class ExecuteRequest(pydantic.BaseModel):
                 PropertiesKeys.ENTRY_RID: transition.region_id,
                 PropertiesKeys.PROBABILITY: transition.probability
             }
-            transitions[transition.id] = PetriNet.Transition(
-                name=transition.id,
-                label=transition.label,
-                properties=prop
-            )
+            net_transition = PetriNet.Transition(name=transition.id, label=transition.label, properties=prop)
+            transitions[transition.id] = net_transition
+            petri_net.transitions.add(net_transition)
 
         places = {}
         for place in self.petri_net.places:
@@ -192,40 +194,26 @@ class ExecuteRequest(pydantic.BaseModel):
                 PropertiesKeys.DURATION: place.duration,
                 PropertiesKeys.IMPACTS: place.impacts
             }
-            places[place.id] = PetriNet.Place(
-                name=place.id,
-                properties=prop
-            )
+            net_place = PetriNet.Place(name=place.id, properties=prop)
+            places[place.id] = net_place
+            petri_net.places.add(net_place)
 
         arcs = []
-        places_keys = set(places.keys())
-        transitions_keys = set(transitions.keys())
 
         for arc in self.petri_net.arcs:
             source = None
-            if arc.source in places_keys:
+            if arc.source in places:
                 source = places[arc.source]
-            elif arc.source in transitions_keys:
+            elif arc.source in transitions:
                 source = transitions[arc.source]
 
             target = None
-            if arc.target in places_keys:
+            if arc.target in places:
                 target = places[arc.target]
-            elif arc.target in transitions_keys:
+            elif arc.target in transitions:
                 target = transitions[arc.target]
 
-            arcs.append(PetriNet.Arc(
-                source=source,
-                target=target,
-                weight=arc.weight or 1
-            ))
-
-        petri_net = PetriNet(
-            name=self.petri_net.name,
-            transitions=list(transitions.values()),
-            places=list(places.values()),
-            arcs=arcs
-        )
+            add_arc_from_to(source, target, petri_net)
 
         return petri_net
 
@@ -287,3 +275,10 @@ class ExecuteRequest(pydantic.BaseModel):
             raise ValueError("Current node not found in the execution tree.")
 
         return ex_tree
+
+    @property
+    def choices_obj(self) -> list[T]:
+        """
+        Returns the choices as a list of strings.
+        """
+        return [get_transition_by_name(self.petri_net_obj, choice) for choice in self.choices] if self.choices else None

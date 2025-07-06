@@ -1,4 +1,5 @@
 import logging
+import traceback
 
 from fastapi import FastAPI, status
 from fastapi.responses import RedirectResponse, HTMLResponse
@@ -37,24 +38,23 @@ def execute(data: ExecuteRequest):
         else:
             ctx = NetContext(region=region, net=net, im=im, fm=fm)
             current_marking = extree.current_node.snapshot.marking
-            choices_transitions = [get_transition_by_name(ctx.net, choice) for choice in choices]
-            if not all(choices_transitions):
+            if not all(choices):
                 raise ValueError("One or more choices are not valid transitions in the Petri net.")
 
-            new_marking, probability, impacts, execution_time = ctx.strategy.consume(ctx, current_marking, choices_transitions)
+            new_marking, probability, impacts, execution_time = ctx.strategy.consume(ctx, current_marking, choices)
             new_snapshot = Snapshot(marking=new_marking, probability=probability, impacts=impacts, time=execution_time)
             extree.add_snapshot(ctx, new_snapshot)
 
-        return create_response(region, net, extree.current_node.snapshot.marking, fm, extree).model_dump(exclude_unset=True, exclude_none=True, exclude_defaults=True)
+        return create_response(region, net, im, fm, extree).model_dump(exclude_unset=True, exclude_none=True, exclude_defaults=True)
     except Exception as e:
         logging.error(f"Error processing request: {e}")
         return {
             "type": "error",
             "message": str(e),
-            "traceback": str(e.__traceback__),
+            "traceback": traceback.format_tb(e.__traceback__),
         }
 
 
-# if __name__ == '__main__':
-#     import uvicorn
-#     uvicorn.run(api, port=8001)
+if __name__ == '__main__':
+    import uvicorn
+    uvicorn.run(api, port=8001)

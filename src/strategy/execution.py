@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Dict, List, Collection, Set, TypeVar
+from copy import copy
+from typing import Collection, Set, TypeVar
 
+import numpy as np
 
 from model.time_spin import NetUtils, TimeMarking
-from model.types import N, T, P, M
-from utils.default import Defaults
+from model.types import T, M
+from utils.default import get_default_transition
 
 ContextType = TypeVar("ContextType", bound="NetContext")
 
@@ -38,18 +40,15 @@ class ClassicExecution(ExecutionInterface):
         return set(enabled_transitions)
 
     def get_choices(self, ctx: ContextType, marking: M):
-        return self.__get_choices(ctx, marking)
-
-    def __get_choices(self, ctx: ContextType, marking: M) -> Dict[P, List[T]]:
         enabled_transitions = self.get_stoppable_active_transitions(ctx, marking)
 
         groups = {}
         for t in enabled_transitions:
-            parent = list(t.in_arcs)[0].source
-            if groups.get(parent) is None:
-                groups.update({parent: []})
+            parent_place = list(t.in_arcs)[0].source
+            if groups.get(parent_place) is None:
+                groups.update({parent_place: []})
 
-            groups[parent].append(t)
+            groups[parent_place].append(t)
 
         return groups
 
@@ -73,104 +72,121 @@ class ClassicExecution(ExecutionInterface):
         # Return the current marking with updated ages
         return marking.add_time(min_delta), min_delta
 
-
-
-        # raw_semantic = ctx.semantic
-        # _saturable_trans = raw_semantic.enabled_transitions(net, marking.marking)
-        # saturable_trans = [t for t in net.transitions if t in _saturable_trans]
-        # k = {}
-        # for t in saturable_trans:
-        #     _max = 0
-        #     for arc in t.in_arcs:
-        #         parent_place = arc.source
-        #         curr_delta = (
-        #                 NetUtils.Place.get_duration(parent_place)
-        #                 - marking.age[parent_place]
-        #         )
-        #         _max = max(curr_delta, _max)
-        #
-        #     k.update({t: _max})
-        # min_delta = min(k.values())
-        #
-        # new_age = {}
-        # for p in marking.marking:
-        #     token, age = marking[p]
-        #     if token == 0:
-        #         continue
-        #     new_age[p] = age + min_delta
-
-        # return TimeMarking(marking.marking, new_age), min_delta
-
     def consume(self, ctx: ContextType, marking: M, choices: Collection[T] | None = None):
-        """
-        TODO:Scegliere i default ed eseguire la consume
-        """
         if not choices:
             choices = []
         else:
             choices = list(choices)
 
         all_choices = self.get_choices(ctx, marking)
-        place_choosen = {p: None for p in all_choices.keys()}
+        new_choices = set(choices)
+        # Check if only one transition is chosen for each parent place
+        place_chosen = {p: None for p in all_choices.keys()}
         for t in choices:
-            parent = list(t.in_arcs)[0].source
-            if parent not in all_choices:
+            parent_place = list(t.in_arcs)[0].source
+            if parent_place not in all_choices:
                 continue
-            if place_choosen[parent]:
-                raise ValueError(f"{place_choosen[parent]} and {parent} can't be both choosen")
+            if place_chosen[parent_place]:
+                raise ValueError(f"{place_chosen[parent_place]} and {parent_place} can't be both choosen")
 
-            place_choosen[parent] = t
+            place_chosen[parent_place] = t
 
-        for p in place_choosen:
-            if place_choosen[p]:
+        # Check if all places have a chosen transition if not get the default transition
+        for p in place_chosen:
+            if place_chosen[p]:
                 continue
-            default_choice = Defaults.get_default_by_region(ctx.region, NetUtils.Place.get_entry_id(p))
-            if not default_choice:
+            default_transition = get_default_transition(ctx, p)
+            if default_transition is None:
                 continue
+            new_choices.add(default_transition)
 
-            for arc in p.out_arcs:
-                t = arc.target
-                next_p = list(t.out_arcs)[0].target
-                if NetUtils.Place.get_entry_id(next_p) == default_choice.id:
-                    choices.append(t)
-                    break
+        choices = (set(choices) & new_choices) | new_choices
 
+        # Start the consume process
         new_marking, probability, impacts, delta = self.__consume(
-            ctx, marking, choices
+            ctx, marking, list(choices)
         )
 
         return new_marking, probability, impacts, delta
 
     def __consume(self, ctx: ContextType, marking: M, choices: Collection[T] | None = None) -> tuple[
         TimeMarking, int, list[int], float]:
+        if not choices:
+            choices = ()
+
+        choices = set(choices)
+
         net = ctx.net
-        new_marking, delta = self.saturate(ctx, marking)
+        saturated_marking, delta = self.saturate(ctx, marking)
         probability = 1
         sem = ctx.semantic
+
+        # Get impacts length
+        len_impacts = None
         for p in net.places:
-            if NetUtils.Place.get_impacts(p):
-                first_place = p
+            impacts = NetUtils.Place.get_impacts(p)
+            if impacts and len(impacts) > 0:
+                len_impacts = len(impacts)
                 break
 
-        impacts = [0] * len(NetUtils.Place.get_impacts(first_place))
+        default_impacts = [0.0] * len_impacts
+        impacts = [0.0] * len_impacts
+        impacts = np.array(impacts)
 
-        for t in sem.enabled_transitions(net, marking):
-            if not NetUtils.Transition.get_stop(t) or t in choices:
-                new_marking = sem.fire(net, t, new_marking)
-                probability *= NetUtils.Transition.get_probability(t)
+        # Get places selected by choices
+        selected_places_names = set([list(t.in_arcs)[0].source.name for t in choices])
 
-                parent = list(t.in_arcs)[0].source
-                parent_impacts = NetUtils.Place.get_impacts(parent) or []
-                for i in range(len(parent_impacts)):
-                    impacts[i] += parent_impacts[i]
+        # Add all transitions that are enabled and not in choices
+        for t in sem.enabled_transitions(net, saturated_marking):
+            if NetUtils.Transition.get_stop(t) and t not in choices:
+                continue
+            parent_place = list(t.in_arcs)[0].source
+            if parent_place.name in selected_places_names:
+                continue
 
-        if new_marking == marking:
-            return new_marking, probability, impacts, delta
+            choices.add(t)
+
+        # Consume the transitions
+        new_marking = copy(saturated_marking)
+        transition_fired = []
+        for t in choices:
+            if not sem.is_enabled(net, t, new_marking):
+                continue
+            new_marking = sem.fire(net, t, new_marking)
+            probability *= NetUtils.Transition.get_probability(t)
+
+            parent_place = list(t.in_arcs)[0].source
+            place_impacts = NetUtils.Place.get_impacts(parent_place) or default_impacts
+            impacts += np.array(place_impacts)
+            # impacts = add_impacts(impacts, place_impacts)
+            transition_fired.append(t)
+
+        # Remove fired transitions from choices
+        for t in transition_fired:
+            choices.remove(t)
+
+        if new_marking == saturated_marking:
+            return new_marking, probability, impacts.tolist(), delta
         else:
             new_marking, next_p, next_i, next_delta = self.__consume(
                 ctx, new_marking, choices
             )
-            for i in range(len(next_i)):
-                impacts[i] += next_i[i]
+            impacts += np.array(next_i)
+            # impacts = add_impacts(impacts, next_i)
 
-            return new_marking, next_p * probability, impacts, delta + next_delta
+            return new_marking, next_p * probability, impacts.tolist(), delta + next_delta
+
+
+def add_impacts(i1, i2):
+    """
+    Adds two impact lists element-wise.
+    :param i1: First impact list.
+    :param i2: Second impact list.
+    :return: Element-wise sum of the two impact lists.
+    """
+    if not i1:
+        return i2
+    if not i2:
+        return i1
+
+    return [x + y for x, y in zip(i1, i2)]

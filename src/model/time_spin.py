@@ -70,12 +70,14 @@ class TimeMarking:
         # Se `key` è una stringa, cerca la corrispondenza tra le chiavi(place)
         if isinstance(key, str):
             for place in self.__keys:
-                if place == key:
+                if place.name == key:
                     key = place
 
-        if key not in self.__keys:
-            raise KeyError(f"Invalid key: '{key}' does not exists.")
-        return self.marking[key], self.age[key]
+        for place in self.__keys:
+            if place.name == key.name:
+                return self.marking[place], self.age[place]
+
+        raise KeyError(f"Invalid key: '{key}' does not exists.")
 
     def __contains__(self, el):
         # Se `el` è una stringa, cerca la corrispondenza tra le chiavi(place)
@@ -117,13 +119,7 @@ class TimeNetSematic(Generic[N]):
             p = arc.source
             d = NetUtils.Place.get_duration(p)
             token, age = marking[p]
-            # print(
-            #     f"{p.name}[token={token},age={age}]\tcheck: {PetriNetSemantics.is_enabled(net, transition, marking.marking)}\t{age<d}"
-            # )
-            if (
-                    not PetriNetSemantics.is_enabled(net, transition, marking.marking)
-                    or age < d
-            ):
+            if token < arc.weight or age < d:
                 return False
 
         return True

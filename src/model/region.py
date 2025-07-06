@@ -12,15 +12,7 @@ class RegionType(Enum):
     NATURE = "nature"
     CHOICE = "choice"
     TASK = "task"
-
-
-# class Task(BaseModel):
-#     id: str
-#     type: RegionType
-#     label: str
-#     impacts: List[float]
-#     duration: float
-
+    LOOP = "loop"
 
 class RegionModel(BaseModel):
     """
@@ -32,7 +24,7 @@ class RegionModel(BaseModel):
     label: str | None = None
     duration: float = 0
     children: List[RegionModel] | None = None
-    distribution: List[float] | None = None
+    distribution: List[float] | float | None = None
     impacts: List[float] | None = None
 
     def is_parallel(self) -> bool:
@@ -49,6 +41,9 @@ class RegionModel(BaseModel):
 
     def is_task(self) -> bool:
         return self.type == RegionType.TASK
+
+    def is_loop(self) -> bool:
+        return self.type == RegionType.LOOP
 
     def has_child(self) -> bool:
         if self.children is None:

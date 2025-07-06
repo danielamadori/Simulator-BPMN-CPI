@@ -52,6 +52,7 @@ def __switch_case(region: RegionModel, expected_impact_length: int = None):
         RegionType.PARALLEL: __parallel_validator,
         RegionType.CHOICE: __choice_validator,
         RegionType.NATURE: __nature_validator,
+        RegionType.LOOP: __loop_validator
     }
 
     validator_fn = switch.get(region.type)
@@ -174,8 +175,14 @@ def __nature_validator(region: RegionModel, expected_impact_length: int = None):
         )
         return False, None
 
+    if not region.distribution and not isinstance(region.distribution, list):
+        logger.error(
+            f"Regione Scelta {region.label} di id:{region.id} non ha distribuzione di probabilità: {region.distribution}"
+        )
+        return False, None
+
     # devo avere la distribuzione di probabilità e  len(prob) = numero childern
-    if not region.distribution or len(region.distribution) != len(
+    if not region.distribution or not isinstance(region.distribution, list) or len(region.distribution) != len(
         region.children or []
     ):
         logger.error(
@@ -212,12 +219,9 @@ def __choice_validator(region: RegionModel, expected_impact_length: int = None):
         )
         return False, None
 
-    # se ho la distribuzione di probabilità allora len(prob) = numero childern
-    if region.distribution and len(region.distribution) != len(region.children or []):
-        logger.error(
-            f"Regione Scelta {region.label} di id:{region.id} ha len(prob) != numero childern"
-        )
-        return False, None
+    # non devo avere una distribuzione di probabilità
+    if region.children is not None:
+        logger.error(f"Regione Scelta {region.label} di id:{region.id} non deve avere figli")
 
     # se ho la distribuzione di probabilità allora deve essere vicino a 1
     if region.distribution:
@@ -236,5 +240,20 @@ def __choice_validator(region: RegionModel, expected_impact_length: int = None):
         return False, None
 
     # duration?
+
+    return True, expected_impact_length
+
+def __loop_validator(region: RegionModel, expected_impact_length: int = None):
+    logger.debug("Validatore Loop")
+    children = region.children
+    if children is None or len(children) != 1:
+        logger.error(
+            f"Regione Loop {region.id} deve avere esattamente un figlio, trovato: {len(children or [])}"
+        )
+        return False, None
+
+    if not isinstance(region.distribution, float) or region.distribution is None:
+        logger.error(f"Regione Loop {region.id} deve avere una distribuzione di probabilità di tipo float")
+        return False, None
 
     return True, expected_impact_length

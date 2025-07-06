@@ -1,16 +1,19 @@
 import math
+import os
 
 import pytest
 
 from model.context import NetContext
+from model.endpoints.execute.response import petri_net_to_dot
 from model.region import RegionModel
 from model.time_spin import TimeMarking
 from utils.net_utils import NetUtils
 
+PWD = "/home/matthewexe/Documents/Uni/Tirocinio/code"
 
 @pytest.fixture
 def ctx():
-    with open("tests/iron.json") as f:
+    with open(os.path.join(PWD, "tests/iron.json")) as f:
         model = RegionModel.model_validate_json(f.read())
 
     return NetContext.from_region(model)
@@ -31,7 +34,7 @@ def marking(ctx):
 
 @pytest.fixture
 def nature_ctx():
-    with open("tests/input_data/bpmn_nature.json") as f:
+    with open(os.path.join(PWD, "tests/input_data/bpmn_nature.json")) as f:
         model = RegionModel.model_validate_json(f.read())
 
     return NetContext.from_region(model)
@@ -75,8 +78,16 @@ def test_consume(ctx, marking):
             if NetUtils.Place.get_entry_id(list(t.out_arcs)[0].target) == "12":
                 choices.append(t)
 
+    # dot_string = petri_net_to_dot(ctx.net, marking, fm)
+
     bho = strategy.consume(ctx, marking, choices)
     consumed_m, _p, _i, _t = bho
+
+    # petri_net_to_dot(ctx.net, consumed_m, fm)
+
+
+
+    assert type(_i) == list
 
     assert math.isclose(_p, 0.8)
     assert _i == [38, 2]
