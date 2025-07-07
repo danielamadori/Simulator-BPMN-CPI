@@ -1,11 +1,12 @@
 import logging
 from typing import Dict, Generic
 
-from pm4py.objects.petri_net.obj import Marking, PetriNet
+from pm4py.objects.petri_net.obj import Marking
 from pm4py.objects.petri_net.semantics import PetriNetSemantics
 
+from model.petri_net.wrapper import PetriNet
 from utils.net_utils import NetUtils
-from .types import N, T, M
+from model.types import N, T, M
 
 logger = logging.getLogger(__name__)
 
@@ -131,10 +132,10 @@ class TimeNetSematic(Generic[N]):
             p = arc.source
             new_age[p] = 0
 
-        c = PetriNetSemantics.fire(net, transition, marking.marking)
-        m = Marking(c)
+        tokens = PetriNetSemantics.fire(net, transition, marking.marking)
+        new_marking = Marking(tokens)
 
-        return TimeMarking(m, new_age)
+        return TimeMarking(new_marking, new_age)
 
     def execute(self, net: N, transition: T, marking: M):
         logger.debug(f"Eseguo la transazione{transition.label}")
@@ -143,7 +144,7 @@ class TimeNetSematic(Generic[N]):
 
         return self.fire(net, transition, marking)
 
-    def enabled_transitions(self, net: N, marking: M):
+    def enabled_transitions(self, net: N, marking: M) -> set[T]:
         enabled = set()
 
         for t in net.transitions:
