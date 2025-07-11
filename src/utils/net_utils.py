@@ -1,7 +1,6 @@
 from enum import Enum
 
-
-from model.types import P, T
+from model.types import P, T, M
 
 
 class NetUtils:
@@ -56,3 +55,27 @@ class PropertiesKeys(Enum):
     IMPACTS = "impacts"
     PROBABILITY = "probability"
     STOP = "stop"
+
+
+def get_all_choices(ctx, marking: M, choices: list[T] = None) -> list[T]:
+    """
+    Fills the choices with default transitions if they are not already present.
+    If no default transitions are found, it returns the choices as is.
+    :param ctx:
+    :param marking:
+    :param choices:
+    :return:
+    """
+    if choices is None:
+        choices = []
+
+    choices = ctx.strategy.get_default_choices(ctx, marking, choices=choices)[:]
+    choices_place = {list(t.in_arcs)[0].source for t in choices if t.in_arcs}
+
+    for t in ctx.semantic.enabled_transitions(ctx.net, marking):
+        place = list(t.in_arcs)[0].source
+        if place not in choices_place:
+            choices.append(t)
+            choices_place.add(place)
+
+    return list(choices)

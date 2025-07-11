@@ -3,7 +3,7 @@ import pytest
 from model.context import NetContext
 from model.extree import ExTree
 from model.region import RegionModel
-from model.time_spin import TimeMarking
+from model.petri_net.time_spin import TimeMarking
 
 
 @pytest.fixture

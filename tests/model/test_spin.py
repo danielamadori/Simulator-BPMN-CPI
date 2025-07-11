@@ -1,7 +1,7 @@
 import pytest
 
 from model.context import NetContext
-from model.time_spin import TimeMarking
+from model.petri_net.time_spin import TimeMarking
 from pm4py.objects.petri_net.obj import Marking
 
 @pytest.fixture

@@ -45,11 +45,14 @@ def saturated_snapshot(ctx, initial_snapshot):
     )
 
 
-def test_add(ctx, extree, saturated_snapshot):
+def test_add(ctx, extree, saturated_snapshot, initial_snapshot):
     assert len(extree.get_nodes()) == 1
 
+    saturated_marking, delta = ctx.strategy.saturate(ctx, initial_snapshot.marking)
+    choices = ctx.strategy.get_default_choices(ctx, saturated_marking)
+
     parent_node = extree.current_node
-    new_node = extree.add_snapshot(ctx, saturated_snapshot)
+    new_node = extree.add_snapshot(ctx, saturated_snapshot, choices)
     sat_marking, _ = ctx.strategy.saturate(ctx, ctx.initial_marking)
 
     assert new_node in extree
@@ -60,5 +63,5 @@ def test_add(ctx, extree, saturated_snapshot):
     assert extree.current_node == parent_node
 
     # Check adding the same snapshot again does not create a new node
-    assert extree.add_snapshot(ctx, saturated_snapshot) == new_node
+    assert extree.add_snapshot(ctx, saturated_snapshot, choices) == new_node
     assert len(extree) == 2

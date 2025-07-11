@@ -1,12 +1,11 @@
-from typing import List, Tuple
+from typing import Tuple
 
 import pytest
-from pm4py import PetriNet
-from tests.converter.region_factory import region_factory
 
 from converter.spin import from_region
-from utils.net_utils import PropertiesKeys
+from model.petri_net.wrapper import PetriNet
 from model.region import RegionModel, RegionType
+from utils.net_utils import PropertiesKeys
 
 
 @pytest.fixture()
@@ -72,10 +71,10 @@ def get_region_ids(region: RegionModel, *types: RegionType):
 
 
 def get_region_props_from_net(
-    net: PetriNet,
-    region: RegionModel,
-    keys: Tuple[PropertiesKeys] = None,
-    types: Tuple[RegionType] = None,
+        net: PetriNet,
+        region: RegionModel,
+        keys: Tuple[PropertiesKeys] = None,
+        types: Tuple[RegionType] = None,
 ):
     if keys is None:
         return None
@@ -86,8 +85,8 @@ def get_region_props_from_net(
 
     for p in net.places:
         rid = (
-            p.properties[PropertiesKeys.ENTRY_RID]
-            or p.properties[PropertiesKeys.EXIT_RID]
+                p.properties[PropertiesKeys.ENTRY_RID]
+                or p.properties[PropertiesKeys.EXIT_RID]
         )
         for key_prop in keys:
             if key_prop not in p.properties.keys():
@@ -95,7 +94,7 @@ def get_region_props_from_net(
             prop = p.properties[key_prop]
             if prop is not None:
                 if key_prop != PropertiesKeys.DURATION or (
-                    _dict[rid].get(key_prop, 0) == 0
+                        _dict[rid].get(key_prop, 0) == 0
                 ):
                     _dict[rid].update({key_prop: prop})
 
@@ -128,13 +127,13 @@ class TestBaseRegion:
         self.last_place = None
         for p in self.net.places:
             if (
-                p.properties[PropertiesKeys.ENTRY_RID]
-                and not p.properties[PropertiesKeys.EXIT_RID]
+                    p.properties[PropertiesKeys.ENTRY_RID]
+                    and not p.properties[PropertiesKeys.EXIT_RID]
             ):
                 self.first_place = p
             elif (
-                not p.properties[PropertiesKeys.ENTRY_RID]
-                and p.properties[PropertiesKeys.EXIT_RID]
+                    not p.properties[PropertiesKeys.ENTRY_RID]
+                    and p.properties[PropertiesKeys.EXIT_RID]
             ):
                 self.last_place = p
 
@@ -180,13 +179,13 @@ class TestBaseRegion:
 
         assert props[self.region.id][PropertiesKeys.DURATION] == self.region.duration
         assert (
-            list(
-                filter(
-                    lambda p: p.properties[PropertiesKeys.EXIT_RID] == self.region.id,
-                    self.net.places,
-                )
-            )[0].properties[PropertiesKeys.DURATION]
-            == 0
+                list(
+                    filter(
+                        lambda p: p.properties[PropertiesKeys.EXIT_RID] == self.region.id,
+                        self.net.places,
+                    )
+                )[0].properties[PropertiesKeys.DURATION]
+                == 0
         )
 
 
@@ -218,6 +217,6 @@ class TestTask:
             assert cur.get(PropertiesKeys.DURATION) == task.duration
             assert cur.get(PropertiesKeys.IMPACTS) == task.impacts
             assert (
-                cur.get(PropertiesKeys.TYPE) == task.type
-                or cur.get(PropertiesKeys.TYPE) == task.type.value
+                    cur.get(PropertiesKeys.TYPE) == task.type
+                    or cur.get(PropertiesKeys.TYPE) == task.type.value
             )

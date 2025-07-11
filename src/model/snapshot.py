@@ -1,6 +1,6 @@
 from copy import copy
 
-from model.time_spin import TimeMarking
+from model.petri_net.time_spin import TimeMarking
 
 '''
 Secondo me si può spostare anche dentro extree

@@ -1,12 +1,13 @@
 import logging
 from typing import List
 
-from pm4py.objects.petri_net.obj import PetriNet, Marking
+from pm4py.objects.petri_net.obj import Marking
 from pm4py.objects.petri_net.utils.petri_utils import add_arc_from_to
 
 from converter.validator import region_validator
+from model.petri_net.wrapper import PetriNet
 from model.region import RegionModel, RegionType
-from model.time_spin import TimeMarking
+from model.petri_net.time_spin import TimeMarking
 from utils.exceptions import ValidationError
 from utils.net_utils import PropertiesKeys
 

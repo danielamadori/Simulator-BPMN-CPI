@@ -10,6 +10,7 @@ from model.endpoints.execute.request import ExecuteRequest
 from model.endpoints.execute.response import create_response
 from model.extree import ExTree
 from model.snapshot import Snapshot
+from utils.net_utils import get_all_choices
 
 logging.basicConfig(
     level=logging.INFO,
@@ -36,14 +37,18 @@ def execute(data: ExecuteRequest):
             fm = ctx.final_marking
             extree = ExTree.from_context(ctx)
         else:
-            ctx = NetContext(region=region, net=net, im=im, fm=fm)
-            current_marking = extree.current_node.snapshot.marking
+            if choices is None:
+                choices = []
             if not all(choices):
                 raise ValueError("One or more choices are not valid transitions in the Petri net.")
 
+            ctx = NetContext(region=region, net=net, im=im, fm=fm)
+            current_marking = extree.current_node.snapshot.marking
+
+            all_transitions_fired = get_all_choices(ctx, current_marking, choices)
             new_marking, probability, impacts, execution_time = ctx.strategy.consume(ctx, current_marking, choices)
             new_snapshot = Snapshot(marking=new_marking, probability=probability, impacts=impacts, time=execution_time)
-            extree.add_snapshot(ctx, new_snapshot)
+            extree.add_snapshot(ctx, new_snapshot, all_transitions_fired)
 
         return create_response(region, net, im, fm, extree).model_dump(exclude_unset=True, exclude_none=True, exclude_defaults=True)
     except Exception as e:

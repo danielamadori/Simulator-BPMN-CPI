@@ -1,8 +1,8 @@
-from pm4py.objects.petri_net.obj import PetriNet
 
 from converter.spin import from_region
+from model.petri_net.wrapper import PetriNet
 from model.region import RegionModel
-from model.time_spin import TimeMarking, TimeNetSematic
+from model.petri_net.time_spin import TimeMarking, TimeNetSematic
 from strategy.execution import ExecutionInterface, ClassicExecution
 
 

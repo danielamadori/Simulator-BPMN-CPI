@@ -1,5 +1,6 @@
 import itertools
 import logging
+from copy import copy
 
 from anytree import Node, PreOrderIter, RenderTree, findall_by_attr
 
@@ -62,13 +63,13 @@ class ExTree:
         return list(result)[0] if len(list(result)) == 1 else None
 
     # Costruzione dell'albero
-    def add_snapshot(self, ctx, snapshot: Snapshot, set_as_current: bool = True):
+    def add_snapshot(self, ctx, snapshot: Snapshot, user_choices: list[T], set_as_current: bool = True):
         parent = self.current_node
         for node in self:
             if node.parent == parent and node.snapshot.marking == snapshot.marking:
                 return node
 
-        idx = get_sorted_id(ctx, self.current_node.snapshot.marking, snapshot.marking)
+        idx = get_sorted_id(ctx, self.current_node.snapshot.marking, user_choices)
         _id = "{}{}{}".format(parent.name, ExTree.__separator, idx)
 
         child_node = Node(
@@ -131,8 +132,22 @@ def is_equal(node1: Node, node2: Node):
     return True
 
 
-def get_sorted_id(ctx, current_marking, new_marking):
+def get_sorted_id(ctx, current_marking: M, choices: list[T]):
+    """
+    Returns the index of the new marking in the sorted list of children of the current node.
+    This function assumes that the children are sorted based on the active places name in marking.
+    :param ctx:
+    :param current_marking:
+    :param choices:
+    :return:
+    """
     sorted_child = get_current_sorted_children(ctx, current_marking)
+
+    # Fire the choices to get the new marking
+    new_marking = copy(current_marking)
+    for t in choices:
+        new_marking = ctx.semantic.fire(ctx.net, t, new_marking)
+
     idx_child = sorted_child.index(new_marking)
 
     if idx_child == -1:
@@ -142,17 +157,32 @@ def get_sorted_id(ctx, current_marking, new_marking):
 
 
 def get_current_sorted_children(ctx: NetContext, marking) -> list[M]:
+    """
+    Returns the sorted list of children for the current node based on the current marking.
+    The children are sorted based on the active places name in the marking.
+    :param ctx:
+    :param marking:
+    :return:
+    """
     curr_time_marking = marking
-    exec_strategy = ctx.strategy
 
-    choices = exec_strategy.get_choices(ctx, curr_time_marking)
-    transition_groups = list(choices.values())
+    # transition_permutations = itertools.permutations(ctx.semantic.enabled_transitions(ctx.net, marking))
+    transition_group_by_in_place = itertools.groupby(ctx.semantic.enabled_transitions(ctx.net, marking), key=lambda t: list(t.in_arcs)[0].source)
+    transition_groups = [tuple(group) for key, group in transition_group_by_in_place]
     transition_combinations = list(itertools.product(*transition_groups))
     key_to_time_marking = {}
 
+    # For each combination of transitions, we fire them and get the new marking
     for combination in transition_combinations:
         key_of_time_marking = [t.name for t in combination if t is not None]
-        temp, *_ = exec_strategy.consume(ctx, curr_time_marking, combination)
+        key_of_time_marking.sort()
+
+        # Fire all transitions in the combination to get the new marking
+        temp = copy(curr_time_marking)
+        for t in combination:
+            if t is not None:
+                temp = ctx.semantic.execute(ctx.net, t, temp)
+
         key_to_time_marking.update({tuple(key_of_time_marking): temp})
 
     children = []

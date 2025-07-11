@@ -3,7 +3,7 @@ from pm4py.objects.bpmn.obj import Marking
 
 from converter.spin import from_region
 from model.region import RegionModel
-from model.time_spin import TimeMarking, TimeNetSematic
+from model.petri_net.time_spin import TimeMarking, TimeNetSematic
 
 
 @pytest.fixture()

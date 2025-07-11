@@ -3,14 +3,14 @@ from typing import Tuple
 import pm4py
 import pydantic
 from anytree import Node
-from pm4py import PetriNet
-from pm4py.objects.petri_net.utils.petri_utils import add_arc_from_to, add_transition, get_transition_by_name
+from pm4py.objects.petri_net.utils.petri_utils import add_arc_from_to, get_transition_by_name
 from pydantic import model_validator, BaseModel
 
 from model.extree import ExTree
+from model.petri_net.wrapper import PetriNet
 from model.region import RegionModel, RegionType
 from model.snapshot import Snapshot
-from model.time_spin import TimeMarking, get_place_by_name
+from model.petri_net.time_spin import TimeMarking, get_place_by_name
 from model.types import T
 from utils.net_utils import PropertiesKeys
 

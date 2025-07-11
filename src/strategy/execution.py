@@ -4,9 +4,7 @@ from abc import ABC, abstractmethod
 from copy import copy
 from typing import Collection, Set, TypeVar
 
-import numpy as np
-
-from model.time_spin import NetUtils, TimeMarking
+from model.petri_net.time_spin import NetUtils, TimeMarking
 from model.types import T, M
 from utils.default import get_default_transition
 
@@ -72,49 +70,60 @@ class ClassicExecution(ExecutionInterface):
         # Return the current marking with updated ages
         return marking.add_time(min_delta), min_delta
 
-    def consume(self, ctx: ContextType, marking: M, choices: Collection[T] | None = None):
-        if not choices:
+    def get_default_choices(self, ctx: ContextType, marking: M, choices: list[T] = None) -> list[T]:
+        """
+        Get the default choices for the current marking.
+        Choices represent all transition that are already chosen by the user.
+        If choices are provided, it filters the default transitions to only include those that are in the choices.
+        If no choices are provided, it returns all default transitions for the current marking.
+        This method ensures that for each place, if no transition is chosen, the default transition is added to the choices.
+        :param ctx: NetContext containing the net and semantic.
+
+        :param marking: Current marking.
+        :param choices: Transitions chosen by the user.
+        :return: Set of default transitions.
+        """
+        if choices is None:
             choices = []
-        else:
-            choices = list(choices)
 
-        all_choices = self.get_choices(ctx, marking)
-        new_choices = set(choices)
-        # Check if only one transition is chosen for each parent place
-        place_chosen = {p: None for p in all_choices.keys()}
-        for t in choices:
-            parent_place = list(t.in_arcs)[0].source
-            if parent_place not in all_choices:
+        all_choices_dict = self.get_choices(ctx, marking)
+        all_choices = set([t for place in all_choices_dict for t in all_choices_dict[place]])
+        new_choices = set(choices) & all_choices
+
+        for place in all_choices_dict:
+            place_choices = all_choices_dict[place]
+            found = False
+            for t in place_choices:
+                if t in new_choices:
+                    found = True
+                    break
+            if found:
                 continue
-            if place_chosen[parent_place]:
-                raise ValueError(f"{place_chosen[parent_place]} and {parent_place} can't be both choosen")
 
-            place_chosen[parent_place] = t
-
-        # Check if all places have a chosen transition if not get the default transition
-        for p in place_chosen:
-            if place_chosen[p]:
-                continue
-            default_transition = get_default_transition(ctx, p)
+            default_transition = get_default_transition(ctx, place)
             if default_transition is None:
                 continue
             new_choices.add(default_transition)
 
-        choices = (set(choices) & new_choices) | new_choices
+        return list(new_choices)
+
+    def consume(self, ctx: ContextType, marking: M, choices: Collection[T] | None = None):
+        # Get default choices if not provided
+        default_choices = self.get_default_choices(ctx, marking, choices=list(choices) if choices is not None else None)
 
         # Start the consume process
         new_marking, probability, impacts, delta = self.__consume(
-            ctx, marking, list(choices)
+            ctx=ctx, marking=marking, user_choices=default_choices
         )
 
         return new_marking, probability, impacts, delta
 
-    def __consume(self, ctx: ContextType, marking: M, choices: Collection[T] | None = None) -> tuple[
+    def __consume(self, ctx: ContextType, marking: M, user_choices: Collection[T] | None = None) -> tuple[
         TimeMarking, int, list[int], float]:
-        if not choices:
+        if not user_choices:
             choices = ()
 
-        choices = set(choices)
+        choices = set(user_choices)
 
         net = ctx.net
         saturated_marking, delta = self.saturate(ctx, marking)
@@ -131,7 +140,7 @@ class ClassicExecution(ExecutionInterface):
 
         default_impacts = [0.0] * len_impacts
         impacts = [0.0] * len_impacts
-        impacts = np.array(impacts)
+        # impacts = np.array(impacts)
 
         # Get places selected by choices
         selected_places_names = set([list(t.in_arcs)[0].source.name for t in choices])
@@ -157,8 +166,8 @@ class ClassicExecution(ExecutionInterface):
 
             parent_place = list(t.in_arcs)[0].source
             place_impacts = NetUtils.Place.get_impacts(parent_place) or default_impacts
-            impacts += np.array(place_impacts)
-            # impacts = add_impacts(impacts, place_impacts)
+            # impacts += np.array(place_impacts)
+            impacts = add_impacts(impacts, place_impacts)
             transition_fired.append(t)
 
         # Remove fired transitions from choices
@@ -166,15 +175,15 @@ class ClassicExecution(ExecutionInterface):
             choices.remove(t)
 
         if new_marking == saturated_marking:
-            return new_marking, probability, impacts.tolist(), delta
+            return new_marking, probability, impacts, delta
         else:
             new_marking, next_p, next_i, next_delta = self.__consume(
                 ctx, new_marking, choices
             )
-            impacts += np.array(next_i)
-            # impacts = add_impacts(impacts, next_i)
+            # impacts += np.array(next_i)
+            impacts = add_impacts(impacts, next_i)
 
-            return new_marking, next_p * probability, impacts.tolist(), delta + next_delta
+            return new_marking, next_p * probability, impacts, delta + next_delta
 
 
 def add_impacts(i1, i2):

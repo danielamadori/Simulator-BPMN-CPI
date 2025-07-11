@@ -1,12 +1,12 @@
 from anytree.exporter import DictExporter
-from pm4py import PetriNet
 from pydantic import BaseModel
 
 from model.endpoints.execute.request import PetriNetModel, ExecutionTreeModel
 from model.extree import ExTree
+from model.petri_net.wrapper import PetriNet
 from model.region import RegionModel
 from model.snapshot import Snapshot
-from model.time_spin import TimeMarking
+from model.petri_net.time_spin import TimeMarking
 from utils.net_utils import NetUtils
 
 

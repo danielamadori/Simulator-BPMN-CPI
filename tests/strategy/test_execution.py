@@ -4,9 +4,8 @@ import os
 import pytest
 
 from model.context import NetContext
-from model.endpoints.execute.response import petri_net_to_dot
 from model.region import RegionModel
-from model.time_spin import TimeMarking
+from model.petri_net.time_spin import TimeMarking
 from utils.net_utils import NetUtils
 
 PWD = "/home/matthewexe/Documents/Uni/Tirocinio/code"
