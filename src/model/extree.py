@@ -11,6 +11,14 @@ from .types import T, M
 
 logger = logging.getLogger(__name__)
 
+def serial_generator():
+    """Generates a unique serial number each time it is called."""
+    n = 0
+    while True:
+        yield n
+        n += 1
+
+id_generator = serial_generator()
 
 class ExTree:
     __separator = '/'
@@ -69,8 +77,10 @@ class ExTree:
             if node.parent == parent and node.snapshot.marking == snapshot.marking:
                 return node
 
-        idx = get_sorted_id(ctx, self.current_node.snapshot.marking, user_choices)
-        _id = "{}{}{}".format(parent.name, ExTree.__separator, idx)
+        # idx = get_sorted_id(ctx, self.current_node.snapshot.marking, user_choices)
+        # _id = "{}{}{}".format(parent.name, ExTree.__separator, idx)
+
+        _id = next(id_generator)
 
         child_node = Node(
             name=str(_id), id=str(_id), snapshot=snapshot, parent=parent
