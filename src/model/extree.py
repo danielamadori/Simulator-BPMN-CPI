@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 def serial_generator():
     """Generates a unique serial number each time it is called."""
-    n = 0
+    n = 1
     while True:
         yield n
         n += 1
@@ -26,13 +26,18 @@ class ExTree:
     __root: Node
 
     # Struttura Node: name[facoltativo],id,snapshot[oggetto di interesse]
-    def __init__(self, root: Snapshot):
+    def __init__(self, root: Snapshot | Node):
         logger.info("Inizializzazione ExTree")
         if root is None:
             logger.error("Lo Snapshot Root è None")
             raise ValueError("Root Snapshot can't be None")
 
-        _root = Node(name="Root", id='-1', snapshot=root)
+        if isinstance(root, Node):
+            self.__root = root
+            self.current_node = root
+            return
+
+        _root = Node(name="Root", id='0', snapshot=root)
         self.__root = _root
         self.current_node = _root
 

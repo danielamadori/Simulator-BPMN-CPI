@@ -2,7 +2,7 @@ from typing import Tuple
 
 import pm4py
 import pydantic
-from anytree import Node
+from anytree import Node, RenderTree
 from pm4py.objects.petri_net.utils.petri_utils import add_arc_from_to, get_transition_by_name
 from pydantic import model_validator, BaseModel
 
@@ -134,11 +134,13 @@ class ExecuteRequest(pydantic.BaseModel):
     def check_execution(self):
         checks = [
             self.petri_net is not None,
-            self.execution_tree is not None,
-            self.choices is not None
+            self.execution_tree is not None
         ]
         if not all(checks) and any(checks):
             raise ValueError("If one of 'petri_net', 'execution_tree', or 'choices' is provided, all must be provided.")
+
+        if not all(checks) and self.choices is not None:
+            raise ValueError("If 'choices' is provided, 'petri_net' and 'execution_tree' must also be provided.")
 
         return self
 
@@ -246,30 +248,30 @@ class ExecuteRequest(pydantic.BaseModel):
         if self.execution_tree is None:
             return None
 
-        root_snapshot = Snapshot(
-            marking=model_to_marking(self.petri_net_obj, self.execution_tree.root.snapshot.marking),
-            probability=self.execution_tree.root.snapshot.probability,
-            impacts=self.execution_tree.root.snapshot.impacts,
-            time=self.execution_tree.root.snapshot.execution_time
-        )
+        def convert_node(node: ExecutionTreeModel.NodeModel, parent: Node | None = None) -> Node:
+            current_node = Node(
+                name=node.name,
+                id=node.id,
+                snapshot=Snapshot(
+                    marking=model_to_marking(self.petri_net_obj, node.snapshot.marking),
+                    probability=node.snapshot.probability,
+                    impacts=node.snapshot.impacts,
+                    time=node.snapshot.execution_time
+                ),
+                parent=parent
+            )
 
-        ex_tree = ExTree(root_snapshot)
+            if node.children is None or len(node.children) == 0:
+                return current_node
 
-        # Populate the execution tree with nodes
-        def add_nodes(node_model, parent_node):
-            for child in node_model.children:
-                snapshot = Snapshot(
-                    marking=model_to_marking(self.petri_net_obj, child.snapshot.marking),
-                    probability=child.snapshot.probability,
-                    impacts=child.snapshot.impacts,
-                    time=child.snapshot.execution_time
-                )
-                child_node = Node(name=child.name, id=child.id, snapshot=snapshot, parent=parent_node)
-                add_nodes(child, child_node)
+            for child in node.children:
+                convert_node(child, parent=current_node)
 
-        root_node = Node(name=self.execution_tree.root.name, id=self.execution_tree.root.id, snapshot=root_snapshot,
-                         parent=None)
-        add_nodes(self.execution_tree.root, root_node)
+            return current_node
+
+        root = convert_node(self.execution_tree.root)
+
+        ex_tree = ExTree(root)
 
         if not ex_tree.set_current(self.execution_tree.current_node):
             raise ValueError("Current node not found in the execution tree.")
