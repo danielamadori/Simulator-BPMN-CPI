@@ -3,7 +3,7 @@ from typing import Tuple
 import pytest
 
 from converter.spin import from_region
-from model.petri_net.wrapper import PetriNet
+from model.petri_net.wrapper import WrapperPetriNet
 from model.region import RegionModel, RegionType
 from utils.net_utils import PropertiesKeys
 
@@ -71,7 +71,7 @@ def get_region_ids(region: RegionModel, *types: RegionType):
 
 
 def get_region_props_from_net(
-        net: PetriNet,
+        net: WrapperPetriNet,
         region: RegionModel,
         keys: Tuple[PropertiesKeys] = None,
         types: Tuple[RegionType] = None,

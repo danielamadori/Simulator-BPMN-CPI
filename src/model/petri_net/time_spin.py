@@ -112,6 +112,9 @@ class TimeMarking:
     def __copy__(self):
         return TimeMarking(self.marking.copy(), self.age.copy())
 
+    def __deepcopy__(self, memo):
+        return self.__copy__()
+
 
 class TimeNetSematic(Generic[N]):
 

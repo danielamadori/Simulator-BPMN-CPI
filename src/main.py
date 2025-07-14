@@ -1,4 +1,5 @@
 import logging
+import os
 import traceback
 
 from fastapi import FastAPI, status
@@ -50,7 +51,8 @@ def execute(data: ExecuteRequest):
             new_snapshot = Snapshot(marking=new_marking, probability=probability, impacts=impacts, time=execution_time)
             extree.add_snapshot(ctx, new_snapshot, all_transitions_fired)
 
-        return create_response(region, net, im, fm, extree).model_dump(exclude_unset=True, exclude_none=True, exclude_defaults=True)
+        return create_response(region, net, im, fm, extree).model_dump(exclude_unset=True, exclude_none=True,
+                                                                       exclude_defaults=True)
     except Exception as e:
         logging.error(f"Error processing request: {e}")
         return {
@@ -60,6 +62,7 @@ def execute(data: ExecuteRequest):
         }
 
 
-if __name__ == '__main__':
-    import uvicorn
-    uvicorn.run(api, port=8001)
+# if __name__ == '__main__':
+#     import uvicorn
+#
+#     uvicorn.run(api, port=8001)

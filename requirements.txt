@@ -4,3 +4,4 @@ pydantic~=2.10.6
 fastapi~=0.115.11
 pytest~=8.3.5
 numpy~=2.2.4
+graphviz~=0.20.3

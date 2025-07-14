@@ -4,7 +4,7 @@ import pm4py
 import pydantic
 from anytree import Node, RenderTree
 from pm4py.objects.petri_net.utils.petri_utils import add_arc_from_to, get_transition_by_name
-from pydantic import model_validator, BaseModel
+from pydantic import model_validator, BaseModel, ConfigDict
 
 from model.extree import ExTree
 from model.petri_net.wrapper import WrapperPetriNet
@@ -75,8 +75,7 @@ class PetriNetModel(pydantic.BaseModel):
     initial_marking: Marking
     final_marking: Marking
 
-    class Config:
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
 
 # ExecutionTreeModel
@@ -107,8 +106,7 @@ class ExecutionTreeModel(pydantic.BaseModel):
     root: NodeModel
     current_node: str
 
-    class Config:
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
 
 # ExecuteRequest
@@ -121,8 +119,7 @@ class ExecuteRequest(pydantic.BaseModel):
     execution_tree: ExecutionTreeModel | None = None
     choices: list[str] | None = None
 
-    class Config:
-        use_enum_values = True
+    model_config = ConfigDict(use_enum_values=True)
 
     @model_validator(mode='after')
     def check_execution(self):
@@ -131,7 +128,7 @@ class ExecuteRequest(pydantic.BaseModel):
             self.execution_tree is not None
         ]
         if not all(checks) and any(checks):
-            raise ValueError("If one of 'petri_net', 'execution_tree', or 'choices' is provided, all must be provided.")
+            raise ValueError("If one of 'petri_net' or 'execution_tree', all must be provided.")
 
         if not all(checks) and self.choices is not None:
             raise ValueError("If 'choices' is provided, 'petri_net' and 'execution_tree' must also be provided.")
