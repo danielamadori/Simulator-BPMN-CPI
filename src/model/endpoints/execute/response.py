@@ -3,7 +3,7 @@ from pydantic import BaseModel
 
 from model.endpoints.execute.request import PetriNetModel, ExecutionTreeModel
 from model.extree import ExTree
-from model.petri_net.wrapper import PetriNet
+from model.petri_net.wrapper import WrapperPetriNet
 from model.region import RegionModel
 from model.snapshot import Snapshot
 from model.petri_net.time_spin import TimeMarking
@@ -20,7 +20,7 @@ class ExecuteResponse(BaseModel):
     execution_tree: ExecutionTreeModel
 
 
-def create_response(region: RegionModel, petri_net: PetriNet, im: TimeMarking, fm: TimeMarking,
+def create_response(region: RegionModel, petri_net: WrapperPetriNet, im: TimeMarking, fm: TimeMarking,
                     extree: ExTree) -> ExecuteResponse:
     """
     Creates a response object containing the BPMN region, Petri net model, and execution tree.
@@ -32,7 +32,7 @@ def create_response(region: RegionModel, petri_net: PetriNet, im: TimeMarking, f
                            execution_tree=execution_tree_model)
 
 
-def petri_net_to_model(petri_net: PetriNet, im, fm) -> PetriNetModel:
+def petri_net_to_model(petri_net: WrapperPetriNet, im, fm) -> PetriNetModel:
     transitions = []
     for t in petri_net.transitions:
         obj = PetriNetModel.TransitionModel(id=t.name,
@@ -67,15 +67,13 @@ def petri_net_to_model(petri_net: PetriNet, im, fm) -> PetriNetModel:
                          initial_marking=model_im, final_marking=model_fm)
 
 
-def petri_net_to_dot(petri_net: PetriNet, im, fm) -> str:
+def petri_net_to_dot(petri_net: WrapperPetriNet, im, fm) -> str:
     """
     Converts a Petri net to its DOT representation.
     """
     from pm4py.visualization.petri_net import visualizer as pn_visualizer
     gviz = pn_visualizer.apply(petri_net, im, fm)
     dot_string = gviz.pipe(format="dot").decode()
-
-    gviz.view()
 
     return dot_string
 

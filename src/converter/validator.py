@@ -220,8 +220,8 @@ def __choice_validator(region: RegionModel, expected_impact_length: int = None):
         return False, None
 
     # non devo avere una distribuzione di probabilità
-    if region.children is not None:
-        logger.error(f"Regione Scelta {region.label} di id:{region.id} non deve avere figli")
+    if region.distribution is not None:
+        logger.error(f"Regione Scelta {region.label} di id:{region.id} non deve avere probabilità")
 
     # se ho la distribuzione di probabilità allora deve essere vicino a 1
     if region.distribution:

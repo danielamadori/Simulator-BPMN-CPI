@@ -4,7 +4,7 @@ from typing import Dict, Generic
 from pm4py.objects.petri_net.obj import Marking
 from pm4py.objects.petri_net.semantics import PetriNetSemantics
 
-from model.petri_net.wrapper import PetriNet
+from model.petri_net.wrapper import WrapperPetriNet
 from utils.net_utils import NetUtils
 from model.types import N, T, M
 
@@ -23,10 +23,10 @@ def get_place_by_name(net, place_name):
 
 class TimeMarking:
     __marking: Marking
-    __age: dict[PetriNet.Place, float]
-    __keys: set[PetriNet.Place]
+    __age: dict[WrapperPetriNet.Place, float]
+    __keys: set[WrapperPetriNet.Place]
 
-    def __init__(self, marking: Marking, age: Dict[PetriNet.Place, float] = None):
+    def __init__(self, marking: Marking, age: Dict[WrapperPetriNet.Place, float] = None):
         if age is None:
             age = {}
 
@@ -53,10 +53,10 @@ class TimeMarking:
         )  # Restituisce una copia per mantenere l'immutabilità
 
     @property
-    def age(self) -> Dict[PetriNet.Place, float]:
+    def age(self) -> Dict[WrapperPetriNet.Place, float]:
         return self.__age.copy()  # Restituisce una copia per mantenere l'immutabilità
 
-    def keys(self) -> set[PetriNet.Place]:
+    def keys(self) -> set[WrapperPetriNet.Place]:
         return self.__keys.copy()
 
     def add_time(self, time):

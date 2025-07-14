@@ -2,10 +2,9 @@ import logging
 from typing import List
 
 from pm4py.objects.petri_net.obj import Marking
-from pm4py.objects.petri_net.utils.petri_utils import add_arc_from_to
 
 from converter.validator import region_validator
-from model.petri_net.wrapper import PetriNet
+from model.petri_net.wrapper import WrapperPetriNet, add_arc_from_to
 from model.region import RegionModel, RegionType
 from model.petri_net.time_spin import TimeMarking
 from utils.exceptions import ValidationError
@@ -42,16 +41,16 @@ class RegionProp:
         self.distribution = distribution
 
 
-def get_place_prop(place: PetriNet.Place):
+def get_place_prop(place: WrapperPetriNet.Place):
     return place.properties
 
 
-def get_trans_prop(trans: PetriNet.Transition):
+def get_trans_prop(trans: WrapperPetriNet.Transition):
     return trans.properties
 
 
 def create_place(place_id: str, region: RegionModel):
-    place = PetriNet.Place(
+    place = WrapperPetriNet.Place(
         place_id,
     )
 
@@ -71,7 +70,7 @@ def create_prop(region: RegionModel):
 def create_transition(
         trans_id: str, region: RegionModel, probability: float = 1, stop: bool = False
 ):
-    trans = PetriNet.Transition(trans_id, label=region.label)
+    trans = WrapperPetriNet.Transition(trans_id, label=region.label)
 
     trans.properties[PropertiesKeys.ENTRY_RID] = region.id
     trans.properties[PropertiesKeys.EXIT_RID] = None
@@ -88,11 +87,11 @@ def from_region(region: RegionModel):
         logger.error("Lancio eccezzione perchè i dati forniti non sono validi")
         raise ValidationError()
     else:
-        logger.info("Validazione avvenuta con successo\n")
+        logger.info("Validazione avvenuta con successo")
 
-    net = PetriNet()
+    net = WrapperPetriNet()
 
-    def rec(region: RegionModel, source: PetriNet.Place | None = None):
+    def rec(region: RegionModel, source: WrapperPetriNet.Place | None = None):
         if region.is_task():
             # Task
             # Entry Place

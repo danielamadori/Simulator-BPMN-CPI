@@ -7,7 +7,7 @@ from pm4py.objects.petri_net.utils.petri_utils import add_arc_from_to, get_trans
 from pydantic import model_validator, BaseModel
 
 from model.extree import ExTree
-from model.petri_net.wrapper import PetriNet
+from model.petri_net.wrapper import WrapperPetriNet
 from model.region import RegionModel, RegionType
 from model.snapshot import Snapshot
 from model.petri_net.time_spin import TimeMarking, get_place_by_name
@@ -76,8 +76,6 @@ class PetriNetModel(pydantic.BaseModel):
     final_marking: Marking
 
     class Config:
-        allow_mutation = False
-        frozen = True
         use_enum_values = True
 
 
@@ -110,8 +108,6 @@ class ExecutionTreeModel(pydantic.BaseModel):
     current_node: str
 
     class Config:
-        allow_mutation = False
-        frozen = True
         use_enum_values = True
 
 
@@ -126,8 +122,6 @@ class ExecuteRequest(pydantic.BaseModel):
     choices: list[str] | None = None
 
     class Config:
-        allow_mutation = False
-        frozen = True
         use_enum_values = True
 
     @model_validator(mode='after')
@@ -144,7 +138,7 @@ class ExecuteRequest(pydantic.BaseModel):
 
         return self
 
-    def to_object(self) -> Tuple[RegionModel, PetriNet, TimeMarking, TimeMarking, ExTree, list[T]]:
+    def to_object(self) -> Tuple[RegionModel, WrapperPetriNet, TimeMarking, TimeMarking, ExTree, list[T]]:
         """
         Converts the ExecuteRequest to its component objects.
         """
@@ -171,7 +165,7 @@ class ExecuteRequest(pydantic.BaseModel):
         if self.petri_net is None:
             return None
 
-        petri_net = PetriNet(name=self.petri_net.name)
+        petri_net = WrapperPetriNet(name=self.petri_net.name)
 
         transitions = {}
         for transition in self.petri_net.transitions:
@@ -182,7 +176,7 @@ class ExecuteRequest(pydantic.BaseModel):
                 PropertiesKeys.ENTRY_RID: transition.region_id,
                 PropertiesKeys.PROBABILITY: transition.probability
             }
-            net_transition = PetriNet.Transition(name=transition.id, label=transition.label, properties=prop)
+            net_transition = WrapperPetriNet.Transition(name=transition.id, label=transition.label, properties=prop)
             transitions[transition.id] = net_transition
             petri_net.transitions.add(net_transition)
 
@@ -196,11 +190,9 @@ class ExecuteRequest(pydantic.BaseModel):
                 PropertiesKeys.DURATION: place.duration,
                 PropertiesKeys.IMPACTS: place.impacts
             }
-            net_place = PetriNet.Place(name=place.id, properties=prop)
+            net_place = WrapperPetriNet.Place(name=place.id, properties=prop)
             places[place.id] = net_place
             petri_net.places.add(net_place)
-
-        arcs = []
 
         for arc in self.petri_net.arcs:
             source = None

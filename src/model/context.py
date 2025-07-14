@@ -1,6 +1,6 @@
 
 from converter.spin import from_region
-from model.petri_net.wrapper import PetriNet
+from model.petri_net.wrapper import WrapperPetriNet
 from model.region import RegionModel
 from model.petri_net.time_spin import TimeMarking, TimeNetSematic
 from strategy.execution import ExecutionInterface, ClassicExecution
@@ -20,7 +20,7 @@ class NetContext:
     _id: str
     region: RegionModel
     semantic: TimeNetSematic
-    net: PetriNet
+    net: WrapperPetriNet
     initial_marking: TimeMarking
     final_marking: TimeMarking
     strategy: ExecutionInterface

@@ -2,7 +2,7 @@ import pm4py
 from typing_extensions import override
 
 
-class PetriNet(pm4py.PetriNet):
+class WrapperPetriNet(pm4py.PetriNet):
     """
     Wrapper class for PetriNet to allow for custom properties.
     """
@@ -11,13 +11,14 @@ class PetriNet(pm4py.PetriNet):
         """
         Custom Place class that can hold additional properties.
         """
+
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
             self.custom_properties = {}
 
         @override
         def __eq__(self, other):
-            if not isinstance(other, PetriNet.Place):
+            if not isinstance(other, WrapperPetriNet.Place):
                 return False
             return other.name == self.name
 
@@ -41,13 +42,14 @@ class PetriNet(pm4py.PetriNet):
         """
         Custom Transition class that can hold additional properties.
         """
+
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
             self.custom_properties = {}
 
         @override
         def __eq__(self, other):
-            if not isinstance(other, PetriNet.Transition):
+            if not isinstance(other, WrapperPetriNet.Transition):
                 return False
             return other.name == self.name
 
@@ -71,6 +73,7 @@ class PetriNet(pm4py.PetriNet):
         """
         Custom Arc class that can hold additional properties.
         """
+
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
             self.custom_properties = {}
@@ -97,7 +100,7 @@ class PetriNet(pm4py.PetriNet):
 
     @override
     def __eq__(self, other):
-        if not isinstance(other, PetriNet):
+        if not isinstance(other, WrapperPetriNet):
             return False
 
         for place in self.places:
@@ -125,3 +128,22 @@ class PetriNet(pm4py.PetriNet):
         Get a custom property from the PetriNet.
         """
         return self.custom_properties.get(key, None)
+
+
+def add_arc_from_to(fr, to, net, weight=1, type=None) -> WrapperPetriNet.Arc:
+    """
+    Function used instead of pm4py.objects.petri_net.utils.petri_utils.add_arc_from_to to add wrapped arc.
+
+    :param fr: transition/place from
+    :param to:  transition/place to
+    :param net: net to use
+    :param weight: weight associated to the arc
+    :param type: type of arc. Possible values: None
+    :return: arc attached to petri net
+    """
+    a = WrapperPetriNet.Arc(fr, to, weight)
+
+    net.arcs.add(a)
+    fr.out_arcs.add(a)
+    to.in_arcs.add(a)
+    return a
