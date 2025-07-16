@@ -46,10 +46,9 @@ def execute(data: ExecuteRequest):
             ctx = NetContext(region=region, net=net, im=im, fm=fm)
             current_marking = extree.current_node.snapshot.marking
 
-            all_transitions_fired = get_all_choices(ctx, current_marking, choices)
             new_marking, probability, impacts, execution_time = ctx.strategy.consume(ctx, current_marking, choices)
             new_snapshot = Snapshot(marking=new_marking, probability=probability, impacts=impacts, time=execution_time)
-            extree.add_snapshot(ctx, new_snapshot, all_transitions_fired)
+            extree.add_snapshot(ctx, new_snapshot)
 
         return create_response(region, net, im, fm, extree).model_dump(exclude_unset=True, exclude_none=True,
                                                                        exclude_defaults=True)

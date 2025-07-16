@@ -1,6 +1,6 @@
 import pytest
 
-from model.extree import ExTree, get_current_sorted_children
+from model.extree import ExTree
 from model.snapshot import Snapshot
 
 PWD = "/home/matthewexe/Documents/Uni/Tirocinio/code"
