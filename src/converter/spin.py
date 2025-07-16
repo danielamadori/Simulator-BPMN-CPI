@@ -22,9 +22,9 @@ logger = logging.getLogger(__name__)
 #         cls.counter += 1
 #         return f"{cls.counter}"
 
-def serial_generator():
+def serial_generator(initial: int = 0):
     """Generates a unique ID for each call."""
-    counter = 0
+    counter = initial
     while True:
         yield counter
         counter += 1
