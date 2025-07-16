@@ -1,32 +1,39 @@
-import itertools
 import logging
-from copy import copy
+from typing import Iterator
 
 from anytree import Node, PreOrderIter, RenderTree, findall_by_attr
 
 from utils.net_utils import NetUtils
-from .context import NetContext
 from .snapshot import Snapshot
-from .types import T, M
 
 logger = logging.getLogger(__name__)
 
-def serial_generator():
+
+def serial_generator(initial: int = 1):
     """Generates a unique serial number each time it is called."""
-    n = 1
+    n = initial
     while True:
         yield n
         n += 1
 
-id_generator = serial_generator()
 
 class ExTree:
+    """
+    ExTree is a tree structure for managing and traversing snapshots of Petri net markings.
+
+    Attributes:
+        current_node (Node): The current node in the tree.
+        __root (Node): The root node of the tree.
+        __id_generator (Iterator[int]): Iterator for generating unique node IDs.
+    """
     __separator = '/'
     current_node: Node
     __root: Node
+    __id_generator: Iterator[int]
 
     # Struttura Node: name[facoltativo],id,snapshot[oggetto di interesse]
-    def __init__(self, root: Snapshot | Node):
+    def __init__(self, root: Snapshot | Node, generator: Iterator[int] = None):
+        self.__id_generator = generator or serial_generator()
         logger.info("Inizializzazione ExTree")
         if root is None:
             logger.error("Lo Snapshot Root è None")
@@ -35,6 +42,12 @@ class ExTree:
         if isinstance(root, Node):
             self.__root = root
             self.current_node = root
+            if generator is None:
+                max_id = -1
+                for node in PreOrderIter(root):
+                    max_id = max(max_id, int(node.id))
+
+                self.__id_generator = serial_generator(max_id + 1)
             return
 
         _root = Node(name="Root", id='0', snapshot=root)
@@ -76,16 +89,13 @@ class ExTree:
         return list(result)[0] if len(list(result)) == 1 else None
 
     # Costruzione dell'albero
-    def add_snapshot(self, ctx, snapshot: Snapshot, user_choices: list[T], set_as_current: bool = True):
+    def add_snapshot(self, ctx, snapshot: Snapshot, set_as_current: bool = True):
         parent = self.current_node
         for node in self:
             if node.parent == parent and node.snapshot.marking == snapshot.marking:
                 return node
 
-        # idx = get_sorted_id(ctx, self.current_node.snapshot.marking, user_choices)
-        # _id = "{}{}{}".format(parent.name, ExTree.__separator, idx)
-
-        _id = next(id_generator)
+        _id = next(self.__id_generator)
 
         child_node = Node(
             name=str(_id), id=str(_id), snapshot=snapshot, parent=parent
@@ -103,7 +113,7 @@ class ExTree:
         if node is None or node not in self:
             return False
 
-        self.current_node = node
+        self.current_node = self.get_node_by_id(node.id)
         return True
 
     # Visualizzazione Albero
@@ -145,63 +155,3 @@ def is_equal(node1: Node, node2: Node):
         return False
 
     return True
-
-
-def get_sorted_id(ctx, current_marking: M, choices: list[T]):
-    """
-    Returns the index of the new marking in the sorted list of children of the current node.
-    This function assumes that the children are sorted based on the active places name in marking.
-    :param ctx:
-    :param current_marking:
-    :param choices:
-    :return:
-    """
-    sorted_child = get_current_sorted_children(ctx, current_marking)
-
-    # Fire the choices to get the new marking
-    new_marking = copy(current_marking)
-    for t in choices:
-        new_marking = ctx.semantic.fire(ctx.net, t, new_marking)
-
-    idx_child = sorted_child.index(new_marking)
-
-    if idx_child == -1:
-        raise ValueError("The new snapshot can't be reached from the current node")
-
-    return idx_child
-
-
-def get_current_sorted_children(ctx: NetContext, marking) -> list[M]:
-    """
-    Returns the sorted list of children for the current node based on the current marking.
-    The children are sorted based on the active places name in the marking.
-    :param ctx:
-    :param marking:
-    :return:
-    """
-    curr_time_marking = marking
-
-    # transition_permutations = itertools.permutations(ctx.semantic.enabled_transitions(ctx.net, marking))
-    transition_group_by_in_place = itertools.groupby(ctx.semantic.enabled_transitions(ctx.net, marking), key=lambda t: list(t.in_arcs)[0].source)
-    transition_groups = [tuple(group) for key, group in transition_group_by_in_place]
-    transition_combinations = list(itertools.product(*transition_groups))
-    key_to_time_marking = {}
-
-    # For each combination of transitions, we fire them and get the new marking
-    for combination in transition_combinations:
-        key_of_time_marking = [t.name for t in combination if t is not None]
-        key_of_time_marking.sort()
-
-        # Fire all transitions in the combination to get the new marking
-        temp = copy(curr_time_marking)
-        for t in combination:
-            if t is not None:
-                temp = ctx.semantic.execute(ctx.net, t, temp)
-
-        key_to_time_marking.update({tuple(key_of_time_marking): temp})
-
-    children = []
-    for key_row in sorted(list(key_to_time_marking.keys())):
-        children.append(key_to_time_marking[key_row])
-
-    return children

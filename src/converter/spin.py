@@ -13,14 +13,21 @@ from utils.net_utils import PropertiesKeys
 logger = logging.getLogger(__name__)
 
 
-# id
-class IDGenerator:
-    counter = 0
+# # id
+# class IDGenerator:
+#     counter = 0
+#
+#     @classmethod
+#     def next_id(cls):
+#         cls.counter += 1
+#         return f"{cls.counter}"
 
-    @classmethod
-    def next_id(cls):
-        cls.counter += 1
-        return f"{cls.counter}"
+def serial_generator():
+    """Generates a unique ID for each call."""
+    counter = 0
+    while True:
+        yield counter
+        counter += 1
 
 
 class RegionProp:
@@ -90,14 +97,14 @@ def from_region(region: RegionModel):
         logger.info("Validazione avvenuta con successo")
 
     net = WrapperPetriNet()
-
+    id_generator = serial_generator()
     def rec(region: RegionModel, source: WrapperPetriNet.Place | None = None):
         if region.is_task():
             # Task
             # Entry Place
             logger.debug(f"Task\tRegion: {region.id}")
             if not source:
-                entry_task_id = IDGenerator.next_id()
+                entry_task_id = str(next(id_generator))
                 entry_place = create_place(entry_task_id, region)
                 net.places.add(entry_place)
             else:
@@ -107,7 +114,7 @@ def from_region(region: RegionModel):
                 entry_place.properties.update({PropertiesKeys.EXIT_RID: _tmp_id})
 
             # Exit place
-            exit_task_id = IDGenerator.next_id()
+            exit_task_id = str(next(id_generator))
             exit_place = create_place(exit_task_id, region)
             exit_place.properties.update(
                 {
@@ -122,7 +129,7 @@ def from_region(region: RegionModel):
             net.places.add(exit_place)
 
             # Transition
-            trans_id = IDGenerator.next_id()
+            trans_id = str(next(id_generator))
             trans = create_transition(trans_id, region)
             net.transitions.add(trans)
 
@@ -137,7 +144,7 @@ def from_region(region: RegionModel):
             # Entry Place
             logger.debug(f"Parallel\tRegion: {region.id}")
             if not source:
-                entry_task_id = IDGenerator.next_id()
+                entry_task_id = str(next(id_generator))
                 entry_place = create_place(entry_task_id, region)
                 net.places.add(entry_place)
             else:
@@ -147,7 +154,7 @@ def from_region(region: RegionModel):
                 entry_place.properties.update({PropertiesKeys.EXIT_RID: _tmp_id})
 
             # Exit place
-            exit_task_id = IDGenerator.next_id()
+            exit_task_id = str(next(id_generator))
             exit_place = create_place(exit_task_id, region)
             exit_place.properties.update(
                 {
@@ -161,12 +168,12 @@ def from_region(region: RegionModel):
             net.places.add(exit_place)
 
             # Entry transition
-            entry_trans_id = IDGenerator.next_id()
+            entry_trans_id = str(next(id_generator))
             entry_trans = create_transition(entry_trans_id, region)
             net.transitions.add(entry_trans)
 
             # Exit Transition
-            exit_trans_id = IDGenerator.next_id()
+            exit_trans_id = str(next(id_generator))
             exit_trans = create_transition(exit_trans_id, region)
             net.transitions.add(exit_trans)
 
@@ -183,7 +190,7 @@ def from_region(region: RegionModel):
         elif region.is_sequential():
             logger.debug(f"Sequential\tRegion: {region.id}")
             if not source:
-                entry_task_id = IDGenerator.next_id()
+                entry_task_id = str(next(id_generator))
                 entry_place = create_place(entry_task_id, region)
                 net.places.add(entry_place)
             else:
@@ -203,7 +210,7 @@ def from_region(region: RegionModel):
             logger.debug(f"Nature or Choice\tRegion: {region.id}")
             # Nature or Choice
             if not source:
-                entry_task_id = IDGenerator.next_id()
+                entry_task_id = str(next(id_generator))
                 entry_place = create_place(entry_task_id, region)
                 net.places.add(entry_place)
             else:
@@ -213,7 +220,7 @@ def from_region(region: RegionModel):
                 entry_place.properties.update({PropertiesKeys.EXIT_RID: _tmp_id})
 
             # Exit place
-            exit_task_id = IDGenerator.next_id()
+            exit_task_id = str(next(id_generator))
             exit_place = create_place(exit_task_id, region)
             exit_place.properties.update(
                 {
@@ -235,7 +242,7 @@ def from_region(region: RegionModel):
                 child_entry, child_exit = rec(child)
 
                 # Entry transition for a child
-                entry_child_trans_id = IDGenerator.next_id()
+                entry_child_trans_id = str(next(id_generator))
                 entry_child_trans = create_transition(
                     entry_child_trans_id,
                     region,
@@ -247,7 +254,7 @@ def from_region(region: RegionModel):
                 net.transitions.add(entry_child_trans)
 
                 # Exit transition for a child
-                exit_child_trans_id = IDGenerator.next_id()
+                exit_child_trans_id = str(next(id_generator))
                 exit_child_trans = create_transition(
                     exit_child_trans_id,
                     region,
@@ -265,7 +272,7 @@ def from_region(region: RegionModel):
             logger.debug(f"Loop\tRegion: {region.id}")
             # Loop
             if not source:
-                entry_task_id = IDGenerator.next_id()
+                entry_task_id = str(next(id_generator))
                 entry_place = create_place(entry_task_id, region)
                 net.places.add(entry_place)
             else:
@@ -275,7 +282,7 @@ def from_region(region: RegionModel):
                 entry_place.properties.update({PropertiesKeys.EXIT_RID: _tmp_id})
 
             # Exit place
-            exit_task_id = IDGenerator.next_id()
+            exit_task_id = str(next(id_generator))
             exit_place = create_place(exit_task_id, region)
             exit_place.properties.update(
                 {
@@ -289,7 +296,7 @@ def from_region(region: RegionModel):
             net.places.add(exit_place)
 
             # Entry transition
-            entry_trans_id = IDGenerator.next_id()
+            entry_trans_id = str(next(id_generator))
             entry_trans = create_transition(entry_trans_id, region)
             # entry_trans.label = "Entry " + region.label
             entry_trans.properties[PropertiesKeys.LABEL] = "Entry " + region.label
@@ -299,14 +306,14 @@ def from_region(region: RegionModel):
             child_entry_place, child_exit_place = rec(region.children[0])
 
             # Loop transition
-            loop_trans_id = IDGenerator.next_id()
+            loop_trans_id = str(next(id_generator))
             loop_trans = create_transition(loop_trans_id, region, probability=region.distribution, stop=True)
             # loop_trans.label = "Loop " + region.label
             loop_trans.properties[PropertiesKeys.LABEL] = "Loop " + region.label
             net.transitions.add(loop_trans)
 
             # Exit transition
-            exit_trans_id = IDGenerator.next_id()
+            exit_trans_id = str(next(id_generator))
             exit_trans = create_transition(exit_trans_id, region, probability=1-region.distribution, stop=True)
             # exit_trans.label = "Exit " + region.label
             exit_trans.properties[PropertiesKeys.LABEL] = "Exit " + region.label
