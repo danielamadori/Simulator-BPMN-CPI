@@ -26,6 +26,7 @@ class RegionModel(BaseModel):
     children: List[RegionModel] | None = None
     distribution: List[float] | float | None = None
     impacts: List[float] | None = None
+    bound: int | None = None
 
     def is_parallel(self) -> bool:
         return self.type == RegionType.PARALLEL

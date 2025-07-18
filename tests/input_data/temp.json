@@ -1,0 +1,61 @@
+{
+  "id": "0",
+  "label": "Parallel",
+  "type": "parallel",
+  "children": [
+    {
+      "id": "1",
+      "label": "Sequential",
+      "type": "sequential",
+      "children": [
+        {
+          "id": "3",
+          "label": "Task 3",
+          "type": "task",
+          "duration": 1,
+          "impacts": [
+            1,
+            1
+          ]
+        },
+        {
+          "id": "4",
+          "label": "Choice",
+          "type": "choice",
+          "children": [
+            {
+              "id": "5",
+              "label": "Task 5",
+              "type": "task",
+              "duration": 1,
+              "impacts": [
+                1,
+                1
+              ]
+            },
+            {
+              "id": "6",
+              "label": "Task 6",
+              "type": "task",
+              "duration": 2,
+              "impacts": [
+                2,
+                2
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "label": "Task 2",
+      "type": "task",
+      "duration": 2,
+      "impacts": [
+        2,
+        2
+      ]
+    }
+  ]
+}

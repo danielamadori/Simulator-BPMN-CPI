@@ -3,10 +3,10 @@ from pydantic import BaseModel
 
 from model.endpoints.execute.request import PetriNetModel, ExecutionTreeModel
 from model.extree import ExTree
+from model.petri_net.time_spin import TimeMarking
 from model.petri_net.wrapper import WrapperPetriNet
 from model.region import RegionModel
 from model.snapshot import Snapshot
-from model.petri_net.time_spin import TimeMarking
 from utils.net_utils import NetUtils
 
 
@@ -28,7 +28,8 @@ def create_response(region: RegionModel, petri_net: WrapperPetriNet, im: TimeMar
     petri_net_model = petri_net_to_model(petri_net, im, fm)
     execution_tree_model = extree_to_model(extree)
 
-    return ExecuteResponse(bpmn=region, petri_net=petri_net_model, petri_net_dot=petri_net_to_dot(petri_net, extree.current_node.snapshot.marking, fm.marking),
+    return ExecuteResponse(bpmn=region, petri_net=petri_net_model,
+                           petri_net_dot=petri_net_to_dot(petri_net, extree.current_node.snapshot.marking, fm.tokens),
                            execution_tree=execution_tree_model)
 
 
@@ -52,7 +53,8 @@ def petri_net_to_model(petri_net: WrapperPetriNet, im, fm) -> PetriNetModel:
                                        entry_region_id=NetUtils.Place.get_entry_id(p),
                                        exit_region_id=NetUtils.Place.get_exit_id(p),
                                        duration=NetUtils.Place.get_duration(p),
-                                       impacts=NetUtils.Place.get_impacts(p))
+                                       impacts=NetUtils.Place.get_impacts(p),
+                                       visit_limit=NetUtils.Place.get_visit_limit(p))
         places.append(obj)
 
     arcs = []
@@ -72,7 +74,11 @@ def petri_net_to_dot(petri_net: WrapperPetriNet, im, fm) -> str:
     Converts a Petri net to its DOT representation.
     """
     from pm4py.visualization.petri_net import visualizer as pn_visualizer
-    gviz = pn_visualizer.apply(petri_net, im, fm)
+    marking = {}
+    for place in im.keys():
+        token, age, visit_count = im.tokens[place], im.age.get(place, 0.0), im.visit_count.get(place, 0)
+        marking[place] = (token, age, visit_count)
+    gviz = pn_visualizer.apply(petri_net, marking, fm)
     dot_string = gviz.pipe(format="dot").decode()
 
     return dot_string
@@ -82,8 +88,14 @@ def marking_to_model(marking: TimeMarking) -> dict[str, dict[str, float]]:
     """
     Converts a marking to a model representation.
     """
-    return {place.name: {"token": marking.marking.get(place, 0), "age": marking.age.get(place, 0.0)} for place in
-            marking.keys()}
+    result = {}
+    for place in marking.keys():
+        result[place.name] = {
+            "token": marking.tokens.get(place, 0),
+            "age": marking.age.get(place, 0.0),
+            "visit_count": marking.visit_count.get(place, 0)
+        }
+    return result
 
 
 def extree_to_model(extree: ExTree) -> ExecutionTreeModel:

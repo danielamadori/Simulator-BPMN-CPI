@@ -1,12 +1,14 @@
+import copy
 import logging
-from typing import Dict, Generic
+from collections import defaultdict
+from typing import Dict
 
 from pm4py.objects.petri_net.obj import Marking
 from pm4py.objects.petri_net.semantics import PetriNetSemantics
 
 from model.petri_net.wrapper import WrapperPetriNet
+from model.region import RegionType
 from utils.net_utils import NetUtils
-from model.types import N, T, M
 
 logger = logging.getLogger(__name__)
 
@@ -23,51 +25,79 @@ def get_place_by_name(net, place_name):
 
 class TimeMarking:
     __marking: Marking
-    __age: dict[WrapperPetriNet.Place, float]
     __keys: set[WrapperPetriNet.Place]
 
-    def __init__(self, marking: Marking, age: Dict[WrapperPetriNet.Place, float] = None):
+    def __init__(self, marking: Marking, age: Dict[WrapperPetriNet.Place, float] | None = None,
+                 visit_count: dict[WrapperPetriNet.Place, int] | None = None):
+
         if age is None:
             age = {}
+        if visit_count is None:
+            visit_count = {}
 
-        self.__marking = marking.copy()
-        self.__age = age.copy()
+        # Set marking
+        self.__marking = copy.copy(marking)
         self.__keys = set(marking.keys())
 
-        # Verifica che le chiavi di `marking` siano un superset delle chiavi di `age`
-        if not self.__keys.issuperset(age.keys()):
-            logger.error(
-                "le chiavi di `marking` non sono un superset delle chiavi di `age`"
-            )
-            raise ValueError(f"Invalid keys in 'age': {age.keys() - self.__keys}")
+        # Set data
+        self.__age = defaultdict(float)
+        self.__visit_count = defaultdict(int)
+        for place in self.__keys:
+            if place in age or place.name in age:
+                self.__age[place] = age[place]
 
-        # Aggiungi le chiavi di default a `_age` se non sono presenti
-        for x in self.__keys:
-            if x not in self.__age:
-                self.__age[x] = 0
+            if place in visit_count or place.name in visit_count:
+                self.__visit_count[place] = visit_count[place]
 
     @property
-    def marking(self) -> Marking:
-        return (
-            self.__marking.copy()
-        )  # Restituisce una copia per mantenere l'immutabilità
+    def tokens(self) -> Marking:
+        return copy.copy(self.__marking)  # Restituisce una copia per mantenere l'immutabilità
 
     @property
     def age(self) -> Dict[WrapperPetriNet.Place, float]:
-        return self.__age.copy()  # Restituisce una copia per mantenere l'immutabilità
+        return copy.copy(self.__age)  # Restituisce una copia per mantenere l'immutabilità
+
+    @property
+    def visit_count(self) -> Dict[WrapperPetriNet.Place, int]:
+        return copy.copy(self.__visit_count)
 
     def keys(self) -> set[WrapperPetriNet.Place]:
-        return self.__keys.copy()
+        return copy.copy(self.__keys)
 
     def add_time(self, time):
         """
         Aggiunge un tempo specificato a tutte le età dei posti nel marking.
         Ritorna una nuova istanza di TimeMarkign con le età aggiornate.
         """
-        new_age = {k: v + time for k, v in self.__age.items() if self.__marking[k] > 0}
-        return TimeMarking(self.marking, new_age)
+        new_age = {}
+        for key in self.__keys:
+            token, age = self[key]["token"], self[key]["age"]
+            if token > 0:
+                new_age[key] = age + time
 
-    def __getitem__(self, key: str):
+        copy_visit_count = copy.copy(self.__visit_count)
+        return TimeMarking(self.tokens, age=new_age, visit_count=copy_visit_count)
+
+    def increase_visit_count(self, places: WrapperPetriNet.Place | list[WrapperPetriNet.Place]):
+        """
+        Incrementa il contatore di visita per i posti specificati.
+        Ritorna una nuova istanza di TimeMarking con i contatori aggiornati.
+        """
+        if isinstance(places, WrapperPetriNet.Place):
+            places = [places]
+
+        new_visit_count = copy.copy(self.__visit_count)
+        for place in places:
+            if place not in self:
+                continue
+            if place in new_visit_count:
+                new_visit_count[place] += 1
+            else:
+                new_visit_count[place] = 1
+
+        return TimeMarking(self.tokens, age=self.age, visit_count=new_visit_count)
+
+    def __getitem__(self, key: str | WrapperPetriNet.Place):
         # Se `key` è una stringa, cerca la corrispondenza tra le chiavi(place)
         if isinstance(key, str):
             for place in self.__keys:
@@ -76,7 +106,11 @@ class TimeMarking:
 
         for place in self.__keys:
             if place.name == key.name:
-                return self.marking[place], self.age[place]
+                return {
+                    "token": self.__marking[place],
+                    "age": self.__age.get(place, 0),
+                    "visit_count": self.__visit_count.get(place, 0)
+                }
 
         raise KeyError(f"Invalid key: '{key}' does not exists.")
 
@@ -103,51 +137,60 @@ class TimeMarking:
         return True
 
     def __repr__(self):
-        result = {k: self[k] for k in self.keys()}
+        result = {key: self[key] for key in self.keys()}
         return repr(result)
 
     def __str__(self):
         return repr(self)
 
     def __copy__(self):
-        return TimeMarking(self.marking.copy(), self.age.copy())
+        return TimeMarking(copy.copy(self.tokens), copy.copy(self.age), copy.copy(self.__visit_count))
 
     def __deepcopy__(self, memo):
         return self.__copy__()
 
 
-class TimeNetSematic(Generic[N]):
+class TimeNetSematic:
 
-    def is_enabled(self, net: N, transition: T, marking: M):
+    def is_enabled(self, net: WrapperPetriNet, transition: WrapperPetriNet.Transition, marking: TimeMarking) -> bool:
         for arc in transition.in_arcs:
-            p = arc.source
-            d = NetUtils.Place.get_duration(p)
-            token, age = marking[p]
-            if token < arc.weight or age < d:
+            input_place = arc.source
+            duration = NetUtils.Place.get_duration(input_place)
+            token, age = marking[input_place]["token"], marking[input_place]["age"]
+            if token < arc.weight or age < duration:
+                return False
+            if (NetUtils.Transition.get_stop(transition)
+                    and NetUtils.Place.get_visit_limit(input_place) is not None
+                    and NetUtils.Place.get_visit_limit(input_place) <= marking[input_place]["visit_count"]
+                    and NetUtils.get_type(transition) == RegionType.LOOP
+                    and transition.label.startswith("Loop")):
                 return False
 
         return True
 
-    def fire(self, net: N, transition: T, marking: M):
+    def fire(self, net: WrapperPetriNet, transition: WrapperPetriNet.Transition, marking: TimeMarking) -> TimeMarking:
         logger.debug(f"Sparo la transazione{transition.label}")
         new_age = marking.age
+        new_visit_count = marking.visit_count
         for arc in transition.in_arcs:
-            p = arc.source
-            new_age[p] = 0
+            input_place = arc.source
+            new_age[input_place] = 0
+            new_visit_count[input_place] += 1
 
-        tokens = PetriNetSemantics.fire(net, transition, marking.marking)
+        tokens = PetriNetSemantics.fire(net, transition, marking.tokens)
         new_marking = Marking(tokens)
 
-        return TimeMarking(new_marking, new_age)
+        return TimeMarking(new_marking, new_age, new_visit_count)
 
-    def execute(self, net: N, transition: T, marking: M):
+    def execute(self, net: WrapperPetriNet, transition: WrapperPetriNet.Transition,
+                marking: TimeMarking) -> TimeMarking:
         logger.debug(f"Eseguo la transazione{transition.label}")
         if not self.is_enabled(net, transition, marking):
             return marking
 
         return self.fire(net, transition, marking)
 
-    def enabled_transitions(self, net: N, marking: M) -> set[T]:
+    def enabled_transitions(self, net: WrapperPetriNet, marking: TimeMarking) -> set[WrapperPetriNet.Transition]:
         enabled = set()
 
         for t in net.transitions:
@@ -156,91 +199,3 @@ class TimeNetSematic(Generic[N]):
                 enabled.add(t)
 
         return enabled
-
-# class Builder:
-#     def __init__(self):
-#         self.net = PetriNet()
-#         self.place_prop = {}
-#         self.trans_prop = {}
-#         self.d_match = {}
-
-#     def set_name(self, name: str):
-#         self.name = name
-
-#     def add_place(self, place: PetriNet.Place, prop: RegionModel):
-#         place.properties
-
-# class DataSPIN:
-
-#     places_prop: Dict[str, PlaceProp]
-#     transitions_prop: Dict[str, TransitionProp]
-
-#     @dataclass
-#     class PlaceProp:
-#         region_id: str
-#         label: str
-#         duration: float
-#         distribution: List[Tuple[float, str]]
-
-#     @dataclass
-#     class TransitionProp:
-#         region_id: str
-#         label: str
-#         impacts: List[float]
-
-#     def __init__(
-#         self,
-#         net: PetriNet,
-#         props: Dict[str, RegionProp],
-#         distribution_match: Dict[str, List[Tuple[float, str]]],
-#     ):
-#         self.net = net
-#         self.prop = props
-
-#         self.places_prop = dict()
-#         for place in net.places:
-#             id = place.name
-#             raw = props[id]
-#             d_match = distribution_match[id] if id in distribution_match else []
-#             self.places_prop.update(
-#                 {
-#                     id: DataSPIN.PlaceProp(
-#                         raw.region_id, raw.label, raw.duration, d_match
-#                     )
-#                 }
-#             )
-
-#         self.transitions_prop = dict()
-#         for trans in net.transitions:
-#             id = trans.name
-#             raw = props[id]
-#             self.transitions_prop.update(
-#                 {id: DataSPIN.TransitionProp(raw.region_id, raw.label, raw.impacts)}
-#             )
-
-#     def get_region_id(self, id):
-#         return self.prop[id].region_id
-
-#     def get_duration(self, id):
-#         if not self.is_place(id):
-#             None
-
-#         return self.places_prop[id].duration
-
-#     def is_transition(self, id):
-#         return id in self.transitions_prop
-
-#     def is_place(self, id):
-#         return id in self.places_prop
-
-#     def from_region(region: RegionModel):
-#         pass
-
-#     def get_props(
-#         self, id: str
-#     ) -> Type[DataSPIN.PlaceProp] | Type[DataSPIN.TransitionProp]:
-#         if self.is_place(id):
-#             return self.places_prop[id]
-
-
-#         return self.transitions_prop[id]

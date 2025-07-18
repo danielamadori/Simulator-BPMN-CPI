@@ -1,18 +1,19 @@
 {
   "id": "1",
-    "type": "loop",
-    "label": "Loop painting",
+  "type": "loop",
+  "label": "Loop painting",
   "children": [
     {
       "id": "2",
       "type": "task",
-        "label": "HPHS painting",
-        "impacts": [
-            40,
-            1
-            ],
-        "duration": 1
+      "label": "HPHS painting",
+      "impacts": [
+        40,
+        1
+      ],
+      "duration": 1
     }
   ],
-  "distribution": 0.6
+  "distribution": 0.6,
+  "bound": 2
 }

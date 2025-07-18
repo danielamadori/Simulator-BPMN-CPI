@@ -21,6 +21,7 @@ type Marking = dict[str, dict[str, float]]
 def model_to_marking(petri_net_obj, marking_model: Marking):
     im = pm4py.Marking()
     age = {}
+    visit_count = {}
     net = petri_net_obj
     for place_name in marking_model:
         place_prop = marking_model[place_name]
@@ -29,7 +30,8 @@ def model_to_marking(petri_net_obj, marking_model: Marking):
             raise ValueError(f"Place '{place_name}' not found in the Petri net.")
         im[place] = int(place_prop.get('token', 0))
         age[place] = place_prop.get('age', 0.0)
-    return TimeMarking(im, age)
+        visit_count[place] = place_prop.get('visit_count', 0)
+    return TimeMarking(im, age, visit_count)
 
 
 # PetriNetModel
@@ -59,6 +61,7 @@ class PetriNetModel(pydantic.BaseModel):
         exit_region_id: str | None = None
         duration: float = 0.0
         impacts: list[float] | None = None
+        visit_limit: int | None = None
 
     class ArcModel(BaseModel):
         """
@@ -185,7 +188,8 @@ class ExecuteRequest(pydantic.BaseModel):
                 PropertiesKeys.ENTRY_RID: place.entry_region_id,
                 PropertiesKeys.EXIT_RID: place.exit_region_id,
                 PropertiesKeys.DURATION: place.duration,
-                PropertiesKeys.IMPACTS: place.impacts
+                PropertiesKeys.IMPACTS: place.impacts,
+                PropertiesKeys.VISIT_LIMIT: place.visit_limit,
             }
             net_place = WrapperPetriNet.Place(name=place.id, properties=prop)
             places[place.id] = net_place

@@ -61,7 +61,7 @@ def execute(data: ExecuteRequest):
         }
 
 
-# if __name__ == '__main__':
-#     import uvicorn
-#
-#     uvicorn.run(api, port=8001)
+if __name__ == '__main__':
+    import uvicorn
+
+    uvicorn.run(api, port=8001)

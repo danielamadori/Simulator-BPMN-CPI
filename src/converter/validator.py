@@ -1,12 +1,12 @@
-from model.region import RegionModel, RegionType
-import math
 import logging
+import math
+
+from model.region import RegionModel, RegionType
 
 logger = logging.getLogger(__name__)
 
 
 def region_validator(region: RegionModel):
-
     def explore(_r: RegionModel, expected_impact_length: int = None):
         logger.debug(f"Esploro la Region: {_r.label} id:{_r.id}")
         # controlli per tutti i tipi di regione
@@ -28,6 +28,9 @@ def region_validator(region: RegionModel):
         logger.debug(f"Expected_Value:{expected_impact_length}")
 
         if status is False:
+            return False, None
+
+        if _r.bound is not None and _r.type is not RegionType.LOOP:
             return False, None
 
         # se ho dei children
@@ -183,7 +186,7 @@ def __nature_validator(region: RegionModel, expected_impact_length: int = None):
 
     # devo avere la distribuzione di probabilità e  len(prob) = numero childern
     if not region.distribution or not isinstance(region.distribution, list) or len(region.distribution) != len(
-        region.children or []
+            region.children or []
     ):
         logger.error(
             f"Regione Natura {region.label} di id:{region.id} non ha distribuzione di probabilità oppure: len(prob) != numero childern"
@@ -243,6 +246,7 @@ def __choice_validator(region: RegionModel, expected_impact_length: int = None):
 
     return True, expected_impact_length
 
+
 def __loop_validator(region: RegionModel, expected_impact_length: int = None):
     logger.debug("Validatore Loop")
     children = region.children
@@ -254,6 +258,10 @@ def __loop_validator(region: RegionModel, expected_impact_length: int = None):
 
     if not isinstance(region.distribution, float) or region.distribution is None:
         logger.error(f"Regione Loop {region.id} deve avere una distribuzione di probabilità di tipo float")
+        return False, None
+
+    if region.bound is None or not isinstance(region.bound, (int, float)):
+        logger.error(f"Regione Loop {region.id} deve avere un bound definito")
         return False, None
 
     return True, expected_impact_length

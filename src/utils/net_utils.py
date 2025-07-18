@@ -1,7 +1,27 @@
 from enum import Enum
 
+from model.region import RegionModel
 from model.types import P, T, M
 
+def get_region_by_id(root_region: RegionModel, region_id: str) -> RegionModel | None:
+    """
+    Recursively searches for a region by its ID in the given root region.
+    :param root_region: The root region to start the search from.
+    :param region_id: The ID of the region to find.
+    :return: The RegionModel if found, otherwise None.
+    """
+    if root_region.id == region_id:
+        return root_region
+
+    if root_region.children is None or len(root_region.children) == 0:
+        return None
+
+    for subregion in root_region.children:
+        found_region = get_region_by_id(subregion, region_id)
+        if found_region:
+            return found_region
+
+    return None
 
 class NetUtils:
 
@@ -31,6 +51,10 @@ class NetUtils:
         def get_impacts(cls, place: P):
             return place.properties.get(PropertiesKeys.IMPACTS)
 
+        @classmethod
+        def get_visit_limit(cls, place: P):
+            return place.properties.get(PropertiesKeys.VISIT_LIMIT)
+
     class Transition:
 
         @classmethod
@@ -46,6 +70,7 @@ class NetUtils:
             return transition.properties.get(PropertiesKeys.STOP)
 
 
+
 class PropertiesKeys(Enum):
     ENTRY_RID = "entry_rid"  # Entry Region ID
     EXIT_RID = "exit_rid"  # Exit Region ID
@@ -55,6 +80,7 @@ class PropertiesKeys(Enum):
     IMPACTS = "impacts"
     PROBABILITY = "probability"
     STOP = "stop"
+    VISIT_LIMIT = 'fire_limit'
 
 
 def get_all_choices(ctx, marking: M, choices: list[T] = None) -> list[T]:
