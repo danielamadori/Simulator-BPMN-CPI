@@ -112,7 +112,11 @@ class TimeMarking:
                     "visit_count": self.__visit_count.get(place, 0)
                 }
 
-        raise KeyError(f"Invalid key: '{key}' does not exists.")
+        return {
+            "token": 0,
+            "age": 0,
+            "visit_count": 0
+        }
 
     def __contains__(self, el):
         # Se `el` è una stringa, cerca la corrispondenza tra le chiavi(place)

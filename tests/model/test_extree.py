@@ -2,6 +2,7 @@ import pytest
 
 from model.extree import ExTree
 from model.snapshot import Snapshot
+from strategy.execution import ClassicExecution, get_default_choices
 
 PWD = "/home/matthewexe/Documents/Uni/Tirocinio/code"
 
@@ -19,6 +20,7 @@ def ctx(region_model):
     """Fixture to create a NetContext from the region model"""
     from model.context import NetContext
     context = NetContext.from_region(region_model)
+    context.strategy = ClassicExecution()
     return context
 
 @pytest.fixture
@@ -49,7 +51,7 @@ def test_add(ctx, extree, saturated_snapshot, initial_snapshot):
     assert len(extree.get_nodes()) == 1
 
     saturated_marking, delta = ctx.strategy.saturate(ctx, initial_snapshot.marking)
-    choices = ctx.strategy.get_default_choices(ctx, saturated_marking)
+    choices = get_default_choices(ctx, saturated_marking)
 
     parent_node = extree.current_node
     new_node = extree.add_snapshot(ctx, saturated_snapshot, choices)

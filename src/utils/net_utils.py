@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import logging
 from enum import Enum
 
 from model.region import RegionModel
@@ -105,3 +108,17 @@ def get_all_choices(ctx, marking: M, choices: list[T] = None) -> list[T]:
             choices_place.add(place)
 
     return list(choices)
+
+
+def get_default_impacts(net):
+    # Default impacts
+    default_impacts = None
+    for p in net.places:
+        impacts = NetUtils.Place.get_impacts(p)
+        if impacts is not None:
+            default_impacts = [0] * len(impacts)
+            break
+    if default_impacts is None:
+        logging.getLogger("execution").debug("Default impacts are None")
+        raise RuntimeError("Impacts length not found")
+    return default_impacts

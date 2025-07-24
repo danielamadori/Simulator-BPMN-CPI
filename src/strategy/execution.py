@@ -1,77 +1,18 @@
 from __future__ import annotations
 
-import logging
-from abc import ABC, abstractmethod
-from copy import copy, deepcopy
+import copy
 from typing import Collection, Set, TypeVar
-
 
 from model.petri_net.time_spin import NetUtils, TimeMarking
 from model.petri_net.wrapper import WrapperPetriNet
 from model.region import RegionType
-from model.types import T
 from utils.default import get_default_transition
-from utils.net_utils import get_region_by_id
+from utils.net_utils import get_region_by_id, get_default_impacts
 
 ContextType = TypeVar("ContextType", bound="NetContext")
 
 
-class ExecutionInterface(ABC):
-
-    @abstractmethod
-    def consume(self, ctx: ContextType, marking: TimeMarking, choices: Collection[T] | None = None):
-        pass
-
-    @abstractmethod
-    def get_choices(self, ctx: ContextType, marking: TimeMarking):
-        pass
-
-    @abstractmethod
-    def saturate(self, ctx: ContextType, marking: TimeMarking):
-        pass
-
-
-class ClassicExecution(ExecutionInterface):
-
-    def get_stoppable_active_transitions(self, ctx: ContextType, marking: TimeMarking) -> Set[
-        WrapperPetriNet.Transition]:
-        """
-        Get the active transitions that can be stopped. It filters the enabled transitions to only include those
-        that have the stop attribute set to True.
-        :param ctx: Current context containing the net and semantic.
-        :param marking: Current marking of the net.
-        :return: A set of transitions that are currently enabled and can be stopped.
-        """
-        enabled_transitions = ctx.semantic.enabled_transitions(ctx.net, marking)
-        # Filtro per transizoni con stop attivo
-        enabled_transitions = filter(
-            lambda x: NetUtils.Transition.get_stop(x), enabled_transitions
-        )
-
-        result = set(enabled_transitions)
-
-        return result
-
-    def get_choices(self, ctx: ContextType, marking: TimeMarking) -> dict[
-        WrapperPetriNet.Place, list[WrapperPetriNet.Transition]]:
-        """
-        Get the stoppable transitions grouped by place. It returns a dictionary where the keys are the places
-        and the values are lists of transitions that can be executed from that place.
-        :param ctx: Current context containing the net and semantic.
-        :param marking: Current marking of the net.
-        :return: dictionary with places as keys and lists of transitions as values.
-        """
-        enabled_transitions = self.get_stoppable_active_transitions(ctx, marking)
-
-        groups = {}
-        for t in enabled_transitions:
-            parent_place = list(t.in_arcs)[0].source
-            if groups.get(parent_place) is None:
-                groups.update({parent_place: []})
-
-            groups[parent_place].append(t)
-
-        return groups
+class ClassicExecution:
 
     def saturate(self, ctx: ContextType, marking: TimeMarking) -> tuple[TimeMarking, float]:
         """
@@ -110,47 +51,6 @@ class ClassicExecution(ExecutionInterface):
         # Return the current marking with updated ages
         return marking.add_time(min_delta), min_delta
 
-    def get_default_choices(self, ctx: ContextType, marking: TimeMarking,
-                            choices: list[WrapperPetriNet.Transition] = None) -> list[WrapperPetriNet.Transition]:
-        """
-        Get the default choices for the current marking.
-        Choices represent all transition that are already chosen by the user.
-        If choices are provided, it filters the default transitions to only include those that are in the choices.
-        If no choices are provided, it returns all default transitions for the current marking.
-        This method ensures that for each place, if no transition is chosen, the default transition is added to the choices.
-        :param ctx: context containing the net and semantic.
-
-        :param marking: Current marking.
-        :param choices: Transitions chosen by the user.
-        :return: Set of default transitions.
-        """
-        if choices is None:
-            choices = []
-
-        # Get all choices from the context and marking grouped by place
-        all_choices_dict = self.get_choices(ctx, marking)
-        # Flat values from the dictionary to a set
-        # all_choices = set([t for place in all_choices_dict for t in all_choices_dict[place]])
-        # new_choices = set(choices) & all_choices
-        new_choices = set(choices)
-        
-        for place in all_choices_dict:
-            place_choices = all_choices_dict[place]
-            found = False
-            for t in place_choices:
-                if t in new_choices:
-                    found = True
-                    break
-            if found:
-                continue
-
-            default_transition = get_default_transition(ctx, place, marking)
-            if default_transition is None:
-                continue
-            new_choices.add(default_transition)
-
-        return list(new_choices)
-
     def consume(self, ctx: ContextType, marking: TimeMarking,
                 choices: Collection[WrapperPetriNet.Transition] | None = None) -> tuple[
         TimeMarking, int, list[int], float]:
@@ -162,7 +62,7 @@ class ClassicExecution(ExecutionInterface):
         :return: new marking, probability of the execution, impacts of the execution, execution time.
         """
         # Get default choices if not provided
-        default_choices = self.get_default_choices(ctx, marking, choices=list(choices) if choices is not None else None)
+        default_choices = get_default_choices(ctx, marking, choices=list(choices) if choices is not None else None)
 
         # Start the consume process
         new_marking, probability, impacts, delta = self.__consume(
@@ -189,20 +89,10 @@ class ClassicExecution(ExecutionInterface):
         enabled_transitions = ctx.semantic.enabled_transitions(ctx.net, saturated_marking)
         user_choices = set(user_choices) & enabled_transitions
 
-        # Default impacts
-        default_impacts = None
-        for p in ctx.net.places:
-            impacts = NetUtils.Place.get_impacts(p)
-            if impacts is not None:
-                default_impacts = [0] * len(impacts)
-                break
-
-        if default_impacts is None:
-            logging.getLogger("execution").debug("Default impacts are None")
-            raise RuntimeError("Impacts length not found")
+        default_impacts = get_default_impacts(ctx.net)
 
         # Check if there is a transition with stop that's not in choices
-        strategy_get_choices = ctx.strategy.get_choices(ctx, marking)
+        strategy_get_choices = get_choices(ctx, marking)
         is_place_chosen = {p: False for p in strategy_get_choices.keys()}
         for t in user_choices:
             in_place = list(t.in_arcs)[0].source
@@ -212,9 +102,9 @@ class ClassicExecution(ExecutionInterface):
         if not all(is_place_chosen.values()) or saturated_marking == ctx.final_marking:
             return marking, 1, default_impacts, 0
 
-        result_marking = copy(saturated_marking)
+        result_marking = copy.copy(saturated_marking)
         choices = list(user_choices)
-        expected_impacts = deepcopy(default_impacts)
+        expected_impacts = copy.deepcopy(default_impacts)
         probability = 1
         fired_transition = set()
 
@@ -244,6 +134,90 @@ class ClassicExecution(ExecutionInterface):
         result_marking, new_probability, impacts, delta = self.__consume(ctx, result_marking, user_choices)
 
         return result_marking, probability * new_probability, add_impacts(expected_impacts, impacts), time_delta + delta
+
+
+def get_stoppable_active_transitions(ctx: ContextType, marking: TimeMarking) -> Set[
+    WrapperPetriNet.Transition]:
+    """
+    Get the active transitions that can be stopped. It filters the enabled transitions to only include those
+    that have the stop attribute set to True.
+    :param ctx: Current context containing the net and semantic.
+    :param marking: Current marking of the net.
+    :return: A set of transitions that are currently enabled and can be stopped.
+    """
+    enabled_transitions = ctx.semantic.enabled_transitions(ctx.net, marking)
+    # Filtro per transizioni con stop attivo
+    enabled_transitions = filter(
+        lambda x: NetUtils.Transition.get_stop(x), enabled_transitions
+    )
+
+    result = set(enabled_transitions)
+
+    return result
+
+
+def get_choices(ctx: ContextType, marking: TimeMarking) -> dict[
+    WrapperPetriNet.Place, list[WrapperPetriNet.Transition]]:
+    """
+    Get the stoppable transitions grouped by place. It returns a dictionary where the keys are the places
+    and the values are lists of transitions that can be executed from that place.
+    :param ctx: Current context containing the net and semantic.
+    :param marking: Current marking of the net.
+    :return: dictionary with places as keys and lists of transitions as values.
+    """
+    enabled_transitions = get_stoppable_active_transitions(ctx, marking)
+
+    groups = {}
+    for t in enabled_transitions:
+        parent_place = list(t.in_arcs)[0].source
+        if groups.get(parent_place) is None:
+            groups.update({parent_place: []})
+
+        groups[parent_place].append(t)
+
+    return groups
+
+
+def get_default_choices(ctx: ContextType, marking: TimeMarking,
+                        choices: list[WrapperPetriNet.Transition] = None) -> list[WrapperPetriNet.Transition]:
+    """
+    Get the default choices for the current marking.
+    Choices represent all transition that are already chosen by the user.
+    If choices are provided, it filters the default transitions to only include those that are in the choices.
+    If no choices are provided, it returns all default transitions for the current marking.
+    This method ensures that for each place, if no transition is chosen, the default transition is added to the choices.
+    :param ctx: context containing the net and semantic.
+
+    :param marking: Current marking.
+    :param choices: Transitions chosen by the user.
+    :return: Set of default transitions.
+    """
+    if choices is None:
+        choices = []
+
+    # Get all choices from the context and marking grouped by place
+    all_choices_dict = get_choices(ctx, marking)
+    # Flat values from the dictionary to a set
+    all_choices = set([t for place in all_choices_dict for t in all_choices_dict[place]])
+    new_choices = set(choices) & all_choices
+
+    for place in all_choices_dict:
+        place_choices = all_choices_dict[place]
+        found = False
+        for t in place_choices:
+            if t in new_choices:
+                found = True
+                break
+        if found:
+            continue
+
+        default_transition = get_default_transition(ctx, place, marking)
+        if default_transition is None:
+            continue
+        new_choices.add(default_transition)
+
+    return list(new_choices)
+
 
 
 def add_impacts(i1: list[int], i2: list[int]) -> list[int]:

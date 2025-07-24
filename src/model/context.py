@@ -1,9 +1,11 @@
+from pm4py.objects.petri_net.semantics import ClassicSemantics
 
 from converter.spin import from_region
+from model.petri_net.time_spin import TimeMarking, TimeNetSematic
 from model.petri_net.wrapper import WrapperPetriNet
 from model.region import RegionModel
-from model.petri_net.time_spin import TimeMarking, TimeNetSematic
-from strategy.execution import ExecutionInterface, ClassicExecution
+from strategy.duration import DurationExecution
+from strategy.execution import ClassicExecution
 
 
 # id
@@ -23,7 +25,7 @@ class NetContext:
     net: WrapperPetriNet
     initial_marking: TimeMarking
     final_marking: TimeMarking
-    strategy: ExecutionInterface
+    strategy: any
 
     def __init__(self, region, net, im, fm, strategy=None, _id=None, semantic=None):
         self._id = _id or IDGenerator.next_id()
@@ -35,7 +37,7 @@ class NetContext:
         self.strategy = strategy or ClassicExecution()
 
     @classmethod
-    def from_region(cls, region, strategy=ClassicExecution()):
+    def from_region(cls, region, strategy=None):
         net, im, fm = from_region(region)
 
         return NetContext(region, net, im, fm, strategy)
