@@ -14,6 +14,7 @@ class RegionType(Enum):
     TASK = "task"
     LOOP = "loop"
 
+
 class RegionModel(BaseModel):
     """
     Classe che rappresenta i dati ricevuti dal client

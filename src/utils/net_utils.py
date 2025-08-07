@@ -6,6 +6,7 @@ from enum import Enum
 from model.region import RegionModel
 from model.types import P, T, M
 
+
 def get_region_by_id(root_region: RegionModel, region_id: str) -> RegionModel | None:
     """
     Recursively searches for a region by its ID in the given root region.
@@ -25,6 +26,7 @@ def get_region_by_id(root_region: RegionModel, region_id: str) -> RegionModel | 
             return found_region
 
     return None
+
 
 class NetUtils:
 
@@ -71,7 +73,6 @@ class NetUtils:
         @classmethod
         def get_stop(cls, transition: T):
             return transition.properties.get(PropertiesKeys.STOP)
-
 
 
 class PropertiesKeys(Enum):

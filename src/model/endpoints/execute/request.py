@@ -1,21 +1,21 @@
-from typing import Tuple
+from typing import Tuple, Any
 
 import pm4py
 import pydantic
-from anytree import Node, RenderTree
+from anytree import Node
 from pm4py.objects.petri_net.utils.petri_utils import add_arc_from_to, get_transition_by_name
 from pydantic import model_validator, BaseModel, ConfigDict
 
 from model.extree import ExTree
+from model.petri_net.time_spin import TimeMarking, get_place_by_name
 from model.petri_net.wrapper import WrapperPetriNet
 from model.region import RegionModel, RegionType
 from model.snapshot import Snapshot
-from model.petri_net.time_spin import TimeMarking, get_place_by_name
 from model.types import T
 from utils.net_utils import PropertiesKeys
 
 # Marking
-type Marking = dict[str, dict[str, float]]
+type Marking = dict[str, dict[str, Any]]
 
 
 def model_to_marking(petri_net_obj, marking_model: Marking):
@@ -231,7 +231,6 @@ class ExecuteRequest(pydantic.BaseModel):
             return None
 
         return model_to_marking(self.petri_net_obj, self.petri_net.final_marking)
-
 
     @property
     def execution_tree_obj(self) -> ExTree | None:

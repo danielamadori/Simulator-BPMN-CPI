@@ -1,10 +1,7 @@
-from pm4py.objects.petri_net.semantics import ClassicSemantics
-
 from converter.spin import from_region
 from model.petri_net.time_spin import TimeMarking, TimeNetSematic
 from model.petri_net.wrapper import WrapperPetriNet
 from model.region import RegionModel
-from strategy.duration import DurationExecution
 from strategy.execution import ClassicExecution
 
 

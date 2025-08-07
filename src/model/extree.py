@@ -1,9 +1,11 @@
 import logging
 from typing import Iterator
 
-from anytree import Node, PreOrderIter, RenderTree, findall_by_attr
+from anytree import Node, PreOrderIter, RenderTree, findall_by_attr, findall
 
-from utils.net_utils import NetUtils
+from strategy.execution import add_impacts
+from utils.net_utils import NetUtils, get_default_impacts
+from .petri_net.time_spin import TimeMarking
 from .snapshot import Snapshot
 
 logger = logging.getLogger(__name__)
@@ -95,11 +97,17 @@ class ExTree:
             if node.parent == parent and node.snapshot.marking == snapshot.marking:
                 return node
 
+        parent_probability = parent.snapshot.probability if parent is not None else 1
+        parent_impacts = parent.snapshot.impacts if parent is not None else get_default_impacts(ctx.net)
+        parent_time = parent.snapshot.execution_time if parent is not None else 0
+
         _id = next(self.__id_generator)
 
-        child_node = Node(
-            name=str(_id), id=str(_id), snapshot=snapshot, parent=parent
-        )
+        cumulative_snapshot = Snapshot(marking=snapshot.marking, probability=parent_probability * snapshot.probability,
+                                       impacts=add_impacts(parent_impacts, snapshot.impacts),
+                                       time=parent_time + snapshot.execution_time)
+
+        child_node = Node(name=str(_id), id=str(_id), snapshot=cumulative_snapshot, parent=parent)
 
         if set_as_current:
             self.current_node = child_node
@@ -123,6 +131,27 @@ class ExTree:
                 print("X" + f"{pre}{node.name}" + "X")
             else:
                 print(f"{pre}{node.name}")
+
+    def search_nodes_by_marking(self, marking: TimeMarking) -> list[Node]:
+        """
+        Search for nodes that match the given marking in the execution tree.
+        :param marking: The marking to search for. Can be partial or complete.
+        :return: The list of nodes with the matching marking.
+        """
+
+        def check_marking(node: Node):
+            valid = True
+            __marking = node.snapshot.marking
+            for key in __marking.keys() | marking.keys():
+                token, age, _ = marking[key]['token'], marking[key]['age'], marking[key]['time']
+                other_token, other_age, _ = __marking[key]['token'], __marking[key]['age'], __marking[key]['time']
+                if token != other_token or age != other_age:
+                    valid = False
+                    break
+
+            return valid
+
+        return list(findall(self.root, check_marking))
 
     def __repr__(self):
         return self.print_tree()

@@ -219,7 +219,6 @@ def get_default_choices(ctx: ContextType, marking: TimeMarking,
     return list(new_choices)
 
 
-
 def add_impacts(i1: list[int], i2: list[int]) -> list[int]:
     """
     Adds two impact lists element-wise.
