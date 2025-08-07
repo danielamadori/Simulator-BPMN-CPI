@@ -18,6 +18,7 @@ from utils.net_utils import PropertiesKeys
 type Marking = dict[str, dict[str, Any]]
 
 
+
 def model_to_marking(petri_net_obj, marking_model: Marking):
     im = pm4py.Marking()
     age = {}
