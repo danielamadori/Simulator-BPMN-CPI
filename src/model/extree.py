@@ -4,7 +4,7 @@ from typing import Iterator
 from anytree import Node, PreOrderIter, RenderTree, findall_by_attr, findall
 
 from strategy.execution import add_impacts
-from utils.net_utils import NetUtils, get_default_impacts
+from utils.net_utils import NetUtils, get_default_impacts, is_final_marking
 from .petri_net.time_spin import TimeMarking
 from .snapshot import Snapshot
 
@@ -93,6 +93,12 @@ class ExTree:
     # Costruzione dell'albero
     def add_snapshot(self, ctx, snapshot: Snapshot, set_as_current: bool = True):
         parent = self.current_node
+
+        # Final marking check
+        if is_final_marking(ctx, self.current_node.snapshot.marking):
+            return self.current_node
+
+        # If exists a node with the same marking under the current parent, return that node
         for node in self:
             if node.parent == parent and node.snapshot.marking == snapshot.marking:
                 return node

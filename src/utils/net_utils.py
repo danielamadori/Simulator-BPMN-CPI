@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import logging
 from enum import Enum
+from typing import TYPE_CHECKING
 
 from model.region import RegionModel
 from model.types import P, T, M
 
+if TYPE_CHECKING:
+    from model.petri_net.time_spin import TimeMarking
 
 def get_region_by_id(root_region: RegionModel, region_id: str) -> RegionModel | None:
     """
@@ -123,3 +126,28 @@ def get_default_impacts(net):
         logging.getLogger("execution").debug("Default impacts are None")
         raise RuntimeError("Impacts length not found")
     return default_impacts
+
+def is_final_marking(ctx, marking: M) -> bool:
+    """
+    Checks if the given marking is a final marking in the context.
+    :param ctx: The NetContext containing the final marking.
+    :param marking: The marking to check.
+    :return: True if the marking is a final marking, False otherwise.
+    """
+    from model.petri_net.time_spin import TimeMarking
+    if not isinstance(marking, TimeMarking):
+        return False
+
+    fm = ctx.final_marking
+
+    if fm.keys() != marking.keys():
+        return False
+
+    for place in ctx.net.places:
+        fm_token = fm[place]['token']
+        marking_token = marking[place]['token']
+
+        if fm_token != marking_token:
+            return False
+
+    return True
