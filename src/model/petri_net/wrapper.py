@@ -14,8 +14,8 @@ class WrapperPetriNet(pm4py.PetriNet):
         Custom Place class that can hold additional properties.
         """
 
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
+        def __init__(self, name, in_arcs=None, out_arcs=None, properties=None):
+            super().__init__(name=name, in_arcs=in_arcs, out_arcs=out_arcs, properties=properties)
             self.properties['custom'] = {}
 
         @override
@@ -139,8 +139,8 @@ class WrapperPetriNet(pm4py.PetriNet):
         Custom Transition class that can hold additional properties.
         """
 
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
+        def __init__(self, name, label=None, in_arcs=None, out_arcs=None, properties=None):
+            super().__init__(name=name, label=label, in_arcs=in_arcs, out_arcs=out_arcs, properties=properties)
             self.properties['custom'] = {}
 
         @override
@@ -238,8 +238,8 @@ class WrapperPetriNet(pm4py.PetriNet):
         Custom Arc class that can hold additional properties.
         """
 
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
+        def __init__(self, source, target, weight=1, properties=None):
+            super().__init__(source=source, target=target, weight=weight, properties=properties)
             self.properties['custom'] = {}
 
         @override
