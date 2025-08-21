@@ -1,22 +1,24 @@
-from typing import Tuple, Any
+from __future__ import annotations
+from typing import Tuple, Any, TYPE_CHECKING
 
 import pm4py
 import pydantic
 from anytree import Node
-from pm4py.objects.petri_net.utils.petri_utils import add_arc_from_to, get_transition_by_name
+from pm4py.objects.petri_net.utils.petri_utils import get_transition_by_name
 from pydantic import model_validator, BaseModel, ConfigDict
 
 from model.extree import ExTree
 from model.petri_net.time_spin import TimeMarking, get_place_by_name
 from model.petri_net.wrapper import WrapperPetriNet
+from utils.net_utils import add_arc_from_to
 from model.region import RegionModel, RegionType
 from model.snapshot import Snapshot
-from model.types import T
-from utils.net_utils import PropertiesKeys
+
+if TYPE_CHECKING:
+    from model.types import T
 
 # Marking
 type Marking = dict[str, dict[str, Any]]
-
 
 
 def model_to_marking(petri_net_obj, marking_model: Marking):
@@ -170,29 +172,27 @@ class ExecuteRequest(pydantic.BaseModel):
 
         transitions = {}
         for transition in self.petri_net.transitions:
-            prop = {
-                PropertiesKeys.LABEL: transition.label,
-                PropertiesKeys.TYPE: transition.region_type,
-                PropertiesKeys.STOP: transition.stop,
-                PropertiesKeys.ENTRY_RID: transition.region_id,
-                PropertiesKeys.PROBABILITY: transition.probability
-            }
-            net_transition = WrapperPetriNet.Transition(name=transition.id, label=transition.label, properties=prop)
+            net_transition = WrapperPetriNet.Transition(name=transition.id, label=transition.label)
+            net_transition.region_id = transition.region_id
+            net_transition.region_type = transition.region_type
+            net_transition.region_label = transition.label
+            net_transition.probability = transition.probability
+            net_transition.stop = transition.stop
+
             transitions[transition.id] = net_transition
             petri_net.transitions.add(net_transition)
 
         places = {}
         for place in self.petri_net.places:
-            prop = {
-                PropertiesKeys.LABEL: place.label,
-                PropertiesKeys.TYPE: place.region_type,
-                PropertiesKeys.ENTRY_RID: place.entry_region_id,
-                PropertiesKeys.EXIT_RID: place.exit_region_id,
-                PropertiesKeys.DURATION: place.duration,
-                PropertiesKeys.IMPACTS: place.impacts,
-                PropertiesKeys.VISIT_LIMIT: place.visit_limit,
-            }
-            net_place = WrapperPetriNet.Place(name=place.id, properties=prop)
+            net_place = WrapperPetriNet.Place(name=place.id)
+            net_place.entry_id = place.entry_id
+            net_place.exit_id = place.exit_id
+            net_place.region_type = place.region_type
+            net_place.region_label = place.label
+            net_place.duration = place.duration
+            net_place.impacts = place.impacts
+            net_place.visit_limit = place.visit_limit
+
             places[place.id] = net_place
             petri_net.places.add(net_place)
 

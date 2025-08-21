@@ -4,7 +4,7 @@ from typing import Iterator
 from anytree import Node, PreOrderIter, RenderTree, findall_by_attr, findall
 
 from strategy.execution import add_impacts
-from utils.net_utils import NetUtils, get_default_impacts, is_final_marking
+from utils.net_utils import get_default_impacts, is_final_marking
 from .petri_net.time_spin import TimeMarking
 from .snapshot import Snapshot
 
@@ -58,15 +58,15 @@ class ExTree:
 
     @classmethod
     def from_context(cls, ctx):
-        places = ctx.initial_marking.keys()
+        places = ctx.net.places
 
         place = None
         for _p in places:
-            if NetUtils.Place.get_impacts(_p):
+            if _p.impacts:
                 place = _p
                 break
 
-        place_impacts = NetUtils.Place.get_impacts(place)
+        place_impacts = place.impacts
         impacts = [0] * len(place_impacts)
 
         extree = ExTree(Snapshot(marking=ctx.initial_marking, probability=1, impacts=impacts, time=0))

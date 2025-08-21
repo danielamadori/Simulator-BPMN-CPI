@@ -7,7 +7,6 @@ from model.petri_net.time_spin import TimeMarking
 from model.petri_net.wrapper import WrapperPetriNet
 from model.region import RegionModel
 from model.snapshot import Snapshot
-from utils.net_utils import NetUtils
 
 
 class ExecuteResponse(BaseModel):
@@ -37,24 +36,24 @@ def petri_net_to_model(petri_net: WrapperPetriNet, im, fm) -> PetriNetModel:
     transitions = []
     for t in petri_net.transitions:
         obj = PetriNetModel.TransitionModel(id=t.name,
-                                            label=NetUtils.get_label(t),
-                                            region_id=NetUtils.Transition.get_region_id(t),
-                                            region_type=NetUtils.get_type(t),
-                                            probability=NetUtils.Transition.get_probability(t),
-                                            stop=NetUtils.Transition.get_stop(t)
+                                            label=t.region_label,
+                                            region_id=t.region_id,
+                                            region_type=t.region_type,
+                                            probability=t.probability,
+                                            stop=t.stop
                                             )
         transitions.append(obj)
 
     places = []
     for p in petri_net.places:
         obj = PetriNetModel.PlaceModel(id=p.name,
-                                       label=NetUtils.get_label(p),
-                                       region_type=NetUtils.get_type(p),
-                                       entry_region_id=NetUtils.Place.get_entry_id(p),
-                                       exit_region_id=NetUtils.Place.get_exit_id(p),
-                                       duration=NetUtils.Place.get_duration(p),
-                                       impacts=NetUtils.Place.get_impacts(p),
-                                       visit_limit=NetUtils.Place.get_visit_limit(p))
+                                       label=p.region_label,
+                                       region_type=p.region_type,
+                                       entry_region_id=p.entry_id,
+                                       exit_region_id=p.exit_id,
+                                       duration=p.duration,
+                                       impacts=p.impacts,
+                                       visit_limit=p.visit_limit)
         places.append(obj)
 
     arcs = []

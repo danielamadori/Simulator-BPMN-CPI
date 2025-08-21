@@ -8,7 +8,6 @@ from pm4py.objects.petri_net.semantics import PetriNetSemantics
 
 from model.petri_net.wrapper import WrapperPetriNet
 from model.region import RegionType
-from utils.net_utils import NetUtils
 
 logger = logging.getLogger(__name__)
 
@@ -158,15 +157,15 @@ class TimeNetSematic:
 
     def is_enabled(self, net: WrapperPetriNet, transition: WrapperPetriNet.Transition, marking: TimeMarking) -> bool:
         for arc in transition.in_arcs:
-            input_place = arc.source
-            duration = NetUtils.Place.get_duration(input_place)
+            input_place: WrapperPetriNet.Place = arc.source
+            duration = input_place.duration
             token, age = marking[input_place]["token"], marking[input_place]["age"]
             if token < arc.weight or age < duration:
                 return False
-            if (NetUtils.Transition.get_stop(transition)
-                    and NetUtils.Place.get_visit_limit(input_place) is not None
-                    and NetUtils.Place.get_visit_limit(input_place) <= marking[input_place]["visit_count"]
-                    and NetUtils.get_type(transition) == RegionType.LOOP
+            if (transition.stop
+                    and input_place.visit_limit is not None
+                    and input_place.visit_limit <= marking[input_place]["visit_count"]
+                    and transition.region_type == RegionType.LOOP
                     and transition.label.startswith("Loop")):
                 return False
 

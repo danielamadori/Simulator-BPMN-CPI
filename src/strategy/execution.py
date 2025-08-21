@@ -3,7 +3,7 @@ from __future__ import annotations
 import copy
 from typing import Collection, Set, TypeVar
 
-from model.petri_net.time_spin import NetUtils, TimeMarking
+from model.petri_net.time_spin import TimeMarking
 from model.petri_net.wrapper import WrapperPetriNet
 from model.region import RegionType
 from utils.default import get_default_transition
@@ -30,13 +30,13 @@ class ClassicExecution:
         min_delta = float("inf")
         for p in current_places:
             # Get the duration of the place
-            duration = NetUtils.Place.get_duration(p)
+            duration = p.duration
             # Check if transition after place is parallel
             current_delta = duration - marking.age[p]
             if len(p.out_arcs) > 0:
                 transition = list(p.out_arcs)[0].target
                 out_place = list(transition.out_arcs)[0].target
-                exit_id = NetUtils.Place.get_exit_id(out_place)
+                exit_id = out_place.exit_id
                 if exit_id is not None:
                     exit_region = get_region_by_id(ctx.region, exit_id)
                     if exit_region.type == RegionType.PARALLEL:
@@ -114,7 +114,7 @@ class ClassicExecution:
                 fired_transition.add(t)
             temp_marking, __probability, impacts = execute_transition(ctx, t, result_marking)
             if temp_marking != result_marking:
-                user_choices.remove(t)
+                user_choices.discard(t)
                 result_marking = temp_marking
                 expected_impacts = add_impacts(expected_impacts, impacts)
                 probability *= __probability
@@ -148,7 +148,7 @@ def get_stoppable_active_transitions(ctx: ContextType, marking: TimeMarking) -> 
     enabled_transitions = ctx.semantic.enabled_transitions(ctx.net, marking)
     # Filtro per transizioni con stop attivo
     enabled_transitions = filter(
-        lambda x: NetUtils.Transition.get_stop(x), enabled_transitions
+        lambda x: x.stop, enabled_transitions
     )
 
     result = set(enabled_transitions)
@@ -245,7 +245,7 @@ def execute_transition(ctx: ContextType, t: WrapperPetriNet.Transition, marking:
     """
     marking = ctx.semantic.execute(ctx.net, t, marking)
     in_place = list(t.in_arcs)[0].source
-    probability = NetUtils.Transition.get_probability(t)
-    impacts = NetUtils.Place.get_impacts(in_place)
+    probability = t.probability
+    impacts = in_place.impacts
 
     return marking, probability, impacts

@@ -5,10 +5,76 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 from model.region import RegionModel
-from model.types import P, T, M
 
 if TYPE_CHECKING:
+    from model.types import T, M
+    from model.petri_net.wrapper import WrapperPetriNet
     from model.petri_net.time_spin import TimeMarking
+
+
+def add_arc_from_to(fr, to, net, weight=1, type=None) -> WrapperPetriNet.Arc:
+    """
+    Function used instead of pm4py.objects.petri_net.utils.petri_utils.add_arc_from_to to add wrapped arc.
+
+    :param fr: transition/place from
+    :param to:  transition/place to
+    :param net: net to use
+    :param weight: weight associated to the arc
+    :param type: type of arc. Possible values: None
+    :return: arc attached to petri net
+    """
+    from model.petri_net.wrapper import WrapperPetriNet
+    a = WrapperPetriNet.Arc(fr, to, weight)
+
+    net.arcs.add(a)
+    fr.out_arcs.add(a)
+    to.in_arcs.add(a)
+    return a
+
+
+def remove_transition(net: WrapperPetriNet, transition: WrapperPetriNet.Transition):
+    """
+    Removes a transition from the Petri net, including its associated arcs.
+    :param net: The Petri net from which to remove the transition.
+    :param transition: The transition to remove.
+    """
+    for arc in list(transition.in_arcs):
+        remove_arc(net, arc)
+
+    for arc in list(transition.out_arcs):
+        remove_arc(net, arc)
+
+    net.transitions.discard(transition)
+    del transition
+
+
+def remove_place(net: WrapperPetriNet, place: WrapperPetriNet.Place):
+    """
+    Removes a place from the Petri net, including its associated arcs.
+    :param net: The Petri net from which to remove the place.
+    :param place: The place to remove.
+    """
+    for arc in list(place.in_arcs):
+        remove_arc(net, arc)
+
+    for arc in list(place.out_arcs):
+        remove_arc(net, arc)
+
+    net.places.discard(place)
+    del place
+
+
+def remove_arc(net: WrapperPetriNet, arc: WrapperPetriNet.Arc):
+    """
+    Removes an arc from the Petri net.
+    :param net: The Petri net from which to remove the arc.
+    :param arc: The arc to remove.
+    """
+    net.arcs.discard(arc)
+    arc.source.out_arcs.discard(arc)
+    arc.target.in_arcs.discard(arc)
+    del arc
+
 
 def get_region_by_id(root_region: RegionModel, region_id: str) -> RegionModel | None:
     """
@@ -31,51 +97,21 @@ def get_region_by_id(root_region: RegionModel, region_id: str) -> RegionModel | 
     return None
 
 
-class NetUtils:
+def collapse_places(net: WrapperPetriNet, old: WrapperPetriNet.Place, new: WrapperPetriNet.Place):
+    """
+    Collapse old node into new node in the Petri net. They must be separate,
+    this means that doesn't exist a path from old to new and from new to old.
+    """
+    if type(old) != type(new) or old.name == new.name:
+        return
 
-    @classmethod
-    def get_label(cls, node: P | T):
-        return node.properties.get(PropertiesKeys.LABEL)
+    new.exit_id = old.exit_id
 
-    @classmethod
-    def get_type(cls, node: P | T):
-        return node.properties.get(PropertiesKeys.TYPE)
+    for arc in list(old.in_arcs):
+        add_arc_from_to(arc.source, new, net)
+        remove_arc(net, arc)
 
-    class Place:
-
-        @classmethod
-        def get_duration(cls, node: P | T):
-            return node.properties.get(PropertiesKeys.DURATION, 0)
-
-        @classmethod
-        def get_entry_id(cls, place: P):
-            return place.properties.get(PropertiesKeys.ENTRY_RID)
-
-        @classmethod
-        def get_exit_id(cls, place: P):
-            return place.properties.get(PropertiesKeys.EXIT_RID)
-
-        @classmethod
-        def get_impacts(cls, place: P):
-            return place.properties.get(PropertiesKeys.IMPACTS)
-
-        @classmethod
-        def get_visit_limit(cls, place: P):
-            return place.properties.get(PropertiesKeys.VISIT_LIMIT)
-
-    class Transition:
-
-        @classmethod
-        def get_region_id(cls, transition: T):
-            return transition.properties.get(PropertiesKeys.ENTRY_RID)
-
-        @classmethod
-        def get_probability(cls, transition: T):
-            return transition.properties.get(PropertiesKeys.PROBABILITY)
-
-        @classmethod
-        def get_stop(cls, transition: T):
-            return transition.properties.get(PropertiesKeys.STOP)
+    remove_place(net, old)
 
 
 class PropertiesKeys(Enum):
@@ -114,11 +150,11 @@ def get_all_choices(ctx, marking: M, choices: list[T] = None) -> list[T]:
     return list(choices)
 
 
-def get_default_impacts(net):
+def get_default_impacts(net: WrapperPetriNet):
     # Default impacts
     default_impacts = None
     for p in net.places:
-        impacts = NetUtils.Place.get_impacts(p)
+        impacts = p.impacts
         if impacts is not None:
             default_impacts = [0] * len(impacts)
             break
@@ -126,6 +162,7 @@ def get_default_impacts(net):
         logging.getLogger("execution").debug("Default impacts are None")
         raise RuntimeError("Impacts length not found")
     return default_impacts
+
 
 def is_final_marking(ctx, marking: M) -> bool:
     """

@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Collection, Dict, Any
+
 import pm4py
 from typing_extensions import override
 
@@ -16,6 +20,15 @@ class WrapperPetriNet(pm4py.PetriNet):
 
         def __init__(self, name, in_arcs=None, out_arcs=None, properties=None):
             super().__init__(name=name, in_arcs=in_arcs, out_arcs=out_arcs, properties=properties)
+
+            for arc in self.in_arcs:
+                if not isinstance(arc, WrapperPetriNet.Arc):
+                    raise TypeError("All in_arcs must be instances of WrapperPetriNet.Arc")
+
+            for arc in self.out_arcs:
+                if not isinstance(arc, WrapperPetriNet.Arc):
+                    raise TypeError("All out_arcs must be instances of WrapperPetriNet.Arc")
+
             self.properties['custom'] = {}
 
         @override
@@ -44,31 +57,31 @@ class WrapperPetriNet(pm4py.PetriNet):
             """
             Get the label of the region associated with this Place.
             """
-            return self.custom_properties.get(PropertiesKeys.LABEL, None)
+            return self.get_custom_property(PropertiesKeys.LABEL)
 
         def set_region_label(self, label):
             """
             Set the label of the region associated with this Place.
             """
-            self.custom_properties[PropertiesKeys.LABEL] = label
+            self.set_custom_property(PropertiesKeys.LABEL, label)
 
         def get_type(self):
             """
             Get the type of the Place.
             """
-            return self.custom_properties.get(PropertiesKeys.TYPE, None)
+            return self.get_custom_property(PropertiesKeys.TYPE)
 
         def set_type(self, type_value):
             """
             Set the type of the Place.
             """
-            self.custom_properties[PropertiesKeys.TYPE] = type_value
+            self.set_custom_property(PropertiesKeys.TYPE, type_value)
 
         def get_duration(self):
             """
             Get the duration associated with this Place.
             """
-            return self.custom_properties.get(PropertiesKeys.DURATION, 0)
+            return self.get_custom_property(PropertiesKeys.DURATION) or 0
 
         def set_duration(self, duration):
             """
@@ -80,50 +93,50 @@ class WrapperPetriNet(pm4py.PetriNet):
             """
             Get the entry region ID associated with this Place.
             """
-            return self.custom_properties.get(PropertiesKeys.ENTRY_RID, None)
+            return self.get_custom_property(PropertiesKeys.ENTRY_RID)
 
         def set_entry_id(self, entry_id):
             """
             Set the entry region ID associated with this Place.
             """
-            self.custom_properties[PropertiesKeys.ENTRY_RID] = entry_id
+            self.set_custom_property(PropertiesKeys.ENTRY_RID, entry_id)
 
         def get_exit_id(self):
             """
             Get the exit region ID associated with this Place.
             """
-            return self.custom_properties.get(PropertiesKeys.EXIT_RID, None)
+            return self.get_custom_property(PropertiesKeys.EXIT_RID)
 
         def set_exit_id(self, exit_id):
             """
             Set the exit region ID associated with this Place.
             """
-            self.custom_properties[PropertiesKeys.EXIT_RID] = exit_id
+            self.set_custom_property(PropertiesKeys.EXIT_RID, exit_id)
 
         def get_impacts(self):
             """
             Get the impacts associated with this Place.
             """
-            return self.custom_properties.get(PropertiesKeys.IMPACTS, None)
+            return self.get_custom_property(PropertiesKeys.IMPACTS)
 
         def set_impacts(self, impacts):
             """
             Set the impacts associated with this Place.
             """
-            self.custom_properties[PropertiesKeys.IMPACTS] = impacts
+            self.set_custom_property(PropertiesKeys.IMPACTS, impacts)
 
         def get_visit_limit(self):
             """
             Get the visit limit associated with this Place.
             """
-            return self.custom_properties.get(PropertiesKeys.VISIT_LIMIT, None)
+            return self.get_custom_property(PropertiesKeys.VISIT_LIMIT)
 
         def set_visit_limit(self, visit_limit):
             """
             Set the visit limit associated with this Place if it's None.
             """
             if self.get_visit_limit() is None:
-                self.custom_properties[PropertiesKeys.VISIT_LIMIT] = visit_limit
+                self.set_custom_property(PropertiesKeys.VISIT_LIMIT, visit_limit)
 
         custom_properties = property(lambda self: self.properties['custom'])
         region_label = property(get_region_label, set_region_label)
@@ -141,6 +154,14 @@ class WrapperPetriNet(pm4py.PetriNet):
 
         def __init__(self, name, label=None, in_arcs=None, out_arcs=None, properties=None):
             super().__init__(name=name, label=label, in_arcs=in_arcs, out_arcs=out_arcs, properties=properties)
+            for arc in self.in_arcs:
+                if not isinstance(arc, WrapperPetriNet.Arc):
+                    raise TypeError("All in_arcs must be instances of WrapperPetriNet.Arc")
+
+            for arc in self.out_arcs:
+                if not isinstance(arc, WrapperPetriNet.Arc):
+                    raise TypeError("All out_arcs must be instances of WrapperPetriNet.Arc")
+
             self.properties['custom'] = {}
 
         @override
@@ -169,61 +190,61 @@ class WrapperPetriNet(pm4py.PetriNet):
             """
             Get the label of the region associated with this Transition.
             """
-            return self.get_custom_property(PropertiesKeys.LABEL, None)
+            return self.get_custom_property(PropertiesKeys.LABEL)
 
         def set_region_label(self, label):
             """
             Set the label of the region associated with this Transition.
             """
-            self.custom_properties[PropertiesKeys.LABEL] = label
+            self.set_custom_property(PropertiesKeys.LABEL, label)
 
         def get_region_type(self):
             """
             Get the type of the region associated with this Transition.
             """
-            return self.custom_properties.get(PropertiesKeys.TYPE, None)
+            return self.get_custom_property(PropertiesKeys.TYPE)
 
         def set_region_type(self, type_value):
             """
             Set the type of the region associated with this Transition.
             """
-            self.custom_properties[PropertiesKeys.TYPE] = type_value
+            self.set_custom_property(PropertiesKeys.TYPE, type_value)
 
         def get_region_id(self):
             """
             Get the region ID associated with this Transition.
             """
-            return self.custom_properties.get(PropertiesKeys.ENTRY_RID, None)
+            return self.get_custom_property(PropertiesKeys.ENTRY_RID)
 
         def set_region_id(self, region_id):
             """
             Set the region ID associated with this Transition.
             """
-            self.custom_properties[PropertiesKeys.ENTRY_RID] = region_id
+            self.set_custom_property(PropertiesKeys.ENTRY_RID, region_id)
 
         def get_probability(self):
             """
             Get the probability associated with this Transition.
             """
-            return self.custom_properties.get(PropertiesKeys.PROBABILITY, None)
+            return self.get_custom_property(PropertiesKeys.PROBABILITY)
 
         def set_probability(self, probability):
             """
             Set the probability associated with this Transition.
             """
-            self.custom_properties[PropertiesKeys.PROBABILITY] = probability
+            self.set_custom_property(PropertiesKeys.PROBABILITY, probability)
 
         def get_stop(self):
             """
             Get the stop condition associated with this Transition.
             """
-            return self.custom_properties.get(PropertiesKeys.STOP, None)
+            return self.get_custom_property(PropertiesKeys.STOP)
 
         def set_stop(self, stop_condition):
             """
             Set the stop condition associated with this Transition.
             """
-            self.custom_properties[PropertiesKeys.STOP] = stop_condition
+            self.set_custom_property(PropertiesKeys.STOP, stop_condition)
 
         custom_properties = property(lambda self: self.properties['custom'])
         region_label = property(get_region_label, set_region_label)
@@ -232,7 +253,6 @@ class WrapperPetriNet(pm4py.PetriNet):
         probability = property(get_probability, set_probability)
         stop = property(get_stop, set_stop)
 
-
     class Arc(pm4py.PetriNet.Arc):
         """
         Custom Arc class that can hold additional properties.
@@ -240,6 +260,12 @@ class WrapperPetriNet(pm4py.PetriNet):
 
         def __init__(self, source, target, weight=1, properties=None):
             super().__init__(source=source, target=target, weight=weight, properties=properties)
+
+            if not isinstance(target, WrapperPetriNet.Transition | WrapperPetriNet.Place):
+                raise TypeError("Target must be a Transition or Place instance")
+            if not isinstance(source, WrapperPetriNet.Transition | WrapperPetriNet.Place):
+                raise TypeError("Source must be a Transition or Place instance")
+
             self.properties['custom'] = {}
 
         @override
@@ -260,8 +286,26 @@ class WrapperPetriNet(pm4py.PetriNet):
 
         custom_properties = property(lambda self: self.properties['custom'])
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, name: str = None, places: Collection[Place] = None, transitions: Collection[Transition] = None,
+                 arcs: Collection[Arc] = None, properties: Dict[str, Any] = None):
+        super().__init__(name=name, places=places, transitions=transitions, arcs=arcs, properties=properties)
+        self.__places: Collection[WrapperPetriNet.Place] = places if places is not None else set()
+        self.__transitions: Collection[WrapperPetriNet.Transition] = transitions if transitions is not None else set()
+        self.__arcs: Collection[WrapperPetriNet.Arc] = arcs if arcs is not None else set()
+        self.__properties = properties if properties is not None else dict()
+
+        for place in self.places:
+            if not isinstance(place, WrapperPetriNet.Place):
+                raise TypeError("All places must be instances of WrapperPetriNet.Place")
+
+        for transition in self.transitions:
+            if not isinstance(transition, WrapperPetriNet.Transition):
+                raise TypeError("All transitions must be instances of WrapperPetriNet.Transition")
+
+        for arc in self.arcs:
+            if not isinstance(arc, WrapperPetriNet.Arc):
+                raise TypeError("All arcs must be instances of WrapperPetriNet.Arc")
+
         self.properties['custom'] = {}
 
     @override
@@ -295,23 +339,22 @@ class WrapperPetriNet(pm4py.PetriNet):
         """
         return self.custom_properties.get(key, None)
 
+    def __get_places(self) -> Collection[WrapperPetriNet.Place]:
+        return self.__places
+
+    def __get_transitions(self) -> Collection[WrapperPetriNet.Transition]:
+        return self.__transitions
+
+    def __get_arcs(self) -> Collection[WrapperPetriNet.Arc]:
+        return self.__arcs
+
+    def __get_properties(self) -> Dict[str, Any]:
+        return self.__properties
+
+    places = property(__get_places)
+    transitions = property(__get_transitions)
+    arcs = property(__get_arcs)
+    properties = property(__get_properties)
     custom_properties = property(lambda self: self.properties['custom'])
 
 
-def add_arc_from_to(fr, to, net, weight=1, type=None) -> WrapperPetriNet.Arc:
-    """
-    Function used instead of pm4py.objects.petri_net.utils.petri_utils.add_arc_from_to to add wrapped arc.
-
-    :param fr: transition/place from
-    :param to:  transition/place to
-    :param net: net to use
-    :param weight: weight associated to the arc
-    :param type: type of arc. Possible values: None
-    :return: arc attached to petri net
-    """
-    a = WrapperPetriNet.Arc(fr, to, weight)
-
-    net.arcs.add(a)
-    fr.out_arcs.add(a)
-    to.in_arcs.add(a)
-    return a

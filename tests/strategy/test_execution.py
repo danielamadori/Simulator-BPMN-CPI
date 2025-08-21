@@ -6,7 +6,6 @@ import pytest
 from model.context import NetContext
 from model.region import RegionModel
 from model.petri_net.time_spin import TimeMarking
-from utils.net_utils import NetUtils
 
 PWD = "/home/matthewexe/Documents/Uni/Tirocinio/code"
 
@@ -24,7 +23,7 @@ def marking(ctx):
 
     new_base_marking = {k: 0 for k in im.keys()}
     for p in _net.places:
-        if NetUtils.Place.get_entry_id(p) in ['5', '6']:
+        if p.entry_id in ['5', '6']:
             print("FOUND")
             new_base_marking[p] = 1
 
@@ -64,17 +63,17 @@ def test_consume(ctx, marking):
     strategy = ctx.strategy
     choices = []
     for t in _net.transitions:
-        if NetUtils.Transition.get_region_id(t) == "6":
+        if t.region_id == "6":
             if (
-                    NetUtils.Transition.get_probability(t) == 0.8
-                    and NetUtils.Transition.get_stop(t) == True
+                    t.probability == 0.8
+                    and t.stop == True
             ):
                 choices.append(t)
         if (
-                NetUtils.Transition.get_region_id(t) == "5"
-                and NetUtils.Transition.get_stop(t) == True
+                t.region_id == "5"
+                and t.stop == True
         ):
-            if NetUtils.Place.get_entry_id(list(t.out_arcs)[0].target) == "12":
+            if list(t.out_arcs)[0].target.entry_id == "12":
                 choices.append(t)
 
     # dot_string = petri_net_to_dot(ctx.net, marking, fm)

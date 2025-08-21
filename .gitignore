@@ -175,3 +175,6 @@ cython_debug/
 
 # PyCharm
 .idea
+
+# Test Jupyter Notebook
+src/test.ipynb

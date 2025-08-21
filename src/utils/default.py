@@ -4,7 +4,6 @@ import numpy as np
 
 from model.region import RegionModel, find_region_by_id, RegionType
 from model.types import T
-from utils.net_utils import NetUtils
 
 
 def get_default_transition(ctx, place, marking) -> T | None:
@@ -24,18 +23,18 @@ def get_default_transition(ctx, place, marking) -> T | None:
     exit_transition, is_loop, loop_transition = loop_transitions(place)
 
     if is_loop and loop_transition and exit_transition:
-        if NetUtils.Place.get_visit_limit(place) <= marking[place]["visit_count"]:
+        if place.visit_limit <= marking[place]["visit_count"]:
             # If loop region and visit limit is reached, return exit transition
             return exit_transition
-        default_choice = Defaults.get_default_by_region(ctx.region, NetUtils.Transition.get_region_id(loop_transition))
+        default_choice = Defaults.get_default_by_region(ctx.region, loop_transition.region_id)
         loop_place = list(loop_transition.out_arcs)[0].target
-        if NetUtils.Place.get_entry_id(loop_place) == default_choice.id:
+        if loop_place.entry_id == default_choice.id:
             return loop_transition
         else:
             return exit_transition
 
     # Get default region by place
-    default_choice = Defaults.get_default_by_region(ctx.region, NetUtils.Place.get_entry_id(place))
+    default_choice = Defaults.get_default_by_region(ctx.region, place.entry_id)
     if not default_choice:
         return list(place.out_arcs)[0].target if len(list(place.out_arcs)) > 0 else None
 
@@ -43,7 +42,7 @@ def get_default_transition(ctx, place, marking) -> T | None:
     for arc in place.out_arcs:
         t = arc.target
         next_p = list(t.out_arcs)[0].target
-        if NetUtils.Place.get_entry_id(next_p) == default_choice.id:
+        if next_p.entry_id == default_choice.id:
             return t
 
     return None
@@ -55,7 +54,7 @@ def loop_transitions(place):
     exit_transition = None
     for arc in place.out_arcs:
         out_transition = arc.target
-        if NetUtils.get_type(out_transition) == RegionType.LOOP:
+        if out_transition.region_type == RegionType.LOOP:
             is_loop = True
             if out_transition.label.startswith("Loop"):
                 loop_transition = out_transition
