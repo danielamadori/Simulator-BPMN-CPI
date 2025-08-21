@@ -1,0 +1,22 @@
+{
+  "id": "6",
+  "type": "nature",
+  "label": "Nature polishing",
+  "children": [
+    {
+      "id": "9",
+      "type": "task",
+      "label": "Heavy polishing",
+      "impacts": [5, 4],
+      "duration": 2
+    },
+    {
+      "id": "10",
+      "type": "task",
+      "label": "Light polishing",
+      "impacts": [8, 1],
+      "duration": 1
+    }
+  ],
+  "distribution": [0.2, 0.8]
+}

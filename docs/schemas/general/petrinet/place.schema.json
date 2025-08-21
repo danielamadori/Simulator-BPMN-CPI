@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft/2020-12/schema",
+  "$id": "place.schema.json",
+  "title": "Place",
+  "description": "A place in a Petri net, which can hold tokens.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique identifier for the place."
+    },
+    "entry_region_id": {
+      "type": "string",
+      "description": "Identifier of the entry region this place belongs to."
+    },
+    "exit_region_id": {
+      "type": "string",
+      "description": "Identifier of the exit region this place belongs to."
+    },
+    "label": {
+      "type": "string",
+      "description": "Label for the place, used for display purposes."
+    },
+    "duration": {
+      "type": "number",
+      "description": "Duration associated with the place, if applicable."
+    },
+    "impacts": {
+      "type": "array",
+      "items": {
+        "type": "number",
+        "description": "Identifier of the impact associated with this place.",
+        "minimum": 0
+      },
+      "description": "vector of impacts associated with the place."
+    },
+    "region_type": {
+      "type": "string",
+      "enum": [
+        "choice",
+        "nature",
+        "parallel",
+        "sequence",
+        "loop"
+      ],
+      "description": "Type of region this place belongs to, either 'region' or 'subregion'."
+    }
+  },
+  "required": [
+    "id",
+    "entry_region_id"
+  ],
+  "additionalProperties": false
+}

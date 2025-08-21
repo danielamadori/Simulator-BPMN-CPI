@@ -1,0 +1,43 @@
+{
+  "id": "4",
+  "type": "sequential",
+  "children": [
+    {
+      "id": "11",
+      "type": "task",
+      "label": "Milling",
+      "impacts": [
+        50,
+        1
+      ],
+      "duration": 1
+    },
+    {
+      "id": "5",
+      "type": "choice",
+      "label": "Choice deposition",
+      "children": [
+        {
+          "id": "12",
+          "type": "task",
+          "label": "Fine depostion",
+          "impacts": [
+            30,
+            1
+          ],
+          "duration": 1
+        },
+        {
+          "id": "13",
+          "type": "task",
+          "label": "Rough depostion",
+          "impacts": [
+            10,
+            1
+          ],
+          "duration": 1
+        }
+      ]
+    }
+  ]
+}

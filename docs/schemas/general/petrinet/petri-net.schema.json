@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "petri-net.schema.json",
+  "title": "Petri Net",
+  "type": "object",
+  "properties": {
+    "places": {
+      "type": "array",
+      "items": { "$ref": "place.schema.json"}
+    },
+    "transitions": {
+      "type": "array",
+      "items": { "$ref": "transition.schema.json"}
+    },
+    "arcs": {
+      "type": "array",
+      "items": { "$ref": "arc.schema.json"}
+    },
+    "initial_marking": {
+      "$ref": "marking.schema.json"
+    },
+    "final_marking": {
+      "$ref": "marking.schema.json"
+    }
+  },
+  "required": ["places", "transitions", "arcs"]
+}

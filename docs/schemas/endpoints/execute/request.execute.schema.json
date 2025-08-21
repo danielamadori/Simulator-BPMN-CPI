@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "node.schema.json",
+  "title": "Request body execution",
+  "type": "object",
+  "properties": {
+    "bpmn": {
+      "$ref": "../../general/bpmn/region.schema.json"
+    },
+    "net": {
+        "$ref": "../../general/petrinet/petri-net.schema.json"
+    },
+    "extree": {
+      "$ref": "../../general/extree/node.schema.json"
+    },
+    "extree_pointer": {
+        "type": "string",
+        "description": "Pointer to the execution tree node in the format 'extree_id/node_id'."
+    }
+  },
+  "required": [
+    "bpmn"
+  ],
+  "dependentRequired": {
+    "net": ["extree_pointer", "extree"],
+    "extree": ["extree_pointer", "net"],
+    "extree_pointer": ["net", "extree"]  },
+  "additionalProperties": false
+}
