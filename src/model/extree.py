@@ -101,6 +101,9 @@ class ExTree:
         # If exists a node with the same marking under the current parent, return that node
         for node in self:
             if node.parent == parent and node.snapshot.marking == snapshot.marking:
+                if set_as_current:
+                    self.set_current(node)
+
                 return node
 
         parent_probability = parent.snapshot.probability if parent is not None else 1

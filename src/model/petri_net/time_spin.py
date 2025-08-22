@@ -157,8 +157,8 @@ class TimeNetSematic:
         new_visit_count = marking.visit_count
         for arc in transition.in_arcs:
             input_place = arc.source
-            new_age.setdefault(input_place, 0)
-            new_visit_count.setdefault(input_place, 1)
+            new_age[input_place] = 0
+            new_visit_count[input_place] = new_visit_count.get(input_place, 0) + 1
 
         tokens = PetriNetSemantics.fire(net, transition, marking.tokens)
         new_marking = Marking(tokens)

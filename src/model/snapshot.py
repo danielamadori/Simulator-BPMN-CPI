@@ -40,7 +40,7 @@ class Snapshot:
         if not isinstance(other, Snapshot):
             return False
 
-        if other.marking != self.marking:
+        if other.__marking != self.__marking:
             return False
         if other.__impacts != self.__impacts:
             return False

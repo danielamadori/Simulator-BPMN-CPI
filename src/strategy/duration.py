@@ -34,7 +34,7 @@ class DurationExecution:
                 break
 
             all_in_place = [arc.source for t in enabled_transitions for arc in t.in_arcs]
-            delta_places = {p: max(p.duration - marking[p]['age'], 0) for p in all_in_place}
+            delta_places = {p: max(p.duration - marking[p].age, 0) for p in all_in_place}
             min_delta = float("inf")
             for p in delta_places:
                 current_delta = max(delta_places[p], 0)
@@ -94,7 +94,7 @@ def calculate_steps(ctx, marking: TimeMarking) -> tuple[float, bool]:
     """
     semantics = ClassicSemantics()
 
-    durations = {p: p.duration - marking[p]['age'] for p in ctx.net.places}
+    durations = {p: p.duration - marking[p].age for p in ctx.net.places}
     __duration = 0
     __can_continue = True
 

@@ -54,7 +54,7 @@ def execute(data: ExecuteRequest):
     try:
         region, net, im, fm, extree, choices = data.to_object()
         if not net:
-            ctx = NetContext.from_region(region)
+            ctx = NetContext.from_region(region, DurationExecution())
             net = ctx.net
             im = ctx.initial_marking
             fm = ctx.final_marking
@@ -65,7 +65,8 @@ def execute(data: ExecuteRequest):
             if not all(choices):
                 raise ValueError("One or more choices are not valid transitions in the Petri net.")
 
-            ctx = NetContext(region=region, net=net, im=im, fm=fm)
+            ctx = NetContext(region=region, net=net, im=im, fm=fm, strategy=DurationExecution())
+            logging.getLogger(__name__).debug(f"Strategy Type: {type(ctx.strategy)}")
             current_marking = extree.current_node.snapshot.marking
 
             new_marking, probability, impacts, execution_time = ctx.strategy.consume(ctx, current_marking, choices)
