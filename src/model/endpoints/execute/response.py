@@ -6,6 +6,7 @@ from anytree.exporter import DictExporter
 from pydantic import BaseModel
 
 from model.endpoints.execute.request import PetriNetModel, ExecutionTreeModel
+from model.region import RegionModel
 
 if TYPE_CHECKING:
     from model.types import RegionModelType, PetriNetType, MarkingType, ExTreeType, SnapshotType
@@ -15,7 +16,7 @@ class ExecuteResponse(BaseModel):
     """
     Represents the response structure for an execution request.
     """
-    bpmn: RegionModelType
+    bpmn: RegionModel
     petri_net: PetriNetModel
     petri_net_dot: str | None = None
     execution_tree: ExecutionTreeModel
