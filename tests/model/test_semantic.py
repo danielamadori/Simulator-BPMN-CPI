@@ -28,13 +28,13 @@ def iron_net():
 
 @pytest.fixture()
 def marking(iron_net):
-    _m = iron_net[1]
-    age = _m.age
-    for p in _m.tokens:
+    net, im, _ = iron_net
+    age = im.age
+    for p in net.places:
         if len(p.in_arcs) == 0:
             age[p] = 1
 
-    return TimeMarking(_m.tokens, age)
+    return TimeMarking(im.tokens, age)
 
 
 class TestTimeSemantic:
@@ -79,7 +79,7 @@ class TestTimeSemantic:
             else:
                 _m[p] = 0
 
-        expected_time_marking = TimeMarking(_m, visit_count=_visit_count)
+        expected_time_marking = TimeMarking(_m, age=marking.age, visit_count=_visit_count)
         real_time_marking = semantic.execute(net, t, marking)
 
         assert real_time_marking == expected_time_marking

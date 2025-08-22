@@ -1,81 +1,117 @@
 import copy
 import logging
 from collections import defaultdict
-from typing import Dict
 
-from pm4py.objects.petri_net.obj import Marking
+from pm4py.objects.petri_net.obj import Marking, PetriNet
 from pm4py.objects.petri_net.semantics import PetriNetSemantics
 
 from model.petri_net.wrapper import WrapperPetriNet
 from model.region import RegionType
+from model.types import MarkingItem
 
 logger = logging.getLogger(__name__)
 
 
-def get_place_by_name(net, place_name):
-    """
-    Trova un posto nel Petri net per nome.
-    """
-    for place in net.places:
-        if place.name == place_name:
-            return place
-    return None
-
-
 class TimeMarking:
-    __marking: Marking
     __keys: set[WrapperPetriNet.Place]
+    __tokens: Marking
+    __age: dict[WrapperPetriNet.Place, float]
+    __visit_count: dict[WrapperPetriNet.Place, int]
 
-    def __init__(self, marking: Marking, age: Dict[WrapperPetriNet.Place, float] | None = None,
+    def __init__(self, marking: Marking, age: dict[WrapperPetriNet.Place, float] | None = None,
                  visit_count: dict[WrapperPetriNet.Place, int] | None = None):
-
+        super().__init__()
         if age is None:
             age = {}
         if visit_count is None:
             visit_count = {}
 
-        # Set marking
-        self.__marking = copy.copy(marking)
-        self.__keys = set(marking.keys())
-
         # Set data
-        self.__age = defaultdict(float)
-        self.__visit_count = defaultdict(int)
-        for place in self.__keys:
-            if place in age or place.name in age:
-                self.__age[place] = age[place]
+        self.__tokens = Marking()
+        self.__age = dict()
+        self.__visit_count = dict()
 
-            if place in visit_count or place.name in visit_count:
-                self.__visit_count[place] = visit_count[place]
+        # Populate data
+        for key in marking:
+            if marking[key] > 0:
+                self.__tokens[key] = marking[key]
+
+        for place in age:
+            self.__age[place] = age[place]
+
+        for place in visit_count:
+            self.__visit_count[place] = visit_count[place]
+
+    def __getitem__(self, key: str | WrapperPetriNet.Place) -> MarkingItem:
+        # Se `key` è una stringa, cerca la corrispondenza tra le chiavi(place) usando l'id
+        if isinstance(key, str):
+            for place in self.keys():
+                if place.name == key:
+                    key = place
+
+        if isinstance(key, PetriNet.Place) and not isinstance(key, WrapperPetriNet.Place):
+            raise TypeError("Key must be a WrapperPetriNet.Place or a string representing the place name.")
+
+        token = self.__tokens.get(key, 0)
+        age = self.__age.get(key, 0.0)
+        visit_count = self.__visit_count.get(key, 0)
+        return MarkingItem(token=token, age=age, visit_count=visit_count)
+
+    def __eq__(self, other):
+        if not isinstance(other, TimeMarking):
+            return False
+
+        for key in self.keys() | other.keys():
+            if self[key] != other[key]:
+                return False
+
+        return True
+
+    def __repr__(self):
+        result = {key: self[key] for key in self.keys()}
+        return repr(result)
+
+    def __str__(self):
+        return repr(self)
+
+    def __copy__(self):
+        return TimeMarking(self.__tokens, self.__age, self.__visit_count)
+
+    def __deepcopy__(self, memodict=None):
+        return TimeMarking(self.tokens, self.age, self.visit_count)
 
     @property
     def tokens(self) -> Marking:
-        return copy.copy(self.__marking)  # Restituisce una copia per mantenere l'immutabilità
+        m = Marking()
+
+        for key in self.__tokens:
+            m[key] = self.__tokens[key]
+
+        return m  # Restituisce una copia per mantenere l'immutabilità
 
     @property
-    def age(self) -> Dict[WrapperPetriNet.Place, float]:
+    def age(self) -> dict[WrapperPetriNet.Place, float]:
         return copy.copy(self.__age)  # Restituisce una copia per mantenere l'immutabilità
 
     @property
-    def visit_count(self) -> Dict[WrapperPetriNet.Place, int]:
+    def visit_count(self) -> dict[WrapperPetriNet.Place, int]:
         return copy.copy(self.__visit_count)
 
     def keys(self) -> set[WrapperPetriNet.Place]:
-        return copy.copy(self.__keys)
+        return self.__tokens.keys() | self.__age.keys() | self.__visit_count.keys()
 
     def add_time(self, time):
         """
         Aggiunge un tempo specificato a tutte le età dei posti nel marking.
         Ritorna una nuova istanza di TimeMarkign con le età aggiornate.
         """
-        new_age = {}
-        for key in self.__keys:
-            token, age = self[key]["token"], self[key]["age"]
+        new_age = self.age
+        for key in self.__tokens:
+            token, age, _ = self[key]
             if token > 0:
                 new_age[key] = age + time
 
-        copy_visit_count = copy.copy(self.__visit_count)
-        return TimeMarking(self.tokens, age=new_age, visit_count=copy_visit_count)
+        return TimeMarking(self.tokens, age=new_age, visit_count=self.visit_count)
 
     def increase_visit_count(self, places: WrapperPetriNet.Place | list[WrapperPetriNet.Place]):
         """
@@ -94,63 +130,7 @@ class TimeMarking:
             else:
                 new_visit_count[place] = 1
 
-        return TimeMarking(self.tokens, age=self.age, visit_count=new_visit_count)
-
-    def __getitem__(self, key: str | WrapperPetriNet.Place):
-        # Se `key` è una stringa, cerca la corrispondenza tra le chiavi(place)
-        if isinstance(key, str):
-            for place in self.__keys:
-                if place.name == key:
-                    key = place
-
-        for place in self.__keys:
-            if place.name == key.name:
-                return {
-                    "token": self.__marking[place],
-                    "age": self.__age.get(place, 0),
-                    "visit_count": self.__visit_count.get(place, 0)
-                }
-
-        return {
-            "token": 0,
-            "age": 0,
-            "visit_count": 0
-        }
-
-    def __contains__(self, el):
-        # Se `el` è una stringa, cerca la corrispondenza tra le chiavi(place)
-        if isinstance(el, str):
-            for place in self.__keys:
-                if place.name == el:
-                    el = place
-
-        return el in self.__keys
-
-    def __eq__(self, other):
-        if not isinstance(other, TimeMarking):
-            return False
-
-        if self.keys() != other.keys():
-            return False
-
-        for key in self.__keys:
-            if self[key] != other[key]:
-                return False
-
-        return True
-
-    def __repr__(self):
-        result = {key: self[key] for key in self.keys()}
-        return repr(result)
-
-    def __str__(self):
-        return repr(self)
-
-    def __copy__(self):
-        return TimeMarking(copy.copy(self.tokens), copy.copy(self.age), copy.copy(self.__visit_count))
-
-    def __deepcopy__(self, memo):
-        return self.__copy__()
+        return TimeMarking(marking=self.tokens, age=self.age, visit_count=new_visit_count)
 
 
 class TimeNetSematic:
@@ -159,12 +139,12 @@ class TimeNetSematic:
         for arc in transition.in_arcs:
             input_place: WrapperPetriNet.Place = arc.source
             duration = input_place.duration
-            token, age = marking[input_place]["token"], marking[input_place]["age"]
+            token, age, _ = marking[input_place]
             if token < arc.weight or age < duration:
                 return False
             if (transition.stop
                     and input_place.visit_limit is not None
-                    and input_place.visit_limit <= marking[input_place]["visit_count"]
+                    and input_place.visit_limit <= marking[input_place].visit_count
                     and transition.region_type == RegionType.LOOP
                     and transition.label.startswith("Loop")):
                 return False
@@ -177,8 +157,8 @@ class TimeNetSematic:
         new_visit_count = marking.visit_count
         for arc in transition.in_arcs:
             input_place = arc.source
-            new_age[input_place] = 0
-            new_visit_count[input_place] += 1
+            new_age.setdefault(input_place, 0)
+            new_visit_count.setdefault(input_place, 1)
 
         tokens = PetriNetSemantics.fire(net, transition, marking.tokens)
         new_marking = Marking(tokens)

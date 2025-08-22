@@ -188,3 +188,13 @@ def is_final_marking(ctx, marking: M) -> bool:
             return False
 
     return True
+
+
+def get_place_by_name(net, place_name):
+    """
+    Trova un posto nel Petri net per nome.
+    """
+    for place in net.places:
+        if place.name == place_name:
+            return place
+    return None

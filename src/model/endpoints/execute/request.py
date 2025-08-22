@@ -8,9 +8,9 @@ from pm4py.objects.petri_net.utils.petri_utils import get_transition_by_name
 from pydantic import model_validator, BaseModel, ConfigDict
 
 from model.extree import ExTree
-from model.petri_net.time_spin import TimeMarking, get_place_by_name
+from model.petri_net.time_spin import TimeMarking
 from model.petri_net.wrapper import WrapperPetriNet
-from utils.net_utils import add_arc_from_to
+from utils.net_utils import add_arc_from_to, get_place_by_name
 from model.region import RegionModel, RegionType
 from model.snapshot import Snapshot
 
@@ -185,8 +185,8 @@ class ExecuteRequest(pydantic.BaseModel):
         places = {}
         for place in self.petri_net.places:
             net_place = WrapperPetriNet.Place(name=place.id)
-            net_place.entry_id = place.entry_id
-            net_place.exit_id = place.exit_id
+            net_place.entry_id = place.entry_region_id
+            net_place.exit_id = place.exit_region_id
             net_place.region_type = place.region_type
             net_place.region_label = place.label
             net_place.duration = place.duration

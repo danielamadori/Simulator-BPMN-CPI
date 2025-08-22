@@ -1,6 +1,7 @@
 import logging
 
 from pm4py.objects.petri_net.obj import Marking
+from pm4py.objects.petri_net.utils.petri_utils import place_set_as_marking
 
 from converter.validator import region_validator
 from model.petri_net.time_spin import TimeMarking
@@ -242,11 +243,8 @@ def from_region(region: RegionModel):
 
     entry_place, exit_place = rec(region)
 
-    raw_im = Marking()
-    raw_fm = Marking()
-    for place in net.places:
-        raw_im[place] = 0 if place.name != entry_place.name else 1
-        raw_fm[place] = 0 if place.name != exit_place.name else 1
+    raw_im = place_set_as_marking([entry_place])
+    raw_fm = place_set_as_marking([exit_place])
 
     im = TimeMarking(raw_im)
     fm = TimeMarking(raw_fm)

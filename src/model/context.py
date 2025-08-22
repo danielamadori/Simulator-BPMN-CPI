@@ -22,7 +22,7 @@ class NetContext:
     net: WrapperPetriNet
     initial_marking: TimeMarking
     final_marking: TimeMarking
-    strategy: any
+    strategy: object
 
     def __init__(self, region, net, im, fm, strategy=None, _id=None, semantic=None):
         self._id = _id or IDGenerator.next_id()

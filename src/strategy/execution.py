@@ -32,7 +32,7 @@ class ClassicExecution:
             # Get the duration of the place
             duration = p.duration
             # Check if transition after place is parallel
-            current_delta = duration - marking.age[p]
+            current_delta = duration - marking[p].age
             if len(p.out_arcs) > 0:
                 transition = list(p.out_arcs)[0].target
                 out_place = list(transition.out_arcs)[0].target

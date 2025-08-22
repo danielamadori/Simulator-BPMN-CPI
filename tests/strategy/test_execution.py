@@ -2,6 +2,7 @@ import math
 import os
 
 import pytest
+from pm4py import Marking
 
 from model.context import NetContext
 from model.region import RegionModel
@@ -18,10 +19,10 @@ def ctx():
 
 
 @pytest.fixture
-def marking(ctx):
+def saturated_initial_marking(ctx):
     _net, im, fm = ctx.net, ctx.initial_marking, ctx.final_marking
 
-    new_base_marking = {k: 0 for k in im.keys()}
+    new_base_marking = Marking()
     for p in _net.places:
         if p.entry_id in ['5', '6']:
             print("FOUND")
@@ -57,7 +58,7 @@ def test_saturate(nature_ctx):
     assert delta != 0
 
 
-def test_consume(ctx, marking):
+def test_consume(ctx, saturated_initial_marking):
     _net, _, fm = ctx.net, ctx.initial_marking, ctx.final_marking
 
     strategy = ctx.strategy
@@ -76,14 +77,8 @@ def test_consume(ctx, marking):
             if list(t.out_arcs)[0].target.entry_id == "12":
                 choices.append(t)
 
-    # dot_string = petri_net_to_dot(ctx.net, marking, fm)
-
-    bho = strategy.consume(ctx, marking, choices)
+    bho = strategy.consume(ctx, saturated_initial_marking, choices)
     consumed_m, _p, _i, _t = bho
-
-    # petri_net_to_dot(ctx.net, consumed_m, fm)
-
-
 
     assert type(_i) == list
 
