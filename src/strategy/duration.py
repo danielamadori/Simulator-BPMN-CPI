@@ -1,10 +1,15 @@
+from __future__ import annotations
+
 import copy
+from typing import TYPE_CHECKING
 
 from pm4py.objects.petri_net.semantics import ClassicSemantics
 
-from model.petri_net.time_spin import TimeMarking
 from strategy.execution import add_impacts, get_default_choices
 from utils.net_utils import get_default_impacts
+
+if TYPE_CHECKING:
+    from model.types import MarkingType, TransitionType, ContextType
 
 
 class DurationExecution:
@@ -13,7 +18,7 @@ class DurationExecution:
     It calculates the time to consume to reach a saturated marking based on the current marking.
     """
 
-    def saturate(self, ctx, marking: TimeMarking) -> tuple[TimeMarking, float, list[int], float, float]:
+    def saturate(self, ctx: ContextType, marking: MarkingType) -> tuple[MarkingType, float, list[float], float, float]:
         """
         Calculate time to consume to reach a saturated marking in the Petri net based on the current marking.
         :param ctx: current context containing the net.
@@ -52,7 +57,8 @@ class DurationExecution:
 
         return marking, probability, impact, original_duration - duration, duration
 
-    def consume(self, ctx, marking: TimeMarking, choices: list | None = None) -> tuple[TimeMarking, float, list, float]:
+    def consume(self, ctx: ContextType, marking: MarkingType, choices: list[TransitionType] | None = None) -> tuple[
+        MarkingType, float, list[float], float]:
         """
         Consume the Petri net based on the current marking and choices.
         :param ctx: current context containing the net.
@@ -85,7 +91,7 @@ class DurationExecution:
         return new_marking, probability, impact, duration
 
 
-def calculate_steps(ctx, marking: TimeMarking) -> tuple[float, bool]:
+def calculate_steps(ctx: ContextType, marking: MarkingType) -> tuple[float, bool]:
     """
     Calculate time to consume to reach a saturated marking in the Petri net based on the current marking.
     :param ctx: current context containing the net.

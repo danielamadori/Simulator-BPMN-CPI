@@ -1,12 +1,16 @@
-from typing import Callable
+from __future__ import annotations
+
+from typing import Callable, TYPE_CHECKING
 
 import numpy as np
 
 from model.region import RegionModel, find_region_by_id, RegionType
-from model.types import T
+
+if TYPE_CHECKING:
+    from model.types import TransitionType, ContextType, PlaceType, MarkingType, RegionModelType
 
 
-def get_default_transition(ctx, place, marking) -> T | None:
+def get_default_transition(ctx: ContextType, place: PlaceType, marking: MarkingType) -> TransitionType | None:
     """
     Get the default transition for a given region.
     If no default is found, it returns the first outgoing transition of the place.
@@ -48,7 +52,7 @@ def get_default_transition(ctx, place, marking) -> T | None:
     return None
 
 
-def loop_transitions(place):
+def loop_transitions(place: PlaceType):
     is_loop = False
     loop_transition = None
     exit_transition = None
@@ -67,7 +71,7 @@ def loop_transitions(place):
 class Defaults:
 
     @classmethod
-    def get_default_by_region(cls, root_region: RegionModel, _id: str) -> RegionModel | None:
+    def get_default_by_region(cls, root_region: RegionModelType, _id: str) -> RegionModelType | None:
         region = find_region_by_id(root_region, _id)
         if not region:
             return None
@@ -86,21 +90,21 @@ class Defaults:
         return default_functions[region_type]
 
     @staticmethod
-    def __choice_child(region: RegionModel) -> RegionModel | None:
+    def __choice_child(region: RegionModelType) -> RegionModelType | None:
         if not region:
             return None
 
         return region.children[0]
 
     @staticmethod
-    def __nature_child(region: RegionModel) -> RegionModel | None:
+    def __nature_child(region: RegionModelType) -> RegionModelType | None:
         if not region:
             return None
 
         return np.random.choice(region.children, p=region.distribution)
 
     @staticmethod
-    def __loop_child(region: RegionModel) -> RegionModel | None:
+    def __loop_child(region: RegionModelType) -> RegionModelType | None:
         if not region:
             return None
 

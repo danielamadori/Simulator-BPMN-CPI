@@ -1,8 +1,13 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from converter.spin import from_region
-from model.petri_net.time_spin import TimeMarking, TimeNetSematic
-from model.petri_net.wrapper import WrapperPetriNet
-from model.region import RegionModel
+from model.petri_net.time_spin import TimeNetSematic
 from strategy.execution import ClassicExecution
+
+if TYPE_CHECKING:
+    from model.types import RegionModelType, SemanticType, PetriNetType, MarkingType
 
 
 # id
@@ -17,14 +22,15 @@ class IDGenerator:
 
 class NetContext:
     _id: str
-    region: RegionModel
-    semantic: TimeNetSematic
-    net: WrapperPetriNet
-    initial_marking: TimeMarking
-    final_marking: TimeMarking
+    region: RegionModelType
+    semantic: SemanticType
+    net: PetriNetType
+    initial_marking: MarkingType
+    final_marking: MarkingType
     strategy: object
 
-    def __init__(self, region, net, im, fm, strategy=None, _id=None, semantic=None):
+    def __init__(self, region: RegionModelType, net: PetriNetType, im: MarkingType, fm: MarkingType,
+                 strategy: object = None, _id: str = None, semantic: SemanticType = None):
         self._id = _id or IDGenerator.next_id()
         self.semantic = semantic or TimeNetSematic()
         self.region = region
@@ -34,10 +40,10 @@ class NetContext:
         self.strategy = strategy or ClassicExecution()
 
     @classmethod
-    def from_region(cls, region, strategy=None):
+    def from_region(cls, region: RegionModelType, strategy: object = None):
         net, im, fm = from_region(region)
 
         return NetContext(region, net, im, fm, strategy)
 
-    def __eq__(self, value):
-        return isinstance(value, NetContext) and value._id == self._id
+    def __eq__(self, other):
+        return isinstance(other, NetContext) and other._id == self._id

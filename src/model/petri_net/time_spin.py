@@ -1,25 +1,32 @@
+from __future__ import annotations
+
 import copy
 import logging
-from collections import defaultdict
+from collections import namedtuple
+from typing import TYPE_CHECKING
 
 from pm4py.objects.petri_net.obj import Marking, PetriNet
 from pm4py.objects.petri_net.semantics import PetriNetSemantics
 
 from model.petri_net.wrapper import WrapperPetriNet
 from model.region import RegionType
-from model.types import MarkingItem
+
+if TYPE_CHECKING:
+    from model.types import PlaceType, MarkingType, PetriNetType, TransitionType
 
 logger = logging.getLogger(__name__)
 
+MarkingItem = namedtuple("MarkingItem", ['token', 'age', 'visit_count'])
+
 
 class TimeMarking:
-    __keys: set[WrapperPetriNet.Place]
-    __tokens: Marking
-    __age: dict[WrapperPetriNet.Place, float]
-    __visit_count: dict[WrapperPetriNet.Place, int]
+    __keys: set[PlaceType]
+    __tokens: MarkingType
+    __age: dict[PlaceType, float]
+    __visit_count: dict[PlaceType, int]
 
-    def __init__(self, marking: Marking, age: dict[WrapperPetriNet.Place, float] | None = None,
-                 visit_count: dict[WrapperPetriNet.Place, int] | None = None):
+    def __init__(self, marking: Marking, age: dict[PlaceType, float] | None = None,
+                 visit_count: dict[PlaceType, int] | None = None):
         super().__init__()
         if age is None:
             age = {}
@@ -42,7 +49,7 @@ class TimeMarking:
         for place in visit_count:
             self.__visit_count[place] = visit_count[place]
 
-    def __getitem__(self, key: str | WrapperPetriNet.Place) -> MarkingItem:
+    def __getitem__(self, key: str | PlaceType) -> MarkingItem:
         # Se `key` è una stringa, cerca la corrispondenza tra le chiavi(place) usando l'id
         if isinstance(key, str):
             for place in self.keys():
@@ -81,7 +88,7 @@ class TimeMarking:
         return TimeMarking(self.tokens, self.age, self.visit_count)
 
     @property
-    def tokens(self) -> Marking:
+    def tokens(self) -> MarkingType:
         m = Marking()
 
         for key in self.__tokens:
@@ -90,17 +97,17 @@ class TimeMarking:
         return m  # Restituisce una copia per mantenere l'immutabilità
 
     @property
-    def age(self) -> dict[WrapperPetriNet.Place, float]:
+    def age(self) -> dict[PlaceType, float]:
         return copy.copy(self.__age)  # Restituisce una copia per mantenere l'immutabilità
 
     @property
-    def visit_count(self) -> dict[WrapperPetriNet.Place, int]:
+    def visit_count(self) -> dict[PlaceType, int]:
         return copy.copy(self.__visit_count)
 
-    def keys(self) -> set[WrapperPetriNet.Place]:
+    def keys(self) -> set[PlaceType]:
         return self.__tokens.keys() | self.__age.keys() | self.__visit_count.keys()
 
-    def add_time(self, time):
+    def add_time(self, time: float):
         """
         Aggiunge un tempo specificato a tutte le età dei posti nel marking.
         Ritorna una nuova istanza di TimeMarkign con le età aggiornate.
@@ -113,7 +120,7 @@ class TimeMarking:
 
         return TimeMarking(self.tokens, age=new_age, visit_count=self.visit_count)
 
-    def increase_visit_count(self, places: WrapperPetriNet.Place | list[WrapperPetriNet.Place]):
+    def increase_visit_count(self, places: PlaceType | list[PlaceType]):
         """
         Incrementa il contatore di visita per i posti specificati.
         Ritorna una nuova istanza di TimeMarking con i contatori aggiornati.
@@ -135,7 +142,7 @@ class TimeMarking:
 
 class TimeNetSematic:
 
-    def is_enabled(self, net: WrapperPetriNet, transition: WrapperPetriNet.Transition, marking: TimeMarking) -> bool:
+    def is_enabled(self, net: PetriNetType, transition: TransitionType, marking: MarkingType) -> bool:
         for arc in transition.in_arcs:
             input_place: WrapperPetriNet.Place = arc.source
             duration = input_place.duration
@@ -151,7 +158,7 @@ class TimeNetSematic:
 
         return True
 
-    def fire(self, net: WrapperPetriNet, transition: WrapperPetriNet.Transition, marking: TimeMarking) -> TimeMarking:
+    def fire(self, net: PetriNetType, transition: TransitionType, marking: MarkingType) -> MarkingType:
         logger.debug(f"Sparo la transazione{transition.label}")
         new_age = marking.age
         new_visit_count = marking.visit_count
@@ -165,15 +172,14 @@ class TimeNetSematic:
 
         return TimeMarking(new_marking, new_age, new_visit_count)
 
-    def execute(self, net: WrapperPetriNet, transition: WrapperPetriNet.Transition,
-                marking: TimeMarking) -> TimeMarking:
+    def execute(self, net: PetriNetType, transition: TransitionType, marking: MarkingType) -> MarkingType:
         logger.debug(f"Eseguo la transazione{transition.label}")
         if not self.is_enabled(net, transition, marking):
             return marking
 
         return self.fire(net, transition, marking)
 
-    def enabled_transitions(self, net: WrapperPetriNet, marking: TimeMarking) -> set[WrapperPetriNet.Transition]:
+    def enabled_transitions(self, net: PetriNetType, marking: MarkingType) -> set[TransitionType]:
         enabled = set()
 
         for t in net.transitions:

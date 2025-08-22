@@ -15,13 +15,13 @@ from model.region import RegionModel, RegionType
 from model.snapshot import Snapshot
 
 if TYPE_CHECKING:
-    from model.types import T
+    from model.types import TransitionType, MarkingType, ExTreeType
 
 # Marking
-type Marking = dict[str, dict[str, Any]]
+type MarkingModel = dict[str, dict[str, Any]]
 
 
-def model_to_marking(petri_net_obj, marking_model: Marking):
+def model_to_marking(petri_net_obj: PetriNetModel, marking_model: MarkingModel):
     im = pm4py.Marking()
     age = {}
     visit_count = {}
@@ -78,8 +78,8 @@ class PetriNetModel(pydantic.BaseModel):
     transitions: list[TransitionModel]
     places: list[PlaceModel]
     arcs: list[ArcModel]
-    initial_marking: Marking
-    final_marking: Marking
+    initial_marking: MarkingModel
+    final_marking: MarkingModel
 
     model_config = ConfigDict(use_enum_values=True)
 
@@ -99,7 +99,7 @@ class ExecutionTreeModel(pydantic.BaseModel):
             """
             Represents a snapshot of the execution state.
             """
-            marking: Marking
+            marking: MarkingModel
             probability: float
             impacts: list[float]
             execution_time: float
@@ -141,7 +141,7 @@ class ExecuteRequest(pydantic.BaseModel):
 
         return self
 
-    def to_object(self) -> Tuple[RegionModel, WrapperPetriNet, TimeMarking, TimeMarking, ExTree, list[T]]:
+    def to_object(self) -> Tuple[RegionModel, WrapperPetriNet, TimeMarking, TimeMarking, ExTree, list[TransitionType]]:
         """
         Converts the ExecuteRequest to its component objects.
         """
@@ -214,7 +214,7 @@ class ExecuteRequest(pydantic.BaseModel):
         return petri_net
 
     @property
-    def initial_marking(self) -> TimeMarking | None:
+    def initial_marking(self) -> MarkingType | None:
         """
         Converts the initial marking to a TimeMarking object.
         """
@@ -224,7 +224,7 @@ class ExecuteRequest(pydantic.BaseModel):
         return model_to_marking(self.petri_net_obj, self.petri_net.initial_marking)
 
     @property
-    def final_marking(self) -> TimeMarking | None:
+    def final_marking(self) -> MarkingType | None:
         """
         Converts the final marking to a TimeMarking object.
         """
@@ -234,7 +234,7 @@ class ExecuteRequest(pydantic.BaseModel):
         return model_to_marking(self.petri_net_obj, self.petri_net.final_marking)
 
     @property
-    def execution_tree_obj(self) -> ExTree | None:
+    def execution_tree_obj(self) -> ExTreeType | None:
         """
         Converts the ExecutionTreeModel to an ExTree object.
         """
@@ -272,7 +272,7 @@ class ExecuteRequest(pydantic.BaseModel):
         return ex_tree
 
     @property
-    def choices_obj(self) -> list[T]:
+    def choices_obj(self) -> list[TransitionType]:
         """
         Returns the choices as a list of strings.
         """

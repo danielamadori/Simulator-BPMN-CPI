@@ -351,10 +351,10 @@ class WrapperPetriNet(pm4py.PetriNet):
     def __get_properties(self) -> Dict[str, Any]:
         return self.__properties
 
-    places = property(__get_places)
-    transitions = property(__get_transitions)
-    arcs = property(__get_arcs)
-    properties = property(__get_properties)
-    custom_properties = property(lambda self: self.properties['custom'])
+    places: Collection[WrapperPetriNet.Place] = property(__get_places)
+    transitions: Collection[WrapperPetriNet.Transition] = property(__get_transitions)
+    arcs: Collection[WrapperPetriNet.Arc] = property(__get_arcs)
+    properties: dict = property(__get_properties)
+    custom_properties: dict = property(lambda self: self.properties['custom'])
 
 

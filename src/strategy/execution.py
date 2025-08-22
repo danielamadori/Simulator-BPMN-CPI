@@ -1,20 +1,19 @@
 from __future__ import annotations
 
 import copy
-from typing import Collection, Set, TypeVar
+from typing import Collection, TYPE_CHECKING
 
-from model.petri_net.time_spin import TimeMarking
-from model.petri_net.wrapper import WrapperPetriNet
 from model.region import RegionType
 from utils.default import get_default_transition
 from utils.net_utils import get_region_by_id, get_default_impacts
 
-ContextType = TypeVar("ContextType", bound="NetContext")
+if TYPE_CHECKING:
+    from model.types import ContextType, MarkingType, TransitionType, PlaceType
 
 
 class ClassicExecution:
 
-    def saturate(self, ctx: ContextType, marking: TimeMarking) -> tuple[TimeMarking, float]:
+    def saturate(self, ctx: ContextType, marking: MarkingType) -> tuple[MarkingType, float]:
         """
         Saturate the current marking by checking if there are any enabled transitions.
         :param ctx: Current context
@@ -51,9 +50,8 @@ class ClassicExecution:
         # Return the current marking with updated ages
         return marking.add_time(min_delta), min_delta
 
-    def consume(self, ctx: ContextType, marking: TimeMarking,
-                choices: Collection[WrapperPetriNet.Transition] | None = None) -> tuple[
-        TimeMarking, int, list[int], float]:
+    def consume(self, ctx: ContextType, marking: MarkingType, choices: Collection[TransitionType] | None = None) -> \
+            tuple[MarkingType, int, list[float], float]:
         """
         Consume the current marking by executing transitions based on user choices or default choices if not selected.
         :param ctx: Current context containing the net and semantic.
@@ -71,9 +69,9 @@ class ClassicExecution:
 
         return new_marking, probability, impacts, delta
 
-    def __consume(self, ctx: ContextType, marking: TimeMarking,
-                  user_choices: Collection[WrapperPetriNet.Transition] | None = None) -> tuple[
-        TimeMarking, int, list[int], float]:
+    def __consume(self, ctx: ContextType, marking: MarkingType,
+                  user_choices: Collection[TransitionType] | None = None) -> tuple[
+        MarkingType, int, list[float], float]:
         """
         Recursive function to consume the current marking until there's one (or more)
         transitions with stop that isn't in user_choices
@@ -136,8 +134,7 @@ class ClassicExecution:
         return result_marking, probability * new_probability, add_impacts(expected_impacts, impacts), time_delta + delta
 
 
-def get_stoppable_active_transitions(ctx: ContextType, marking: TimeMarking) -> Set[
-    WrapperPetriNet.Transition]:
+def get_stoppable_active_transitions(ctx: ContextType, marking: MarkingType) -> set[TransitionType]:
     """
     Get the active transitions that can be stopped. It filters the enabled transitions to only include those
     that have the stop attribute set to True.
@@ -156,8 +153,7 @@ def get_stoppable_active_transitions(ctx: ContextType, marking: TimeMarking) -> 
     return result
 
 
-def get_choices(ctx: ContextType, marking: TimeMarking) -> dict[
-    WrapperPetriNet.Place, list[WrapperPetriNet.Transition]]:
+def get_choices(ctx: ContextType, marking: MarkingType) -> dict[PlaceType, list[TransitionType]]:
     """
     Get the stoppable transitions grouped by place. It returns a dictionary where the keys are the places
     and the values are lists of transitions that can be executed from that place.
@@ -178,8 +174,8 @@ def get_choices(ctx: ContextType, marking: TimeMarking) -> dict[
     return groups
 
 
-def get_default_choices(ctx: ContextType, marking: TimeMarking,
-                        choices: list[WrapperPetriNet.Transition] = None) -> list[WrapperPetriNet.Transition]:
+def get_default_choices(ctx: ContextType, marking: MarkingType, choices: list[TransitionType] = None) -> list[
+    TransitionType]:
     """
     Get the default choices for the current marking.
     Choices represent all transition that are already chosen by the user.
@@ -219,7 +215,7 @@ def get_default_choices(ctx: ContextType, marking: TimeMarking,
     return list(new_choices)
 
 
-def add_impacts(i1: list[int], i2: list[int]) -> list[int]:
+def add_impacts(i1: list[float], i2: list[float]) -> list[float]:
     """
     Adds two impact lists element-wise.
     :param i1: First impact list.
@@ -234,8 +230,8 @@ def add_impacts(i1: list[int], i2: list[int]) -> list[int]:
     return [x + y for x, y in zip(i1, i2)]
 
 
-def execute_transition(ctx: ContextType, t: WrapperPetriNet.Transition, marking: TimeMarking) -> tuple[
-    TimeMarking, float, list[int]]:
+def execute_transition(ctx: ContextType, t: TransitionType, marking: MarkingType) -> tuple[
+    MarkingType, float, list[float]]:
     """
     Execute a transition in the Petri net and return the new marking, probability of the transition, and impacts.
     :param ctx:

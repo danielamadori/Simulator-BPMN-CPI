@@ -1,6 +1,10 @@
-from copy import copy
+from __future__ import annotations
 
-from model.petri_net.time_spin import TimeMarking
+from copy import copy
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from model.types import MarkingType
 
 '''
 Secondo me si può spostare anche dentro extree
@@ -9,34 +13,34 @@ Secondo me si può spostare anche dentro extree
 
 # Snapshot è la struttura del nodo dell'albero
 class Snapshot:
-    __marking: TimeMarking
+    __marking: MarkingType
     __probability: float
     __impacts: list[float]
     __exec_time: float
 
-    def __init__(self, marking: TimeMarking, probability: float, impacts: list[float], time: float):
+    def __init__(self, marking: MarkingType, probability: float, impacts: list[float], time: float):
         self.__marking = marking
         self.__probability = probability
         self.__impacts = impacts
         self.__exec_time = time
 
     @property
-    def marking(self):
+    def marking(self) -> MarkingType:
         return copy(self.__marking)
 
     @property
-    def probability(self):
+    def probability(self) -> float:
         return self.__probability
 
     @property
-    def impacts(self):
+    def impacts(self) -> list[float]:
         return copy(self.__impacts)
 
     @property
-    def execution_time(self):
+    def execution_time(self) -> float:
         return self.__exec_time
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if not isinstance(other, Snapshot):
             return False
 

@@ -1,12 +1,16 @@
+from __future__ import annotations
+
 import logging
-from typing import Iterator
+from typing import Iterator, TYPE_CHECKING
 
 from anytree import Node, PreOrderIter, RenderTree, findall_by_attr, findall
 
 from strategy.execution import add_impacts
 from utils.net_utils import get_default_impacts, is_final_marking
-from .petri_net.time_spin import TimeMarking
 from .snapshot import Snapshot
+
+if TYPE_CHECKING:
+    from .types import SnapshotType, NodeType, ContextType, MarkingType
 
 logger = logging.getLogger(__name__)
 
@@ -28,13 +32,13 @@ class ExTree:
         __root (Node): The root node of the tree.
         __id_generator (Iterator[int]): Iterator for generating unique node IDs.
     """
-    __separator = '/'
-    current_node: Node
-    __root: Node
+    __separator: str = '/'
+    current_node: NodeType
+    __root: NodeType
     __id_generator: Iterator[int]
 
     # Struttura Node: name[facoltativo],id,snapshot[oggetto di interesse]
-    def __init__(self, root: Snapshot | Node, generator: Iterator[int] = None):
+    def __init__(self, root: SnapshotType | NodeType, generator: Iterator[int] = None):
         self.__id_generator = generator or serial_generator()
         logger.info("Inizializzazione ExTree")
         if root is None:
@@ -57,7 +61,7 @@ class ExTree:
         self.current_node = _root
 
     @classmethod
-    def from_context(cls, ctx):
+    def from_context(cls, ctx: ContextType):
         places = ctx.net.places
 
         place = None
@@ -80,7 +84,7 @@ class ExTree:
     def get_nodes(self):
         return list(PreOrderIter(self.__root))
 
-    def exists(self, node: Node):
+    def exists(self, node: NodeType):
         return node in self
 
     def get_node_by_id(self, node_id: str):
@@ -91,7 +95,7 @@ class ExTree:
         return list(result)[0] if len(list(result)) == 1 else None
 
     # Costruzione dell'albero
-    def add_snapshot(self, ctx, snapshot: Snapshot, set_as_current: bool = True):
+    def add_snapshot(self, ctx: ContextType, snapshot: SnapshotType, set_as_current: bool = True):
         parent = self.current_node
 
         # Final marking check
@@ -123,7 +127,7 @@ class ExTree:
 
         return child_node
 
-    def set_current(self, node: Node | str):
+    def set_current(self, node: NodeType | str):
         if isinstance(node, str):
             node = self.get_node_by_id(node)
 
@@ -141,14 +145,14 @@ class ExTree:
             else:
                 print(f"{pre}{node.name}")
 
-    def search_nodes_by_marking(self, marking: TimeMarking) -> list[Node]:
+    def search_nodes_by_marking(self, marking: MarkingType) -> list[NodeType]:
         """
         Search for nodes that match the given marking in the execution tree.
         :param marking: The marking to search for. Can be partial or complete.
         :return: The list of nodes with the matching marking.
         """
 
-        def check_marking(node: Node):
+        def check_marking(node: NodeType):
             valid = True
             __marking = node.snapshot.marking
             for key in __marking.keys() | marking.keys():
@@ -186,7 +190,7 @@ class ExTree:
         return len(nodes)
 
 
-def is_equal(node1: Node, node2: Node):
+def is_equal(node1: NodeType, node2: NodeType) -> bool:
     if node1.parent != node2.parent:
         return False
     if node1.snapshot.marking != node2.snapshot.marking:

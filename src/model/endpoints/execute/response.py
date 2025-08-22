@@ -1,26 +1,28 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from anytree.exporter import DictExporter
 from pydantic import BaseModel
 
 from model.endpoints.execute.request import PetriNetModel, ExecutionTreeModel
-from model.extree import ExTree
-from model.petri_net.time_spin import TimeMarking
-from model.petri_net.wrapper import WrapperPetriNet
-from model.region import RegionModel
-from model.snapshot import Snapshot
+
+if TYPE_CHECKING:
+    from model.types import RegionModelType, PetriNetType, MarkingType, ExTreeType, SnapshotType
 
 
 class ExecuteResponse(BaseModel):
     """
     Represents the response structure for an execution request.
     """
-    bpmn: RegionModel
+    bpmn: RegionModelType
     petri_net: PetriNetModel
     petri_net_dot: str | None = None
     execution_tree: ExecutionTreeModel
 
 
-def create_response(region: RegionModel, petri_net: WrapperPetriNet, im: TimeMarking, fm: TimeMarking,
-                    extree: ExTree) -> ExecuteResponse:
+def create_response(region: RegionModelType, petri_net: PetriNetType, im: MarkingType, fm: MarkingType,
+                    extree: ExTreeType) -> ExecuteResponse:
     """
     Creates a response object containing the BPMN region, Petri net model, and execution tree.
     """
@@ -32,7 +34,7 @@ def create_response(region: RegionModel, petri_net: WrapperPetriNet, im: TimeMar
                            execution_tree=execution_tree_model)
 
 
-def petri_net_to_model(petri_net: WrapperPetriNet, im, fm) -> PetriNetModel:
+def petri_net_to_model(petri_net: PetriNetType, im: MarkingType, fm: MarkingType) -> PetriNetModel:
     transitions = []
     for t in petri_net.transitions:
         obj = PetriNetModel.TransitionModel(id=t.name,
@@ -68,7 +70,7 @@ def petri_net_to_model(petri_net: WrapperPetriNet, im, fm) -> PetriNetModel:
                          initial_marking=model_im, final_marking=model_fm)
 
 
-def petri_net_to_dot(petri_net: WrapperPetriNet, im, fm) -> str:
+def petri_net_to_dot(petri_net: PetriNetType, im: MarkingType, fm: MarkingType) -> str:
     """
     Converts a Petri net to its DOT representation.
     """
@@ -83,7 +85,7 @@ def petri_net_to_dot(petri_net: WrapperPetriNet, im, fm) -> str:
     return dot_string
 
 
-def marking_to_model(marking: TimeMarking) -> dict[str, dict[str, float]]:
+def marking_to_model(marking: MarkingType) -> dict[str, dict[str, float]]:
     """
     Converts a marking to a model representation.
     """
@@ -97,7 +99,7 @@ def marking_to_model(marking: TimeMarking) -> dict[str, dict[str, float]]:
     return result
 
 
-def extree_to_model(extree: ExTree) -> ExecutionTreeModel:
+def extree_to_model(extree: ExTreeType) -> ExecutionTreeModel:
     """
     Converts an execution tree to a model representation.
     """
@@ -120,7 +122,7 @@ def extree_to_model(extree: ExTree) -> ExecutionTreeModel:
     return ExecutionTreeModel(root=root, current_node=current_node)
 
 
-def snapshot_to_model(snapshot: Snapshot) -> ExecutionTreeModel.NodeModel.SnapshotModel:
+def snapshot_to_model(snapshot: SnapshotType) -> ExecutionTreeModel.NodeModel.SnapshotModel:
     """
     Converts a snapshot to a model representation.
     """

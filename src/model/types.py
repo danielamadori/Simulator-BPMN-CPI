@@ -1,16 +1,36 @@
 from __future__ import annotations
 
-from collections import namedtuple
 from typing import TypeVar
 
-# from model.petri_net.wrapper import WrapperPetriNet
-# from model.petri_net.time_spin import TimeMarking
+from anytree import Node
+
+from model.context import NetContext
+from model.extree import ExTree
+from model.petri_net.time_spin import TimeMarking, MarkingItem
+from model.petri_net.time_spin import TimeNetSematic
+from model.petri_net.wrapper import WrapperPetriNet
+from model.region import RegionModel
+from model.snapshot import Snapshot
+
+# Context Types
+ContextType = TypeVar('ContextType', bound=NetContext)
+
+# Region Model Types
+RegionModelType = TypeVar("RegionModelType", bound=RegionModel)
 
 # Petri Net Types
-N = TypeVar("N", bound="WrapperPetriNet")
-T = TypeVar("T", bound="WrapperPetriNet.Transition")
-P = TypeVar("P", bound="WrapperPetriNet.Place")
-M = TypeVar("M", bound="TimeMarking")
+PetriNetType = TypeVar("PetriNetType", bound=WrapperPetriNet)
+TransitionType = TypeVar("TransitionType", bound=WrapperPetriNet.Transition)
+PlaceType = TypeVar("PlaceType", bound=WrapperPetriNet.Place)
+ArcType = TypeVar("ArcType", bound=WrapperPetriNet.Arc)
+MarkingType = TypeVar("MarkingType", bound=TimeMarking)
+
+SemanticType = TypeVar("SemanticType", bound=TimeNetSematic)
 
 # Marking Item Type
-MarkingItem = namedtuple("MarkingItem", ['token','age','visit_count'])
+MarkingItemType = TypeVar("MarkingItemType", bound=MarkingItem)
+
+# Execution Tree Types
+ExTreeType = TypeVar("ExTreeType", bound=ExTree)
+SnapshotType = TypeVar("SnapshotType", bound=Snapshot)
+NodeType = TypeVar("NodeType", bound=Node)

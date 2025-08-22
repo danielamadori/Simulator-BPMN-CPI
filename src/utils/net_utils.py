@@ -4,15 +4,14 @@ import logging
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from model.region import RegionModel
-
 if TYPE_CHECKING:
-    from model.types import T, M
+    from model.types import TransitionType, MarkingType, PlaceType, PetriNetType, ArcType, RegionModelType, ContextType
     from model.petri_net.wrapper import WrapperPetriNet
     from model.petri_net.time_spin import TimeMarking
 
 
-def add_arc_from_to(fr, to, net, weight=1, type=None) -> WrapperPetriNet.Arc:
+def add_arc_from_to(fr: PlaceType | TransitionType, to: PlaceType | TransitionType, net: PetriNetType,
+                    weight: float = 1, type: object = None) -> ArcType:
     """
     Function used instead of pm4py.objects.petri_net.utils.petri_utils.add_arc_from_to to add wrapped arc.
 
@@ -32,7 +31,7 @@ def add_arc_from_to(fr, to, net, weight=1, type=None) -> WrapperPetriNet.Arc:
     return a
 
 
-def remove_transition(net: WrapperPetriNet, transition: WrapperPetriNet.Transition):
+def remove_transition(net: PetriNetType, transition: TransitionType) -> None:
     """
     Removes a transition from the Petri net, including its associated arcs.
     :param net: The Petri net from which to remove the transition.
@@ -48,7 +47,7 @@ def remove_transition(net: WrapperPetriNet, transition: WrapperPetriNet.Transiti
     del transition
 
 
-def remove_place(net: WrapperPetriNet, place: WrapperPetriNet.Place):
+def remove_place(net: PetriNetType, place: PlaceType) -> None:
     """
     Removes a place from the Petri net, including its associated arcs.
     :param net: The Petri net from which to remove the place.
@@ -64,7 +63,7 @@ def remove_place(net: WrapperPetriNet, place: WrapperPetriNet.Place):
     del place
 
 
-def remove_arc(net: WrapperPetriNet, arc: WrapperPetriNet.Arc):
+def remove_arc(net: PetriNetType, arc: ArcType) -> None:
     """
     Removes an arc from the Petri net.
     :param net: The Petri net from which to remove the arc.
@@ -76,7 +75,7 @@ def remove_arc(net: WrapperPetriNet, arc: WrapperPetriNet.Arc):
     del arc
 
 
-def get_region_by_id(root_region: RegionModel, region_id: str) -> RegionModel | None:
+def get_region_by_id(root_region: RegionModelType, region_id: str) -> RegionModelType | None:
     """
     Recursively searches for a region by its ID in the given root region.
     :param root_region: The root region to start the search from.
@@ -97,7 +96,7 @@ def get_region_by_id(root_region: RegionModel, region_id: str) -> RegionModel | 
     return None
 
 
-def collapse_places(net: WrapperPetriNet, old: WrapperPetriNet.Place, new: WrapperPetriNet.Place):
+def collapse_places(net: PetriNetType, old: PlaceType, new: PlaceType) -> None:
     """
     Collapse old node into new node in the Petri net. They must be separate,
     this means that doesn't exist a path from old to new and from new to old.
@@ -126,7 +125,8 @@ class PropertiesKeys(Enum):
     VISIT_LIMIT = 'fire_limit'
 
 
-def get_all_choices(ctx, marking: M, choices: list[T] = None) -> list[T]:
+def get_all_choices(ctx: ContextType, marking: MarkingType, choices: list[TransitionType] = None) -> list[
+    TransitionType]:
     """
     Fills the choices with default transitions if they are not already present.
     If no default transitions are found, it returns the choices as is.
@@ -150,7 +150,7 @@ def get_all_choices(ctx, marking: M, choices: list[T] = None) -> list[T]:
     return list(choices)
 
 
-def get_default_impacts(net: WrapperPetriNet):
+def get_default_impacts(net: PetriNetType) -> list[float]:
     # Default impacts
     default_impacts = None
     for p in net.places:
@@ -164,7 +164,7 @@ def get_default_impacts(net: WrapperPetriNet):
     return default_impacts
 
 
-def is_final_marking(ctx, marking: M) -> bool:
+def is_final_marking(ctx: ContextType, marking: MarkingType) -> bool:
     """
     Checks if the given marking is a final marking in the context.
     :param ctx: The NetContext containing the final marking.
@@ -190,7 +190,7 @@ def is_final_marking(ctx, marking: M) -> bool:
     return True
 
 
-def get_place_by_name(net, place_name):
+def get_place_by_name(net: PetriNetType, place_name: str) -> PlaceType | None:
     """
     Trova un posto nel Petri net per nome.
     """
