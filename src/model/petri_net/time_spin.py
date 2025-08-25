@@ -21,7 +21,7 @@ MarkingItem = namedtuple("MarkingItem", ['token', 'age', 'visit_count'])
 
 class TimeMarking:
     __keys: set[PlaceType]
-    __tokens: MarkingType
+    __tokens: Marking
     __age: dict[PlaceType, float]
     __visit_count: dict[PlaceType, int]
 
