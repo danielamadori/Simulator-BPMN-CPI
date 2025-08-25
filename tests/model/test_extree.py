@@ -1,7 +1,7 @@
 import pytest
 
-from model.extree import ExTree
-from model.snapshot import Snapshot
+from model.extree import ExecutionTree
+from model.extree.node import Snapshot
 from strategy.execution import ClassicExecution, get_default_choices
 
 PWD = "/home/matthewexe/Documents/Uni/Tirocinio/code"
@@ -9,7 +9,6 @@ PWD = "/home/matthewexe/Documents/Uni/Tirocinio/code"
 @pytest.fixture
 def region_model():
     """Fixture to load the region model"""
-    import os
     with open("/home/matthewexe/Documents/Uni/Tirocinio/code/tests/input_data/bpmn_choice.json") as f:
         from model.region import RegionModel
         model = RegionModel.model_validate_json(f.read())
@@ -29,7 +28,7 @@ def initial_snapshot(ctx):
 
 @pytest.fixture
 def extree(initial_snapshot):
-    tree = ExTree(initial_snapshot)
+    tree = ExecutionTree(initial_snapshot)
     return tree
 
 @pytest.fixture

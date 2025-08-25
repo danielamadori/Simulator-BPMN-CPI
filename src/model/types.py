@@ -2,15 +2,13 @@ from __future__ import annotations
 
 from typing import TypeVar
 
-from anytree import Node
-
 from model.context import NetContext
-from model.extree import ExTree
+from model.extree import ExecutionTree
+from model.extree.node import Snapshot, ExecutionTreeNode
 from model.petri_net.time_spin import TimeMarking, MarkingItem
 from model.petri_net.time_spin import TimeNetSematic
 from model.petri_net.wrapper import WrapperPetriNet
 from model.region import RegionModel
-from model.snapshot import Snapshot
 
 # Context Types
 ContextType = TypeVar('ContextType', bound=NetContext)
@@ -31,6 +29,6 @@ SemanticType = TypeVar("SemanticType", bound=TimeNetSematic)
 MarkingItemType = TypeVar("MarkingItemType", bound=MarkingItem)
 
 # Execution Tree Types
-ExTreeType = TypeVar("ExTreeType", bound=ExTree)
+ExTreeType = TypeVar("ExTreeType", bound=ExecutionTree)
 SnapshotType = TypeVar("SnapshotType", bound=Snapshot)
-NodeType = TypeVar("NodeType", bound=Node)
+NodeType = TypeVar("NodeType", bound=ExecutionTreeNode)

@@ -7,12 +7,12 @@ from anytree import Node
 from pm4py.objects.petri_net.utils.petri_utils import get_transition_by_name
 from pydantic import model_validator, BaseModel, ConfigDict
 
-from model.extree import ExTree
+from model.extree import ExecutionTree
 from model.petri_net.time_spin import TimeMarking
 from model.petri_net.wrapper import WrapperPetriNet
 from utils.net_utils import add_arc_from_to, get_place_by_name
 from model.region import RegionModel, RegionType
-from model.snapshot import Snapshot
+from model.extree.node import Snapshot
 
 if TYPE_CHECKING:
     from model.types import TransitionType, MarkingType, ExTreeType
@@ -141,7 +141,7 @@ class ExecuteRequest(pydantic.BaseModel):
 
         return self
 
-    def to_object(self) -> Tuple[RegionModel, WrapperPetriNet, TimeMarking, TimeMarking, ExTree, list[TransitionType]]:
+    def to_object(self) -> Tuple[RegionModel, WrapperPetriNet, TimeMarking, TimeMarking, ExecutionTree, list[TransitionType]]:
         """
         Converts the ExecuteRequest to its component objects.
         """
@@ -264,7 +264,7 @@ class ExecuteRequest(pydantic.BaseModel):
 
         root = convert_node(self.execution_tree.root)
 
-        ex_tree = ExTree(root)
+        ex_tree = ExecutionTree(root)
 
         if not ex_tree.set_current(self.execution_tree.current_node):
             raise ValueError("Current node not found in the execution tree.")

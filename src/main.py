@@ -7,8 +7,8 @@ from fastapi.responses import RedirectResponse
 from model.context import NetContext
 from model.endpoints.execute.request import ExecuteRequest
 from model.endpoints.execute.response import create_response
-from model.extree import ExTree
-from model.snapshot import Snapshot
+from model.extree import ExecutionTree
+from model.extree.node import Snapshot
 from strategy.duration import DurationExecution
 
 logging.basicConfig(
@@ -58,7 +58,7 @@ def execute(data: ExecuteRequest):
             net = ctx.net
             im = ctx.initial_marking
             fm = ctx.final_marking
-            extree = ExTree.from_context(ctx)
+            extree = ExecutionTree.from_context(ctx)
         else:
             if choices is None:
                 choices = []

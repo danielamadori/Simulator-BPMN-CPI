@@ -1,3 +1,5 @@
+#  Copyright (c) 2025.
+
 from __future__ import annotations
 
 import logging
@@ -7,10 +9,10 @@ from anytree import Node, PreOrderIter, RenderTree, findall_by_attr, findall
 
 from strategy.execution import add_impacts
 from utils.net_utils import get_default_impacts, is_final_marking
-from .snapshot import Snapshot
+from model.extree.node import Snapshot
 
 if TYPE_CHECKING:
-    from .types import SnapshotType, NodeType, ContextType, MarkingType
+    from model.types import SnapshotType, NodeType, ContextType, MarkingType
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +25,7 @@ def serial_generator(initial: int = 1):
         n += 1
 
 
-class ExTree:
+class ExecutionTree:
     """
     ExTree is a tree structure for managing and traversing snapshots of Petri net markings.
 
@@ -73,7 +75,7 @@ class ExTree:
         place_impacts = place.impacts
         impacts = [0] * len(place_impacts)
 
-        extree = ExTree(Snapshot(marking=ctx.initial_marking, probability=1, impacts=impacts, time=0))
+        extree = ExecutionTree(Snapshot(marking=ctx.initial_marking, probability=1, impacts=impacts, time=0))
 
         return extree
 

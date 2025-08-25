@@ -1,17 +1,15 @@
+#  Copyright (c) 2025.
 from __future__ import annotations
 
 from copy import copy
 from typing import TYPE_CHECKING
 
+from anytree import NodeMixin
+
 if TYPE_CHECKING:
     from model.types import MarkingType
 
-'''
-Secondo me si può spostare anche dentro extree
-'''
 
-
-# Snapshot è la struttura del nodo dell'albero
 class Snapshot:
     __marking: MarkingType
     __probability: float
@@ -54,3 +52,22 @@ class Snapshot:
             return False
 
         return True
+
+
+class NodeAttributes:
+    snapshot: Snapshot
+
+    def __init__(self, snapshot: Snapshot):
+        self.snapshot = snapshot
+
+
+class ExecutionTreeNode(NodeAttributes, NodeMixin):
+
+    def __init__(self, name: str, _id: str, snapshot: Snapshot, parent: ExecutionTreeNode | None = None,
+                 children: list[ExecutionTreeNode] | None = None):
+        super().__init__(snapshot)
+        self.name = name
+        self.id = _id
+        self.parent = parent
+        if children is None:
+            self.children = []
