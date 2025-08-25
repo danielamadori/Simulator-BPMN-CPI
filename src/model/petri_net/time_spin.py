@@ -87,12 +87,15 @@ class TimeMarking:
     def __deepcopy__(self, memodict=None):
         return TimeMarking(self.tokens, self.age, self.visit_count)
 
+    def __iter__(self):
+        return iter(self.keys())
+
     @property
-    def tokens(self) -> MarkingType:
+    def tokens(self) -> Marking:
         m = Marking()
 
         for key in self.__tokens:
-            m[key] = self.__tokens[key]
+            m[key] = self[key].token
 
         return m  # Restituisce una copia per mantenere l'immutabilità
 
