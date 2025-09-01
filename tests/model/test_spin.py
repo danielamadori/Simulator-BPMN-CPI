@@ -87,7 +87,7 @@ class TestTimeMarking:
         tmp = im.age
         first_key_not_active = None
         for place in ctx.net.places:
-            if im.tokens[place] > 0:
+            if im[place].token > 0:
                 tmp[place] = tmp.get(place, 0) + time_added
             else:
                 first_key_not_active = place

@@ -5,10 +5,12 @@ from typing import Callable, TYPE_CHECKING
 import numpy as np
 
 from model.region import RegionModel, find_region_by_id, RegionType
+from utils import logging_utils
 
 if TYPE_CHECKING:
     from model.types import TransitionType, ContextType, PlaceType, MarkingType, RegionModelType
 
+logger = logging_utils.get_logger(__name__)
 
 def get_default_transition(ctx: ContextType, place: PlaceType, marking: MarkingType) -> TransitionType | None:
     """
@@ -22,13 +24,15 @@ def get_default_transition(ctx: ContextType, place: PlaceType, marking: MarkingT
     :param marking: marking of the Petri net.
     :return: The default transition or None if not found.
     """
-
+    logger.debug(f"Getting default transition for place {place}")
     # Check if loop region and visit limit is reached
-    exit_transition, is_loop, loop_transition = loop_transitions(place)
+    exit_transition, is_loop, loop_transition = check_loop_transitions(place)
 
     if is_loop and loop_transition and exit_transition:
-        if place.visit_limit <= marking[place]["visit_count"]:
+        logger.debug(f"Selecting default transition for loop region")
+        if place.visit_limit <= marking[place].visit_count:
             # If loop region and visit limit is reached, return exit transition
+            logger.debug(f"Visit limit reached for place {place.name}, choosing exit transition {exit_transition.name}")
             return exit_transition
         default_choice = Defaults.get_default_by_region(ctx.region, loop_transition.region_id)
         loop_place = list(loop_transition.out_arcs)[0].target
@@ -40,6 +44,7 @@ def get_default_transition(ctx: ContextType, place: PlaceType, marking: MarkingT
     # Get default region by place
     default_choice = Defaults.get_default_by_region(ctx.region, place.entry_id)
     if not default_choice:
+        logger.debug(f"No default transition found for place {place.name}. Selecting first outgoing transition.")
         return list(place.out_arcs)[0].target if len(list(place.out_arcs)) > 0 else None
 
     # Get transition to default region
@@ -49,10 +54,14 @@ def get_default_transition(ctx: ContextType, place: PlaceType, marking: MarkingT
         if next_p.entry_id == default_choice.id:
             return t
 
+    logger.warning(f"No matching transition found for default region {default_choice.id} from place {place.name}")
     return None
 
 
-def loop_transitions(place: PlaceType):
+def check_loop_transitions(place: PlaceType):
+    if place.region_type != RegionType.LOOP:
+        return None, False, None
+
     is_loop = False
     loop_transition = None
     exit_transition = None

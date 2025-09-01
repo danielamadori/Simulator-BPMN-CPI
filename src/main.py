@@ -11,12 +11,7 @@ from model.extree import ExecutionTree
 from model.extree.node import Snapshot
 from strategy.duration import DurationExecution
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(levelname)s - %(message)s - %(name)s - %(funcName)s - %(lineno)d - %(filename)s",
-)
-
-api = FastAPI()
+api = FastAPI(title="BPMN-CPI Execution API", version="1.0.0", docs_url="/docs/", redoc_url=None)
 
 
 @api.exception_handler(404)

@@ -5,7 +5,10 @@ from typing import Collection, Dict, Any
 import pm4py
 from typing_extensions import override
 
+from utils import logging_utils
 from utils.net_utils import PropertiesKeys
+
+logger = logging_utils.get_logger(__name__)
 
 
 class WrapperPetriNet(pm4py.PetriNet):
@@ -23,10 +26,12 @@ class WrapperPetriNet(pm4py.PetriNet):
 
             for arc in self.in_arcs:
                 if not isinstance(arc, WrapperPetriNet.Arc):
+                    logger.error(f"Cannot create place: arc is type {type(arc)} instead of wrapper petri net.")
                     raise TypeError("All in_arcs must be instances of WrapperPetriNet.Arc")
 
             for arc in self.out_arcs:
                 if not isinstance(arc, WrapperPetriNet.Arc):
+                    logger.error(f"Cannot create place: arc is type {type(arc)} instead of wrapper petri net.")
                     raise TypeError("All out_arcs must be instances of WrapperPetriNet.Arc")
 
             self.properties['custom'] = {}
@@ -156,10 +161,12 @@ class WrapperPetriNet(pm4py.PetriNet):
             super().__init__(name=name, label=label, in_arcs=in_arcs, out_arcs=out_arcs, properties=properties)
             for arc in self.in_arcs:
                 if not isinstance(arc, WrapperPetriNet.Arc):
+                    logger.error(f"Cannot create transition: arc is type {type(arc)} instead of wrapper petri net.")
                     raise TypeError("All in_arcs must be instances of WrapperPetriNet.Arc")
 
             for arc in self.out_arcs:
                 if not isinstance(arc, WrapperPetriNet.Arc):
+                    logger.error(f"Cannot create transition: arc is type {type(arc)} instead of wrapper petri net.")
                     raise TypeError("All out_arcs must be instances of WrapperPetriNet.Arc")
 
             self.properties['custom'] = {}
@@ -262,9 +269,14 @@ class WrapperPetriNet(pm4py.PetriNet):
             super().__init__(source=source, target=target, weight=weight, properties=properties)
 
             if not isinstance(target, WrapperPetriNet.Transition | WrapperPetriNet.Place):
+                logger.error(f"Cannot create arc: target is type {type(target)} instead of wrapper petri net place or transition.")
                 raise TypeError("Target must be a Transition or Place instance")
             if not isinstance(source, WrapperPetriNet.Transition | WrapperPetriNet.Place):
+                logger.error(f"Cannot create arc: source is type {type(source)} instead of wrapper petri net place or transition.")
                 raise TypeError("Source must be a Transition or Place instance")
+            if type(source) == type(target):
+                logger.error(f"Cannot create arc: source and target are of the same type: {type(source)} != {type(target)}")
+                raise ValueError("Source and target must be of different types")
 
             self.properties['custom'] = {}
 
@@ -296,15 +308,22 @@ class WrapperPetriNet(pm4py.PetriNet):
 
         for place in self.places:
             if not isinstance(place, WrapperPetriNet.Place):
+                logger.error(f"Cannot create petri net: place is type {type(place)} instead of wrapper petri net place.")
                 raise TypeError("All places must be instances of WrapperPetriNet.Place")
 
         for transition in self.transitions:
             if not isinstance(transition, WrapperPetriNet.Transition):
+                logger.error(f"Cannot create petri net: transition is type {type(transition)} instead of wrapper petri net transition.")
                 raise TypeError("All transitions must be instances of WrapperPetriNet.Transition")
 
         for arc in self.arcs:
             if not isinstance(arc, WrapperPetriNet.Arc):
+                logger.error(f"Cannot create petri net: arc is type {type(arc)} instead of wrapper petri net arc.")
                 raise TypeError("All arcs must be instances of WrapperPetriNet.Arc")
+
+        if not isinstance(properties, dict):
+            logger.error(f"Cannot create petri net: properties is type {type(properties)} instead of dict.")
+            raise TypeError("Properties must be a dictionary")
 
         self.properties['custom'] = {}
 
@@ -356,5 +375,3 @@ class WrapperPetriNet(pm4py.PetriNet):
     arcs: Collection[WrapperPetriNet.Arc] = property(__get_arcs)
     properties: dict = property(__get_properties)
     custom_properties: dict = property(lambda self: self.properties['custom'])
-
-

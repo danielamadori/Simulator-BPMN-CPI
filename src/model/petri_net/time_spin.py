@@ -10,11 +10,12 @@ from pm4py.objects.petri_net.semantics import PetriNetSemantics
 
 from model.petri_net.wrapper import WrapperPetriNet
 from model.region import RegionType
+from utils import logging_utils
 
 if TYPE_CHECKING:
     from model.types import PlaceType, MarkingType, PetriNetType, TransitionType
 
-logger = logging.getLogger(__name__)
+logger = logging_utils.get_logger(__name__)
 
 MarkingItem = namedtuple("MarkingItem", ['token', 'age', 'visit_count'])
 
@@ -162,7 +163,7 @@ class TimeNetSematic:
         return True
 
     def fire(self, net: PetriNetType, transition: TransitionType, marking: MarkingType) -> MarkingType:
-        logger.debug(f"Sparo la transazione{transition.label}")
+        logger.debug(f"Firing transition {transition}")
         new_age = marking.age
         new_visit_count = marking.visit_count
         for arc in transition.in_arcs:
@@ -176,8 +177,9 @@ class TimeNetSematic:
         return TimeMarking(new_marking, new_age, new_visit_count)
 
     def execute(self, net: PetriNetType, transition: TransitionType, marking: MarkingType) -> MarkingType:
-        logger.debug(f"Eseguo la transazione{transition.label}")
+        logger.debug(f"Trying execution of transition {transition}")
         if not self.is_enabled(net, transition, marking):
+            logger.debug(f"Transition {transition} is not enabled")
             return marking
 
         return self.fire(net, transition, marking)
@@ -186,8 +188,8 @@ class TimeNetSematic:
         enabled = set()
 
         for t in net.transitions:
-            logger.debug(f"Transizione{t.label} è abitilata")
             if self.is_enabled(net, t, marking):
                 enabled.add(t)
 
+        logger.debug(f"Enabled transitions: {enabled}")
         return enabled

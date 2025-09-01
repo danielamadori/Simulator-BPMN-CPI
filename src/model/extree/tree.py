@@ -8,13 +8,14 @@ from typing import Iterator, TYPE_CHECKING
 from anytree import Node, PreOrderIter, RenderTree, findall_by_attr, findall
 
 from strategy.execution import add_impacts
+from utils import logging_utils
 from utils.net_utils import get_default_impacts, is_final_marking
 from model.extree.node import Snapshot
 
 if TYPE_CHECKING:
     from model.types import SnapshotType, NodeType, ContextType, MarkingType
 
-logger = logging.getLogger(__name__)
+logger = logging_utils.get_logger(__name__)
 
 
 def serial_generator(initial: int = 1):
@@ -42,9 +43,8 @@ class ExecutionTree:
     # Struttura Node: name[facoltativo],id,snapshot[oggetto di interesse]
     def __init__(self, root: SnapshotType | NodeType, generator: Iterator[int] = None):
         self.__id_generator = generator or serial_generator()
-        logger.info("Inizializzazione ExTree")
         if root is None:
-            logger.error("Lo Snapshot Root è None")
+            logger.error("Cannot initialize ExecutionTree with None root")
             raise ValueError("Root Snapshot can't be None")
 
         if isinstance(root, Node):
@@ -99,14 +99,17 @@ class ExecutionTree:
     # Costruzione dell'albero
     def add_snapshot(self, ctx: ContextType, snapshot: SnapshotType, set_as_current: bool = True):
         parent = self.current_node
+        logger.debug("Adding snapshot to ExecutionTree")
 
         # Final marking check
         if is_final_marking(ctx, self.current_node.snapshot.marking):
+            logger.debug(f"Snapshot {self.current_node.id} is final. Skipping...")
             return self.current_node
 
         # If exists a node with the same marking under the current parent, return that node
         for node in self:
             if node.parent == parent and node.snapshot.marking == snapshot.marking:
+                logger.debug("Snapshot already exists under current parent. Returning existing node.")
                 if set_as_current:
                     self.set_current(node)
 
@@ -125,7 +128,7 @@ class ExecutionTree:
         child_node = Node(name=str(_id), id=str(_id), snapshot=cumulative_snapshot, parent=parent)
 
         if set_as_current:
-            self.current_node = child_node
+            self.set_current(child_node)
 
         return child_node
 
@@ -134,6 +137,7 @@ class ExecutionTree:
             node = self.get_node_by_id(node)
 
         if node is None or node not in self:
+            logger.warning("Node not found in the tree. Skipping...")
             return False
 
         self.current_node = self.get_node_by_id(node.id)
@@ -143,7 +147,7 @@ class ExecutionTree:
     def print_tree(self):
         for pre, fill, node in RenderTree(self.__root):
             if self.current_node.id == node.id:
-                print("X" + f"{pre}{node.name}" + "X")
+                print(f"X{pre}{node.name}X")
             else:
                 print(f"{pre}{node.name}")
 
@@ -158,8 +162,8 @@ class ExecutionTree:
             valid = True
             __marking = node.snapshot.marking
             for key in __marking.keys() | marking.keys():
-                token, age, _ = marking[key]['token'], marking[key]['age'], marking[key]['time']
-                other_token, other_age, _ = __marking[key]['token'], __marking[key]['age'], __marking[key]['time']
+                token, age, _ = marking[key]
+                other_token, other_age, _ = __marking[key]
                 if token != other_token or age != other_age:
                     valid = False
                     break

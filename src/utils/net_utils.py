@@ -1,13 +1,16 @@
 from __future__ import annotations
 
-import logging
 from enum import Enum
 from typing import TYPE_CHECKING
+
+from utils import logging_utils
 
 if TYPE_CHECKING:
     from model.types import TransitionType, MarkingType, PlaceType, PetriNetType, ArcType, RegionModelType, ContextType
     from model.petri_net.wrapper import WrapperPetriNet
     from model.petri_net.time_spin import TimeMarking
+
+logger = logging_utils.get_logger(__name__)
 
 
 def add_arc_from_to(fr: PlaceType | TransitionType, to: PlaceType | TransitionType, net: PetriNetType,
@@ -23,6 +26,7 @@ def add_arc_from_to(fr: PlaceType | TransitionType, to: PlaceType | TransitionTy
     :return: arc attached to petri net
     """
     from model.petri_net.wrapper import WrapperPetriNet
+    logger.debug("Adding arc from %s to %s", fr, to)
     a = WrapperPetriNet.Arc(fr, to, weight)
 
     net.arcs.add(a)
@@ -37,6 +41,7 @@ def remove_transition(net: PetriNetType, transition: TransitionType) -> None:
     :param net: The Petri net from which to remove the transition.
     :param transition: The transition to remove.
     """
+    logger.debug("Removing transition %s", transition)
     for arc in list(transition.in_arcs):
         remove_arc(net, arc)
 
@@ -53,6 +58,7 @@ def remove_place(net: PetriNetType, place: PlaceType) -> None:
     :param net: The Petri net from which to remove the place.
     :param place: The place to remove.
     """
+    logger.debug("Deleting place %s", place.name)
     for arc in list(place.in_arcs):
         remove_arc(net, arc)
 
@@ -69,6 +75,8 @@ def remove_arc(net: PetriNetType, arc: ArcType) -> None:
     :param net: The Petri net from which to remove the arc.
     :param arc: The arc to remove.
     """
+    logger.debug("Deleting arc from %s to %s", arc.source.name, arc.target.name)
+
     net.arcs.discard(arc)
     arc.source.out_arcs.discard(arc)
     arc.target.in_arcs.discard(arc)
@@ -102,7 +110,8 @@ def collapse_places(net: PetriNetType, old: PlaceType, new: PlaceType) -> None:
     this means that doesn't exist a path from old to new and from new to old.
     """
     if type(old) != type(new) or old.name == new.name:
-        return
+        logger.error("Cannot collapse places of different types or same name. %s != %s", type(old), type(new))
+        raise TypeError(f"Cannot collapse places of different types or same name. {type(old)} != {type(new)}")
 
     new.exit_id = old.exit_id
 
@@ -135,10 +144,14 @@ def get_all_choices(ctx: ContextType, marking: MarkingType, choices: list[Transi
     :param choices:
     :return:
     """
+    logger.info("Getting all choices for marking %s with current choices %s", marking, choices)
     if choices is None:
         choices = []
 
     choices = ctx.strategy.get_default_choices(ctx, marking, choices=choices)[:]
+    logger.debug("Default choices are %s", choices)
+
+    # Ensure that only one transition per place is present in the choices
     choices_place = {list(t.in_arcs)[0].source for t in choices if t.in_arcs}
 
     for t in ctx.semantic.enabled_transitions(ctx.net, marking):
@@ -146,7 +159,9 @@ def get_all_choices(ctx: ContextType, marking: MarkingType, choices: list[Transi
         if place not in choices_place:
             choices.append(t)
             choices_place.add(place)
+            logger.debug("Adding transition %s to choices", t, place.name)
 
+    logger.info("All choices are %s", choices)
     return list(choices)
 
 
@@ -158,8 +173,9 @@ def get_default_impacts(net: PetriNetType) -> list[float]:
         if impacts is not None:
             default_impacts = [0] * len(impacts)
             break
+
     if default_impacts is None:
-        logging.getLogger("execution").debug("Default impacts are None")
+        logger.exception("Default impacts are None")
         raise RuntimeError("Impacts length not found")
     return default_impacts
 
@@ -173,6 +189,7 @@ def is_final_marking(ctx: ContextType, marking: MarkingType) -> bool:
     """
     from model.petri_net.time_spin import TimeMarking
     if not isinstance(marking, TimeMarking):
+        logger.warning("Marking is not of type TimeMarking")
         return False
 
     fm = ctx.final_marking
@@ -181,8 +198,8 @@ def is_final_marking(ctx: ContextType, marking: MarkingType) -> bool:
         return False
 
     for place in ctx.net.places:
-        fm_token = fm[place]['token']
-        marking_token = marking[place]['token']
+        fm_token = fm[place].token
+        marking_token = marking[place].token
 
         if fm_token != marking_token:
             return False

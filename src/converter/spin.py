@@ -1,16 +1,14 @@
-import logging
-
-from pm4py.objects.petri_net.obj import Marking
 from pm4py.objects.petri_net.utils.petri_utils import place_set_as_marking
 
 from converter.validator import region_validator
 from model.petri_net.time_spin import TimeMarking
 from model.petri_net.wrapper import WrapperPetriNet
 from model.region import RegionModel
+from utils import logging_utils
 from utils.exceptions import ValidationError
 from utils.net_utils import PropertiesKeys, add_arc_from_to, collapse_places
 
-logger = logging.getLogger(__name__)
+logger = logging_utils.get_logger(__name__)
 
 
 def serial_generator(initial: int = 0):
@@ -68,10 +66,10 @@ def create_transition(trans_id: str, region: RegionModel, probability: float = 1
 
 def from_region(region: RegionModel):
     if not region_validator(region):
-        logger.error("Lancio eccezzione perchè i dati forniti non sono validi")
+        logger.error("Invalid data, can't convert to Petri net")
         raise ValidationError()
     else:
-        logger.info("Validazione avvenuta con successo")
+        logger.info("Starting conversion from BPMN to Petri net")
 
     net = WrapperPetriNet()
     id_generator = serial_generator()
@@ -79,6 +77,7 @@ def from_region(region: RegionModel):
     def rec(__region: RegionModel) -> tuple[
         WrapperPetriNet.Place, WrapperPetriNet.Place]:
         if __region.is_task():
+            logger.debug("Converting task[%s]", __region.id)
             # Task
             # Entry Place
 
@@ -101,11 +100,14 @@ def from_region(region: RegionModel):
             add_arc_from_to(entry_place, trans, net)
             add_arc_from_to(trans, exit_place, net)
 
+            logger.debug("Finished conversion task[%s]", __region.id)
+
             return entry_place, exit_place
 
         elif __region.is_parallel():
             # Parallel Gateway
             # Entry Place
+            logger.debug("Converting parallel gateway[%s]", __region.id)
 
             entry_task_id = str(next(id_generator))
             entry_place = create_entry_place(entry_task_id, __region)
@@ -135,22 +137,30 @@ def from_region(region: RegionModel):
                 add_arc_from_to(entry_trans, child_entry, net)
                 add_arc_from_to(child_exit, exit_trans, net)
 
+            logger.debug("Finished conversion parallel gateway[%s]", __region.id)
+
             return entry_place, exit_place
         elif __region.is_sequential():
+            logger.debug("Converting sequential region[%s]", __region.id)
             first_place = None
             last_child = None
+            prev_region = None
 
             for child in __region.children:
                 child_entry, child_exit = rec(child)
                 if first_place is None:
                     first_place = child_entry
                 else:
+                    logger.debug("Collapsing places between regions %s and %s", prev_region.id, child.id)
                     collapse_places(net, last_child, child_entry)
                 last_child = child_exit
+                prev_region = child
 
+            logger.debug("Finished conversion sequential region[%s]", __region.id)
             return first_place, last_child
         elif __region.is_choice() or __region.is_nature():
             # Nature or Choice
+            logger.debug("Converting %s gateway[%s]",__region.type.value, __region.id)
 
             entry_task_id = str(next(id_generator))
             entry_place = create_entry_place(entry_task_id, __region)
@@ -191,9 +201,12 @@ def from_region(region: RegionModel):
                 add_arc_from_to(child_exit, exit_child_trans, net)
                 add_arc_from_to(exit_child_trans, exit_place, net)
 
+            logger.debug("Finished conversion %s gateway[%s]",__region.type.value, __region.id)
             return entry_place, exit_place
         elif __region.is_loop():
             # Loop
+            logger.debug("Converting loop gateway[%s]", __region.id)
+
             entry_task_id = str(next(id_generator))
             entry_place = create_entry_place(entry_task_id, __region)
             net.places.add(entry_place)
@@ -237,6 +250,7 @@ def from_region(region: RegionModel):
             add_arc_from_to(child_exit_place, exit_trans, net)
             add_arc_from_to(exit_trans, exit_place, net)
 
+            logger.debug("Finished conversion loop gateway[%s]", __region.id)
             return entry_place, exit_place
 
         raise ValueError(f"Unknown region type for region id {__region.id}: {__region.type}")
