@@ -87,7 +87,7 @@ class DurationExecution:
 
         new_marking = copy.copy(marking)
         user_choices = get_default_choices(ctx, new_marking, choices)
-        logger.debug(f"User choices are {", ".join(user_choices)}")
+        logger.debug(f"User choices are {user_choices}")
 
         logger.info(f"Firing user choices {user_choices}")
         for choice in user_choices:
@@ -133,16 +133,17 @@ def calculate_steps(ctx: ContextType, marking: MarkingType, max_steps: int=1000)
 
         # If no enabled transitions or can't continue, break the loop
         if len(__enabled_transitions) == 0 or not __can_continue:
-            logger.debug(f"{current_step} step: No enabled transitions or cannot continue.")
+            logger.debug(f"{current_step} step: No enabled transitions or stoppable transition found, breaking the loop. Active Stoppable Transitions: {list(map(lambda t: not t.stop, __enabled_transitions))}")
             break
 
         # Fire enabled transitions
         for t in __enabled_transitions:
+            logger.debug(f"{current_step} step: Firing transition {t}")
             in_place = list(t.in_arcs)[0].source
             __duration += durations[in_place]
             raw_marking = semantics.execute(t, ctx.net, raw_marking)
 
-        logger.debug(f"{current_step} step: Enabled transitions {__enabled_transitions}, duration {__duration}, marking {raw_marking}")
+        logger.debug(f"{current_step} step: Transitions fired {__enabled_transitions}, duration {__duration}, marking {raw_marking}")
         current_step += 1
 
     if current_step >= max_steps:

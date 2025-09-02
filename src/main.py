@@ -20,30 +20,6 @@ def root():
     return RedirectResponse("/docs/", status_code=status.HTTP_303_SEE_OTHER)
 
 
-@api.post("/steps")
-def steps(data: ExecuteRequest):
-    try:
-        region, net, im, fm, extree, choices = data.to_object()
-        if not net:
-            ctx = NetContext.from_region(region, strategy=DurationExecution())
-        else:
-            ctx = NetContext(region=region, net=net, im=im, fm=fm, strategy=DurationExecution())
-
-        new_marking, p, i, t = ctx.strategy.consume(ctx, extree.current_node.snapshot.marking)
-        extree.add_snapshot(ctx, Snapshot(marking=new_marking, probability=p, impacts=i, time=t))
-
-        return create_response(ctx.region, ctx.net, new_marking, ctx.final_marking, extree).model_dump(
-            exclude_unset=True, exclude_none=True,
-            exclude_defaults=True)
-    except Exception as e:
-        logging.error(f"Error processing request: {e}")
-        return {
-            "type": "error",
-            "message": str(e),
-            "traceback": traceback.format_tb(e.__traceback__),
-        }
-
-
 @api.post("/execute")
 def execute(data: ExecuteRequest):
     try:

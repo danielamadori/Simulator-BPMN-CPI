@@ -71,3 +71,9 @@ class ExecutionTreeNode(NodeAttributes, NodeMixin):
         self.parent = parent
         if children is None:
             self.children = []
+
+    def __str__(self):
+        return f"({self.name=}, {self.id=})"
+
+    def __repr__(self):
+        return f"({self.name=}, {self.id=})"

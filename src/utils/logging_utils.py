@@ -2,15 +2,23 @@
 
 import logging
 import logging.handlers
+import os
+
+LOGS_DIR = "logs"
+
 
 def get_logger(name):
+    if not os.path.exists(LOGS_DIR):
+        os.makedirs(LOGS_DIR)
+
     logger = logging.getLogger(name)
     if not logger.hasHandlers():
         setup_logger(name)
 
     return logger
 
-def setup_logger(name: str, debug: bool = False) -> logging.Logger:
+
+def setup_logger(name: str, debug: bool = True) -> logging.Logger:
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG if debug else logging.INFO)
 
@@ -26,7 +34,7 @@ def setup_logger(name: str, debug: bool = False) -> logging.Logger:
 
     # File handler with rotation
     file_handler = logging.handlers.RotatingFileHandler(
-        filename=f"{name}.log",
+        filename=os.path.join(LOGS_DIR, "detailed.log"),
         maxBytes=10 * 1024 * 1024,
         backupCount=5,
         encoding="utf-8"
@@ -38,7 +46,7 @@ def setup_logger(name: str, debug: bool = False) -> logging.Logger:
 
     # Error file handler
     error_file_handler = logging.handlers.RotatingFileHandler(
-        filename=f"error.log",
+        filename=os.path.join(LOGS_DIR, "error.log"),
         maxBytes=10 * 1024 * 1024,
         backupCount=3,
         encoding="utf-8"
@@ -59,7 +67,7 @@ def simple_formatter():
 
 def detailed_formatter():
     formatter = logging.Formatter(
-        fmt="%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s",
+        fmt="%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(funcName)s:%(lineno)d] - %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
     return formatter

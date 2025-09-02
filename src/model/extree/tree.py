@@ -7,6 +7,7 @@ from typing import Iterator, TYPE_CHECKING
 
 from anytree import Node, PreOrderIter, RenderTree, findall_by_attr, findall
 
+from model.extree import ExecutionTreeNode
 from strategy.execution import add_impacts
 from utils import logging_utils
 from utils.net_utils import get_default_impacts, is_final_marking
@@ -47,7 +48,7 @@ class ExecutionTree:
             logger.error("Cannot initialize ExecutionTree with None root")
             raise ValueError("Root Snapshot can't be None")
 
-        if isinstance(root, Node):
+        if isinstance(root, ExecutionTreeNode):
             self.__root = root
             self.current_node = root
             if generator is None:
@@ -58,7 +59,7 @@ class ExecutionTree:
                 self.__id_generator = serial_generator(max_id + 1)
             return
 
-        _root = Node(name="Root", id='0', snapshot=root)
+        _root = ExecutionTreeNode(name="Root", _id='0', snapshot=root)
         self.__root = _root
         self.current_node = _root
 
@@ -125,14 +126,17 @@ class ExecutionTree:
                                        impacts=add_impacts(parent_impacts, snapshot.impacts),
                                        time=parent_time + snapshot.execution_time)
 
-        child_node = Node(name=str(_id), id=str(_id), snapshot=cumulative_snapshot, parent=parent)
+        child_node = ExecutionTreeNode(name=str(_id), _id=str(_id), snapshot=cumulative_snapshot, parent=parent)
 
         if set_as_current:
             self.set_current(child_node)
 
+        logger.debug(f"Added new snapshot node with ID {child_node.id} under parent ID {parent.id if parent else 'None'}")
+
         return child_node
 
     def set_current(self, node: NodeType | str):
+        logger.debug(f"Setting current node to {node}")
         if isinstance(node, str):
             node = self.get_node_by_id(node)
 
@@ -141,6 +145,7 @@ class ExecutionTree:
             return False
 
         self.current_node = self.get_node_by_id(node.id)
+        logger.debug(f"Current node set to {node}")
         return True
 
     # Visualizzazione Albero
@@ -168,6 +173,9 @@ class ExecutionTree:
                     valid = False
                     break
 
+            if valid:
+                logger.debug(f"Node {node.id} matches. {marking} ~= {node.snapshot.marking}")
+
             return valid
 
         return list(findall(self.root, check_marking))
@@ -182,7 +190,7 @@ class ExecutionTree:
         return PreOrderIter(self.__root)
 
     def __contains__(self, item):
-        if not isinstance(item, Node):
+        if not isinstance(item, ExecutionTreeNode):
             return False
 
         for node in self:

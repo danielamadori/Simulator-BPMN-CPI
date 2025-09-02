@@ -13,7 +13,7 @@ from model.petri_net.wrapper import WrapperPetriNet
 from utils import logging_utils
 from utils.net_utils import add_arc_from_to, get_place_by_name
 from model.region import RegionModel, RegionType
-from model.extree.node import Snapshot
+from model.extree.node import Snapshot, ExecutionTreeNode
 
 if TYPE_CHECKING:
     from model.types import TransitionType, MarkingType, ExTreeType
@@ -273,11 +273,11 @@ class ExecuteRequest(pydantic.BaseModel):
 
         logger.debug("Converting execution tree to an ExTree model")
 
-        def convert_node(node: ExecutionTreeModel.NodeModel, parent: Node | None = None) -> Node:
+        def convert_node(node: ExecutionTreeModel.NodeModel, parent: ExecutionTreeNode | None = None) -> Node:
             logger.debug("Converting node %s, parent %s", node.name, parent.name if parent else None)
-            current_node = Node(
+            current_node = ExecutionTreeNode(
                 name=node.name,
-                id=node.id,
+                _id=node.id,
                 snapshot=Snapshot(
                     marking=model_to_marking(self.petri_net_obj, node.snapshot.marking),
                     probability=node.snapshot.probability,
@@ -314,6 +314,9 @@ class ExecuteRequest(pydantic.BaseModel):
             logger.debug("No petri net provided, skipping choices conversion.")
             return None
         logger.debug("Converting choices to a Choices model")
+
+        if not self.choices:
+            return []
 
         transitions = []
         for choice in self.choices:
