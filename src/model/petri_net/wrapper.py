@@ -321,7 +321,7 @@ class WrapperPetriNet(pm4py.PetriNet):
                 logger.error(f"Cannot create petri net: arc is type {type(arc)} instead of wrapper petri net arc.")
                 raise TypeError("All arcs must be instances of WrapperPetriNet.Arc")
 
-        if not isinstance(properties, dict):
+        if not isinstance(properties, dict | None):
             logger.error(f"Cannot create petri net: properties is type {type(properties)} instead of dict.")
             raise TypeError("Properties must be a dictionary")
 
