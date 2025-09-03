@@ -1,4 +1,5 @@
 import os
+import pathlib
 
 import pytest
 
@@ -6,7 +7,7 @@ from model.context import NetContext
 from model.petri_net.time_spin import TimeMarking
 from model.petri_net.wrapper import WrapperPetriNet
 
-PWD = "/home/matthewexe/Documents/Uni/Tirocinio/code"
+PWD = pathlib.Path(__file__).parent.parent.parent.absolute()
 
 
 @pytest.fixture
@@ -14,6 +15,7 @@ def region_model():
     """Fixture per caricare il modello di regione"""
     with open(os.path.join(PWD, "tests/input_data/bpmn_nature.json")) as f:
         from model.region import RegionModel
+
         model = RegionModel.model_validate_json(f.read())
     return model
 
@@ -100,5 +102,9 @@ class TestTimeMarking:
             else:
                 first_key_not_active = k
 
-        assert new_marking.age == tmp, "Age should be updated correctly after adding time"
-        assert new_marking.age[first_key_not_active] == 0, "Age for inactive places should be set to 0"
+        assert (
+            new_marking.age == tmp
+        ), "Age should be updated correctly after adding time"
+        assert (
+            new_marking.age[first_key_not_active] == 0
+        ), "Age for inactive places should be set to 0"

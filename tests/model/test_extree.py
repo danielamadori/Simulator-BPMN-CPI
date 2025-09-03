@@ -13,9 +13,7 @@ def region_model():
     """Fixture to load the region model"""
     import os
 
-    with open(
-        "/home/matthewexe/Documents/Uni/Tirocinio/code/tests/input_data/bpmn_choice.json"
-    ) as f:
+    with open(os.path.join(PWD, "tests/input_data/bpmn_choice.json")) as f:
         from model.region import RegionModel
 
         model = RegionModel.model_validate_json(f.read())
