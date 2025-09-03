@@ -1,50 +1,58 @@
+import pathlib
 import pytest
 
 from model.extree import ExTree
 from model.snapshot import Snapshot
 from strategy.execution import ClassicExecution, get_default_choices
 
-PWD = "/home/matthewexe/Documents/Uni/Tirocinio/code"
+PWD = pathlib.Path(__file__).parent.parent.parent.absolute()
+
 
 @pytest.fixture
 def region_model():
     """Fixture to load the region model"""
     import os
-    with open("/home/matthewexe/Documents/Uni/Tirocinio/code/tests/input_data/bpmn_choice.json") as f:
+
+    with open(
+        "/home/matthewexe/Documents/Uni/Tirocinio/code/tests/input_data/bpmn_choice.json"
+    ) as f:
         from model.region import RegionModel
+
         model = RegionModel.model_validate_json(f.read())
     return model
+
 
 @pytest.fixture
 def ctx(region_model):
     """Fixture to create a NetContext from the region model"""
     from model.context import NetContext
+
     context = NetContext.from_region(region_model)
     context.strategy = ClassicExecution()
     return context
 
+
 @pytest.fixture
 def initial_snapshot(ctx):
-    return Snapshot(ctx.initial_marking, 1, [0,0], 0)
+    return Snapshot(ctx.initial_marking, 1, [0, 0], 0)
+
 
 @pytest.fixture
 def extree(initial_snapshot):
     tree = ExTree(initial_snapshot)
     return tree
 
+
 @pytest.fixture
 def saturated_snapshot(ctx, initial_snapshot):
     """Create a saturated snapshot based on the initial snapshot"""
     saturated_marking, delta = ctx.strategy.saturate(ctx, initial_snapshot.marking)
     # Consuming the initial marking to create a saturated snapshot
-    saturated_marking, probability, impacts, delta = ctx.strategy.consume(ctx, saturated_marking)
-
-    return Snapshot(
-        saturated_marking,
-        probability,
-        impacts,
-        delta
+    saturated_marking, probability, impacts, delta = ctx.strategy.consume(
+        ctx, saturated_marking
     )
+
+    return Snapshot(saturated_marking, probability, impacts, delta)
 
 
 def test_add(ctx, extree, saturated_snapshot, initial_snapshot):

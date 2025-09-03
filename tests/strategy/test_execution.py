@@ -1,5 +1,6 @@
 import math
 import os
+import pathlib
 
 import pytest
 
@@ -8,7 +9,8 @@ from model.region import RegionModel
 from model.petri_net.time_spin import TimeMarking
 from utils.net_utils import NetUtils
 
-PWD = "/home/matthewexe/Documents/Uni/Tirocinio/code"
+PWD = pathlib.Path(__file__).parent.parent.parent.absolute()
+
 
 @pytest.fixture
 def ctx():
@@ -24,7 +26,7 @@ def marking(ctx):
 
     new_base_marking = {k: 0 for k in im.keys()}
     for p in _net.places:
-        if NetUtils.Place.get_entry_id(p) in ['5', '6']:
+        if NetUtils.Place.get_entry_id(p) in ["5", "6"]:
             print("FOUND")
             new_base_marking[p] = 1
 
@@ -66,13 +68,13 @@ def test_consume(ctx, marking):
     for t in _net.transitions:
         if NetUtils.Transition.get_region_id(t) == "6":
             if (
-                    NetUtils.Transition.get_probability(t) == 0.8
-                    and NetUtils.Transition.get_stop(t) == True
+                NetUtils.Transition.get_probability(t) == 0.8
+                and NetUtils.Transition.get_stop(t) == True
             ):
                 choices.append(t)
         if (
-                NetUtils.Transition.get_region_id(t) == "5"
-                and NetUtils.Transition.get_stop(t) == True
+            NetUtils.Transition.get_region_id(t) == "5"
+            and NetUtils.Transition.get_stop(t) == True
         ):
             if NetUtils.Place.get_entry_id(list(t.out_arcs)[0].target) == "12":
                 choices.append(t)
@@ -83,8 +85,6 @@ def test_consume(ctx, marking):
     consumed_m, _p, _i, _t = bho
 
     # petri_net_to_dot(ctx.net, consumed_m, fm)
-
-
 
     assert type(_i) == list
 
