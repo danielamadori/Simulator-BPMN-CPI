@@ -10,7 +10,7 @@ from anytree import Node, PreOrderIter, RenderTree, findall_by_attr, findall
 from model.extree import ExecutionTreeNode
 from strategy.execution import add_impacts
 from utils import logging_utils
-from utils.net_utils import get_default_impacts, is_final_marking
+from utils.net_utils import get_empty_impacts, is_final_marking
 from model.extree.node import Snapshot
 
 if TYPE_CHECKING:
@@ -117,7 +117,7 @@ class ExecutionTree:
                 return node
 
         parent_probability = parent.snapshot.probability if parent is not None else 1
-        parent_impacts = parent.snapshot.impacts if parent is not None else get_default_impacts(ctx.net)
+        parent_impacts = parent.snapshot.impacts if parent is not None else get_empty_impacts(ctx.net)
         parent_time = parent.snapshot.execution_time if parent is not None else 0
 
         _id = next(self.__id_generator)

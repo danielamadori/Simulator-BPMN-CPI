@@ -6,7 +6,7 @@ from typing import Collection, TYPE_CHECKING
 from model.region import RegionType
 from utils import logging_utils
 from utils.default import get_default_transition
-from utils.net_utils import get_region_by_id, get_default_impacts
+from utils.net_utils import get_region_by_id, get_empty_impacts
 
 if TYPE_CHECKING:
     from model.types import ContextType, MarkingType, TransitionType, PlaceType
@@ -100,7 +100,7 @@ class ClassicExecution:
         enabled_transitions = ctx.semantic.enabled_transitions(ctx.net, saturated_marking)
         user_choices = set(user_choices) & enabled_transitions
 
-        default_impacts = get_default_impacts(ctx.net)
+        default_impacts = get_empty_impacts(ctx.net)
 
         # Check if there is a transition with stop that's not in choices
         strategy_get_choices = get_choices(ctx, marking)

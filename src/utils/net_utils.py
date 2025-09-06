@@ -165,7 +165,7 @@ def get_all_choices(ctx: ContextType, marking: MarkingType, choices: list[Transi
     return list(choices)
 
 
-def get_default_impacts(net: PetriNetType) -> list[float]:
+def get_empty_impacts(net: PetriNetType) -> list[float]:
     # Default impacts
     default_impacts = None
     for p in net.places:

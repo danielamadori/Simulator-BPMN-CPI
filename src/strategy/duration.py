@@ -8,7 +8,7 @@ from pm4py.objects.petri_net.semantics import ClassicSemantics
 from strategy.execution import add_impacts, get_default_choices
 from utils import logging_utils
 from utils.exceptions import MaxIterationsError
-from utils.net_utils import get_default_impacts
+from utils.net_utils import get_empty_impacts
 
 if TYPE_CHECKING:
     from model.types import MarkingType, TransitionType, ContextType
@@ -32,7 +32,7 @@ class DurationExecution:
         duration, can_continue = calculate_steps(ctx, marking)
         original_duration = duration
         probability = 1.0
-        impact = get_default_impacts(ctx.net)
+        impact = get_empty_impacts(ctx.net)
 
         semantics = ClassicSemantics()
 
@@ -81,7 +81,7 @@ class DurationExecution:
         if choices is None:
             choices = []
 
-        impact = get_default_impacts(ctx.net)
+        impact = get_empty_impacts(ctx.net)
         duration = 0
         probability = 1
 
