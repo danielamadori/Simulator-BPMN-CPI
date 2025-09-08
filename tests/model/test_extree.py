@@ -1,8 +1,8 @@
 import pathlib
 import pytest
 
-from model.extree import ExTree
-from model.snapshot import Snapshot
+from model.extree import ExecutionTree
+from model.extree.node import Snapshot
 from strategy.execution import ClassicExecution, get_default_choices
 
 PWD = pathlib.Path(__file__).parent.parent.parent.absolute()
@@ -37,7 +37,7 @@ def initial_snapshot(ctx):
 
 @pytest.fixture
 def extree(initial_snapshot):
-    tree = ExTree(initial_snapshot)
+    tree = ExecutionTree(initial_snapshot)
     return tree
 
 

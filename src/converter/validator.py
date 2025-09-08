@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 def region_validator(region: RegionModel):
     def explore(_r: RegionModel, expected_impact_length: int = None):
-        logger.debug(f"Esploro la Region: {_r.label} id:{_r.id}")
+        ##logger.debug(f"Esploro la Region: {_r.label} id:{_r.id}")
         # controlli per tutti i tipi di regione
         if not _r.id or not isinstance(_r.type, RegionType):
             logger.error(
@@ -25,7 +25,7 @@ def region_validator(region: RegionModel):
         # controllo la regione in base al suo tipo
         status, expected_impact_length = __switch_case(_r, expected_impact_length)
 
-        logger.debug(f"Expected_Value:{expected_impact_length}")
+        #logger.debug(f"Expected_Value:{expected_impact_length}")
 
         if status is False:
             return False, None
@@ -70,7 +70,7 @@ def __switch_case(region: RegionModel, expected_impact_length: int = None):
 
 
 def __sequential_validator(region: RegionModel, expected_impact_length: int = None):
-    logger.debug("Validatore Sequenziale")
+    #logger.debug("Validatore Sequenziale")
     # per essere sequenziale deve almeno avere 2 children
     if not region.children or len(region.children) < 2:
         logger.error(
@@ -98,9 +98,9 @@ def __sequential_validator(region: RegionModel, expected_impact_length: int = No
 
 
 def __task_validator(region: RegionModel, expected_impact_length: int = None):
-    logger.debug("Validatore Task")
-    logger.debug(f"I meiei impatti sono: {region.impacts}")
-    logger.debug(f"expected_impact_length = {expected_impact_length}")
+    #logger.debug("Validatore Task")
+    #logger.debug(f"I meiei impatti sono: {region.impacts}")
+    #logger.debug(f"expected_impact_length = {expected_impact_length}")
 
     if not region.impacts:
         logger.error(
@@ -117,9 +117,9 @@ def __task_validator(region: RegionModel, expected_impact_length: int = None):
 
     if expected_impact_length is None:
         expected_impact_length = len(region.impacts)
-        logger.debug(
-            f"Set della lunghezza degli impatti da {region.label} di id: {region.id} fa set a {expected_impact_length}"
-        )
+        # logger.debug(
+        #     f"Set della lunghezza degli impatti da {region.label} di id: {region.id} fa set a {expected_impact_length}"
+        # )
     elif len(region.impacts) != expected_impact_length:
         logger.error(
             f"Regione Task {region.label} di id:{region.id} ha una lunghezza di impacts diversa ({len(region.impacts or [])} vs {expected_impact_length})"
@@ -142,7 +142,7 @@ def __task_validator(region: RegionModel, expected_impact_length: int = None):
 
 
 def __parallel_validator(region: RegionModel, expected_impact_length: int = None):
-    logger.debug("Validatore Parallelo")
+    #logger.debug("Validatore Parallelo")
     # devo avere almeno 2 children
     if not region.children or len(region.children) < 2:
         logger.error(
@@ -170,7 +170,7 @@ def __parallel_validator(region: RegionModel, expected_impact_length: int = None
 
 
 def __nature_validator(region: RegionModel, expected_impact_length: int = None):
-    logger.debug("Validatore Natura")
+    #logger.debug("Validatore Natura")
     # devo avere almeno 2 children
     if not region.children or len(region.children) < 2:
         logger.error(
@@ -214,7 +214,7 @@ def __nature_validator(region: RegionModel, expected_impact_length: int = None):
 
 
 def __choice_validator(region: RegionModel, expected_impact_length: int = None):
-    logger.debug("Validatore Choice")
+    #logger.debug("Validatore Choice")
     # devo avere almeno 2 children
     if not region.children or len(region.children) < 2:
         logger.error(
@@ -248,7 +248,7 @@ def __choice_validator(region: RegionModel, expected_impact_length: int = None):
 
 
 def __loop_validator(region: RegionModel, expected_impact_length: int = None):
-    logger.debug("Validatore Loop")
+    #logger.debug("Validatore Loop")
     children = region.children
     if children is None or len(children) != 1:
         logger.error(

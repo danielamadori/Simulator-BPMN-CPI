@@ -1,15 +1,14 @@
-import logging
-
-from pm4py.objects.petri_net.obj import Marking
+from pm4py.objects.petri_net.utils.petri_utils import place_set_as_marking
 
 from converter.validator import region_validator
 from model.petri_net.time_spin import TimeMarking
-from model.petri_net.wrapper import WrapperPetriNet, add_arc_from_to
+from model.petri_net.wrapper import WrapperPetriNet
 from model.region import RegionModel
+from utils import logging_utils
 from utils.exceptions import ValidationError
-from utils.net_utils import PropertiesKeys
+from utils.net_utils import PropertiesKeys, add_arc_from_to, collapse_places
 
-logger = logging.getLogger(__name__)
+logger = logging_utils.get_logger(__name__)
 
 
 def serial_generator(initial: int = 0):
@@ -20,25 +19,21 @@ def serial_generator(initial: int = 0):
         counter += 1
 
 
-def get_place_prop(place: WrapperPetriNet.Place):
-    return place.properties
+# SESE Methods
+def create_entry_place(place_id: str, region: RegionModel):
+    place = WrapperPetriNet.Place(place_id)
 
-
-def get_trans_prop(trans: WrapperPetriNet.Transition):
-    return trans.properties
-
-
-def create_place(place_id: str, region: RegionModel):
-    place = WrapperPetriNet.Place(
-        place_id,
-    )
-
-    place.properties.update(create_place_prop(region))
+    place.entry_id = region.id
+    place.exit_id = None
+    place.region_label = region.label
+    place.region_type = region.type
+    place.duration = region.duration
+    place.impacts = region.impacts
 
     return place
 
 
-def create_place_prop(region: RegionModel):
+def create_entry_place_prop(region: RegionModel):
     prop = {PropertiesKeys.ENTRY_RID: region.id, PropertiesKeys.EXIT_RID: None, PropertiesKeys.LABEL: region.label,
             PropertiesKeys.TYPE: region.type, PropertiesKeys.DURATION: region.duration,
             PropertiesKeys.IMPACTS: region.impacts}
@@ -46,57 +41,54 @@ def create_place_prop(region: RegionModel):
     return prop
 
 
+def create_exit_place(place_id: str, region: RegionModel):
+    place = create_entry_place(place_id, region)
+
+    place.entry_id = None
+    place.exit_id = region.id
+    place.duration = 0
+    place.impacts = None
+
+    return place
+
+
 def create_transition(trans_id: str, region: RegionModel, probability: float = 1, stop: bool = False):
     trans = WrapperPetriNet.Transition(trans_id, label=region.label)
 
-    trans.properties[PropertiesKeys.ENTRY_RID] = region.id
-    trans.properties[PropertiesKeys.EXIT_RID] = None
-    trans.properties[PropertiesKeys.LABEL] = region.label
-    trans.properties[PropertiesKeys.TYPE] = region.type
-    trans.properties[PropertiesKeys.PROBABILITY] = probability
-    trans.properties[PropertiesKeys.STOP] = stop
+    trans.region_id = region.id
+    trans.region_label = region.label
+    trans.region_type = region.type
+    trans.probability = probability
+    trans.stop = stop
 
     return trans
 
 
 def from_region(region: RegionModel):
     if not region_validator(region):
-        logger.error("Lancio eccezzione perchè i dati forniti non sono validi")
+        logger.error("Invalid data, can't convert to Petri net")
         raise ValidationError()
     else:
-        logger.info("Validazione avvenuta con successo")
+        logger.info("Starting conversion from BPMN to Petri net")
 
     net = WrapperPetriNet()
     id_generator = serial_generator()
 
-    def rec(__region: RegionModel, source: WrapperPetriNet.Place | None = None):
+    def rec(__region: RegionModel) -> tuple[
+        WrapperPetriNet.Place, WrapperPetriNet.Place]:
         if __region.is_task():
+            logger.debug("Converting task[%s]", __region.id)
             # Task
             # Entry Place
-            logger.debug(f"Task\tRegion: {__region.id}")
-            if not source:
-                entry_task_id = str(next(id_generator))
-                entry_place = create_place(entry_task_id, __region)
-                net.places.add(entry_place)
-            else:
-                entry_place = source
-                _tmp_id = source.properties[PropertiesKeys.EXIT_RID]
-                entry_place.properties.update(create_place_prop(__region))
-                entry_place.properties.update({PropertiesKeys.EXIT_RID: _tmp_id})
+
+            entry_task_id = str(next(id_generator))
+            entry_place = create_entry_place(entry_task_id, __region)
+            net.places.add(entry_place)
 
             # Exit place
             exit_task_id = str(next(id_generator))
-            exit_place = create_place(exit_task_id, __region)
-            exit_place.properties.update(
-                {
-                    PropertiesKeys.ENTRY_RID: None,
-                    PropertiesKeys.EXIT_RID: exit_place.properties[
-                        PropertiesKeys.ENTRY_RID
-                    ],
-                    PropertiesKeys.DURATION: 0,
-                    PropertiesKeys.IMPACTS: None,
-                }
-            )
+            exit_place = create_exit_place(exit_task_id, __region)
+
             net.places.add(exit_place)
 
             # Transition
@@ -108,34 +100,22 @@ def from_region(region: RegionModel):
             add_arc_from_to(entry_place, trans, net)
             add_arc_from_to(trans, exit_place, net)
 
+            logger.debug("Finished conversion task[%s]", __region.id)
+
             return entry_place, exit_place
 
         elif __region.is_parallel():
             # Parallel Gateway
             # Entry Place
-            logger.debug(f"Parallel\tRegion: {__region.id}")
-            if not source:
-                entry_task_id = str(next(id_generator))
-                entry_place = create_place(entry_task_id, __region)
-                net.places.add(entry_place)
-            else:
-                entry_place = source
-                _tmp_id = source.properties[PropertiesKeys.EXIT_RID]
-                entry_place.properties.update(create_place_prop(__region))
-                entry_place.properties.update({PropertiesKeys.EXIT_RID: _tmp_id})
+            logger.debug("Converting parallel gateway[%s]", __region.id)
+
+            entry_task_id = str(next(id_generator))
+            entry_place = create_entry_place(entry_task_id, __region)
+            net.places.add(entry_place)
 
             # Exit place
             exit_task_id = str(next(id_generator))
-            exit_place = create_place(exit_task_id, __region)
-            exit_place.properties.update(
-                {
-                    PropertiesKeys.ENTRY_RID: None,
-                    PropertiesKeys.EXIT_RID: exit_place.properties[
-                        PropertiesKeys.ENTRY_RID
-                    ],
-                    PropertiesKeys.DURATION: 0,
-                }
-            )
+            exit_place = create_exit_place(exit_task_id, __region)
             net.places.add(exit_place)
 
             # Entry transition
@@ -157,58 +137,41 @@ def from_region(region: RegionModel):
                 add_arc_from_to(entry_trans, child_entry, net)
                 add_arc_from_to(child_exit, exit_trans, net)
 
+            logger.debug("Finished conversion parallel gateway[%s]", __region.id)
+
             return entry_place, exit_place
         elif __region.is_sequential():
-            logger.debug(f"Sequential\tRegion: {__region.id}")
-            if not source:
-                entry_task_id = str(next(id_generator))
-                entry_place = create_place(entry_task_id, __region)
-                net.places.add(entry_place)
-            else:
-                entry_place = source
-                _tmp_id = source.properties[PropertiesKeys.EXIT_RID]
-                entry_place.properties.update(create_place_prop(__region))
-                entry_place.properties.update({PropertiesKeys.EXIT_RID: _tmp_id})
-
-            prev_child = entry_place
+            logger.debug("Converting sequential region[%s]", __region.id)
+            first_place = None
+            last_child = None
+            prev_region = None
 
             for child in __region.children:
-                child_entry, child_exit = rec(child, prev_child)
-                prev_child = child_exit
+                child_entry, child_exit = rec(child)
+                if first_place is None:
+                    first_place = child_entry
+                else:
+                    logger.debug("Collapsing places between regions %s and %s", prev_region.id, child.id)
+                    collapse_places(net, last_child, child_entry)
+                last_child = child_exit
+                prev_region = child
 
-            return entry_place, prev_child
+            logger.debug("Finished conversion sequential region[%s]", __region.id)
+            return first_place, last_child
         elif __region.is_choice() or __region.is_nature():
-            logger.debug(f"Nature or Choice\tRegion: {__region.id}")
             # Nature or Choice
-            if not source:
-                entry_task_id = str(next(id_generator))
-                entry_place = create_place(entry_task_id, __region)
-                net.places.add(entry_place)
-            else:
-                entry_place = source
-                _tmp_id = source.properties[PropertiesKeys.EXIT_RID]
-                entry_place.properties.update(create_place_prop(__region))
-                entry_place.properties.update({PropertiesKeys.EXIT_RID: _tmp_id})
+            logger.debug("Converting %s gateway[%s]",__region.type.value, __region.id)
+
+            entry_task_id = str(next(id_generator))
+            entry_place = create_entry_place(entry_task_id, __region)
+            net.places.add(entry_place)
 
             # Exit place
             exit_task_id = str(next(id_generator))
-            exit_place = create_place(exit_task_id, __region)
-            exit_place.properties.update(
-                {
-                    PropertiesKeys.ENTRY_RID: None,
-                    PropertiesKeys.EXIT_RID: exit_place.properties[
-                        PropertiesKeys.ENTRY_RID
-                    ],
-                    PropertiesKeys.DURATION: 0,
-                }
-            )
+            exit_place = create_exit_place(exit_task_id, __region)
             net.places.add(exit_place)
 
             for i in range(len(__region.children)):
-                logger.debug(
-                    f"Region: {__region.id}\tChild: {__region.children[i].id}[{i}]"
-                )
-
                 child = __region.children[i]
                 child_entry, child_exit = rec(child)
 
@@ -238,58 +201,53 @@ def from_region(region: RegionModel):
                 add_arc_from_to(child_exit, exit_child_trans, net)
                 add_arc_from_to(exit_child_trans, exit_place, net)
 
+            logger.debug("Finished conversion %s gateway[%s]",__region.type.value, __region.id)
             return entry_place, exit_place
         elif __region.is_loop():
-            logger.debug(f"Loop\tRegion: {__region.id}")
             # Loop
-            if not source:
-                entry_task_id = str(next(id_generator))
-                entry_place = create_place(entry_task_id, __region)
-                net.places.add(entry_place)
-            else:
-                entry_place = source
-                _tmp_id = source.properties[PropertiesKeys.EXIT_RID]
-                entry_place.properties.update(create_place_prop(__region))
-                entry_place.properties.update({PropertiesKeys.EXIT_RID: _tmp_id})
+            logger.debug("Converting loop gateway[%s]", __region.id)
+
+            entry_task_id = str(next(id_generator))
+            entry_place = create_entry_place(entry_task_id, __region)
+            net.places.add(entry_place)
 
             # Exit place
             exit_task_id = str(next(id_generator))
-            exit_place = create_place(exit_task_id, __region)
-            exit_place.properties.update(
-                {
-                    PropertiesKeys.ENTRY_RID: None,
-                    PropertiesKeys.EXIT_RID: exit_place.properties[
-                        PropertiesKeys.ENTRY_RID
-                    ],
-                    PropertiesKeys.DURATION: 0,
-                }
-            )
+            exit_place = create_exit_place(exit_task_id, __region)
             net.places.add(exit_place)
 
             # Entry transition
             entry_trans_id = str(next(id_generator))
             entry_trans = create_transition(entry_trans_id, __region)
             entry_trans.label = "Entry " + region.label
-            entry_trans.properties[PropertiesKeys.LABEL] = "Entry " + __region.label
+            entry_trans.region_label = "Entry " + __region.label
             net.transitions.add(entry_trans)
 
             # Children region
             child_entry_place, child_exit_place = rec(__region.children[0])
 
-            child_exit_place.properties.update({PropertiesKeys.VISIT_LIMIT: __region.bound})
+            child_exit_place.visit_limit = __region.bound
+
+            # Set properties for child
+            child_exit_place.entry_id = __region.id
+            child_exit_place.region_type = __region.type
+            child_exit_place.region_label = __region.label
+            child_exit_place.duration = __region.duration
+            child_exit_place.impacts = __region.impacts
+
 
             # Loop transition
             loop_trans_id = str(next(id_generator))
             loop_trans = create_transition(loop_trans_id, __region, probability=__region.distribution, stop=True)
             loop_trans.label = "Loop " + region.label
-            loop_trans.properties[PropertiesKeys.LABEL] = "Loop " + __region.label
+            loop_trans.region_label = "Loop " + __region.label
             net.transitions.add(loop_trans)
 
             # Exit transition
             exit_trans_id = str(next(id_generator))
             exit_trans = create_transition(exit_trans_id, __region, probability=1 - __region.distribution, stop=True)
             exit_trans.label = "Exit " + region.label
-            exit_trans.properties[PropertiesKeys.LABEL] = "Exit " + __region.label
+            exit_trans.region_label = "Exit " + __region.label
             net.transitions.add(exit_trans)
 
             # Add arcs
@@ -300,17 +258,15 @@ def from_region(region: RegionModel):
             add_arc_from_to(child_exit_place, exit_trans, net)
             add_arc_from_to(exit_trans, exit_place, net)
 
+            logger.debug("Finished conversion loop gateway[%s]", __region.id)
             return entry_place, exit_place
 
         raise ValueError(f"Unknown region type for region id {__region.id}: {__region.type}")
 
     entry_place, exit_place = rec(region)
 
-    raw_im = Marking()
-    raw_fm = Marking()
-    for place in net.places:
-        raw_im[place] = 0 if place.name != entry_place.name else 1
-        raw_fm[place] = 0 if place.name != exit_place.name else 1
+    raw_im = place_set_as_marking([entry_place])
+    raw_fm = place_set_as_marking([exit_place])
 
     im = TimeMarking(raw_im)
     fm = TimeMarking(raw_fm)

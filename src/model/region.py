@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import List
 
 from pydantic import BaseModel
 
@@ -24,9 +23,9 @@ class RegionModel(BaseModel):
     type: RegionType
     label: str | None = None
     duration: float = 0
-    children: List[RegionModel] | None = None
-    distribution: List[float] | float | None = None
-    impacts: List[float] | None = None
+    children: list[RegionModel] | None = None
+    distribution: list[float] | float | None = None
+    impacts: list[float] | None = None
     bound: int | None = None
 
     def is_parallel(self) -> bool:

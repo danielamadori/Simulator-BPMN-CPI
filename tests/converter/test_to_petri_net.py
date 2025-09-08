@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Collection
 
 import pytest
 
@@ -73,8 +73,8 @@ def get_region_ids(region: RegionModel, *types: RegionType):
 def get_region_props_from_net(
         net: WrapperPetriNet,
         region: RegionModel,
-        keys: Tuple[PropertiesKeys] = None,
-        types: Tuple[RegionType] = None,
+        keys: Collection[PropertiesKeys] = None,
+        types: Collection[RegionType] = None,
 ):
     if keys is None:
         return None
@@ -85,13 +85,13 @@ def get_region_props_from_net(
 
     for p in net.places:
         rid = (
-                p.properties[PropertiesKeys.ENTRY_RID]
-                or p.properties[PropertiesKeys.EXIT_RID]
+                p.entry_id
+                or p.exit_id
         )
         for key_prop in keys:
-            if key_prop not in p.properties.keys():
+            if key_prop not in p.custom_properties.keys():
                 continue
-            prop = p.properties[key_prop]
+            prop = p.custom_properties[key_prop]
             if prop is not None:
                 if key_prop != PropertiesKeys.DURATION or (
                         _dict[rid].get(key_prop, 0) == 0
@@ -99,11 +99,11 @@ def get_region_props_from_net(
                     _dict[rid].update({key_prop: prop})
 
     for t in net.transitions:
-        rid = t.properties[PropertiesKeys.ENTRY_RID]
+        rid = t.region_id
         for key_prop in keys:
-            if key_prop not in t.properties.keys():
+            if key_prop not in t.custom_properties.keys():
                 continue
-            prop = t.properties[key_prop]
+            prop = t.custom_properties[key_prop]
             if prop is not None:
                 _dict[rid].update({key_prop: prop})
 
@@ -127,13 +127,13 @@ class TestBaseRegion:
         self.last_place = None
         for p in self.net.places:
             if (
-                    p.properties[PropertiesKeys.ENTRY_RID]
-                    and not p.properties[PropertiesKeys.EXIT_RID]
+                    p.entry_id
+                    and not p.exit_id
             ):
                 self.first_place = p
             elif (
-                    not p.properties[PropertiesKeys.ENTRY_RID]
-                    and p.properties[PropertiesKeys.EXIT_RID]
+                    not p.entry_id
+                    and p.exit_id
             ):
                 self.last_place = p
 
@@ -166,7 +166,7 @@ class TestBaseRegion:
         child_ids = {r.id for r in self.region.children}
         child_ids.add(self.region.id)
         place_child_rids = (
-            a.target.properties[PropertiesKeys.ENTRY_RID]
+            a.target.custom_properties[PropertiesKeys.ENTRY_RID]
             for a in self.first_place.out_arcs
         )
 
@@ -178,15 +178,7 @@ class TestBaseRegion:
         props = get_region_props_from_net(self.net, self.region, keys=keys)
 
         assert props[self.region.id][PropertiesKeys.DURATION] == self.region.duration
-        assert (
-                list(
-                    filter(
-                        lambda p: p.properties[PropertiesKeys.EXIT_RID] == self.region.id,
-                        self.net.places,
-                    )
-                )[0].properties[PropertiesKeys.DURATION]
-                == 0
-        )
+        assert list(filter(lambda p: p.exit_id == self.region.id, self.net.places))[0].duration == 0
 
 
 class TestTask:
