@@ -42,7 +42,20 @@ def get_default_transition(ctx: ContextType, place: PlaceType, marking: MarkingT
             return exit_transition
 
     # Get default region by place
-    default_choice = Defaults.get_default_by_region(ctx.region, place.entry_id)
+    region_id = None
+    if hasattr(place, 'entry_id'):
+        region_id = place.entry_id
+    if hasattr(place, 'exit_id') and not region_id:
+        logger.debug(f"Place {place.name} has no entry_id, trying exit_id.")
+        region_id = place.exit_id
+
+    if not region_id:
+        logger.warning(f"Place {place.name} has no entry_id or exit_id.")
+        logger.debug(f"Place {place.name} has no entry_id or exit_id. Selecting first outgoing transition.")
+        return list(place.out_arcs)[0].target if len(list(place.out_arcs)) > 0 else None
+
+    default_choice = Defaults.get_default_by_region(ctx.region, region_id)
+
     if not default_choice:
         logger.debug(f"No default transition found for place {place.name}. Selecting first outgoing transition.")
         return list(place.out_arcs)[0].target if len(list(place.out_arcs)) > 0 else None
@@ -95,6 +108,10 @@ class Defaults:
             RegionType.NATURE: cls.__nature_child,
             RegionType.LOOP: cls.__loop_child
         }
+
+        if region_type not in default_functions:
+            logger.warning(f"No default function found for region type {region_type.name}.")
+            return lambda x: None
 
         return default_functions[region_type]
 

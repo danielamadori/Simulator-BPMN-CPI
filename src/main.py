@@ -9,10 +9,11 @@ from model.endpoints.execute.request import ExecuteRequest
 from model.endpoints.execute.response import create_response
 from model.extree import ExecutionTree
 from model.extree.node import Snapshot
-from strategy.duration import DurationExecution
+from utils import logging_utils
 
 api = FastAPI(title="BPMN-CPI Execution API", version="1.0.0", docs_url="/docs/", redoc_url=None)
 
+logger = logging_utils.get_logger(__name__)
 
 @api.exception_handler(404)
 @api.get("/")
@@ -24,8 +25,10 @@ def root():
 def execute(data: ExecuteRequest):
     try:
         region, net, im, fm, extree, choices = data.to_object()
+        logger.info("Request received:")
         if not net:
-            ctx = NetContext.from_region(region, DurationExecution())
+            logger.info(f"No net defined. Creating new context and execution tree.")
+            ctx = NetContext.from_region(region)
             net = ctx.net
             im = ctx.initial_marking
             fm = ctx.final_marking
@@ -36,10 +39,13 @@ def execute(data: ExecuteRequest):
             if not all(choices):
                 raise ValueError("One or more choices are not valid transitions in the Petri net.")
 
-            ctx = NetContext(region=region, net=net, im=im, fm=fm, strategy=DurationExecution())
-            logging.getLogger(__name__).debug(f"Strategy Type: {type(ctx.strategy)}")
+            logger.info(f"Net defined, using provided markings and execution tree.")
+            ctx = NetContext(region=region, net=net, im=im, fm=fm)
+            logger.info(f"Strategy Type: {type(ctx.strategy)}")
             current_marking = extree.current_node.snapshot.marking
+            logger.info(f"Current marking: {current_marking}")
 
+            logger.info(f"Consuming choices: {choices}")
             new_marking, probability, impacts, execution_time = ctx.strategy.consume(ctx, current_marking, choices)
             new_snapshot = Snapshot(marking=new_marking, probability=probability, impacts=impacts, time=execution_time)
             extree.add_snapshot(ctx, new_snapshot)

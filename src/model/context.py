@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 from converter.spin import from_region
 from model.petri_net.time_spin import TimeNetSematic
+from strategy import default_strategy
 from strategy.execution import ClassicExecution
 
 if TYPE_CHECKING:
@@ -37,7 +38,7 @@ class NetContext:
         self.net = net
         self.initial_marking = im
         self.final_marking = fm
-        self.strategy = strategy or ClassicExecution()
+        self.strategy = strategy or default_strategy
 
     @classmethod
     def from_region(cls, region: RegionModelType, strategy: object = None):

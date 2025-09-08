@@ -12,8 +12,10 @@ def get_logger(name):
         os.makedirs(LOGS_DIR)
 
     logger = logging.getLogger(name)
-    if not logger.hasHandlers():
-        setup_logger(name)
+    if logger.hasHandlers():
+        logger.handlers.clear()
+
+    setup_logger(name)
 
     return logger
 

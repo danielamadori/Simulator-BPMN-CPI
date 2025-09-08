@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 from typing import TYPE_CHECKING
 
+import deprecation
 from pm4py.objects.petri_net.semantics import ClassicSemantics
 
 from strategy.execution import add_impacts, get_default_choices
@@ -15,6 +16,7 @@ if TYPE_CHECKING:
 
 logger = logging_utils.get_logger(__name__)
 
+@deprecation.deprecated
 class DurationExecution:
     """
     Class to calculate the duration of execution in a Petri net.

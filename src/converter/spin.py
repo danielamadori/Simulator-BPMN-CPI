@@ -228,6 +228,14 @@ def from_region(region: RegionModel):
 
             child_exit_place.visit_limit = __region.bound
 
+            # Set properties for child
+            child_exit_place.entry_id = __region.id
+            child_exit_place.region_type = __region.type
+            child_exit_place.region_label = __region.label
+            child_exit_place.duration = __region.duration
+            child_exit_place.impacts = __region.impacts
+
+
             # Loop transition
             loop_trans_id = str(next(id_generator))
             loop_trans = create_transition(loop_trans_id, __region, probability=__region.distribution, stop=True)
