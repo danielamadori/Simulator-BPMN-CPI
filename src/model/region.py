@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from enum import Enum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 
 class RegionType(Enum):
@@ -19,7 +19,7 @@ class RegionModel(BaseModel):
     Classe che rappresenta i dati ricevuti dal client
     """
 
-    id: str
+    id: str | int
     type: RegionType
     label: str | None = None
     duration: float = 0

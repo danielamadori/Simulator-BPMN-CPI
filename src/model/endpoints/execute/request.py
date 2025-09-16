@@ -54,9 +54,9 @@ class PetriNetModel(pydantic.BaseModel):
         """
         Represents a transition in a Petri net.
         """
-        id: str
+        id: str | int
         label: str | None = None
-        region_id: str = None
+        region_id: str | int = None
         region_type: RegionType = None
         probability: float = 1
         stop: bool = False
@@ -64,11 +64,11 @@ class PetriNetModel(pydantic.BaseModel):
     class PlaceModel(BaseModel):
         """ Represents a place in a Petri net.
         """
-        id: str
+        id: str | int
         label: str | None = None
         region_type: RegionType = None
-        entry_region_id: str | None = None
-        exit_region_id: str | None = None
+        entry_region_id: str | int | None = None
+        exit_region_id: str | int | None = None
         duration: float = 0.0
         impacts: list[float] | None = None
         visit_limit: int | None = None
