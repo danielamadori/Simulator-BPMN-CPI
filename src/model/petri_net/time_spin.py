@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import copy
-import logging
 from collections import namedtuple
 from typing import TYPE_CHECKING
 
@@ -88,7 +87,7 @@ class TimeMarking:
     def __deepcopy__(self, memodict=None):
         return TimeMarking(self.tokens, self.age, self.visit_count)
 
-    def __iter__(self):
+    def __iter__(self) -> iter[PlaceType]:
         return iter(self.keys())
 
     @property

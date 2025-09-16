@@ -4,6 +4,7 @@ import copy
 from typing import Collection, TYPE_CHECKING
 
 from model.region import RegionType
+from strategy.base import execute_transition
 from utils import logging_utils
 from utils.default import get_default_transition
 from utils.net_utils import get_region_by_id, get_empty_impacts
@@ -263,18 +264,3 @@ def add_impacts(i1: list[float], i2: list[float]) -> list[float]:
     return [x + y for x, y in zip(i1, i2)]
 
 
-def execute_transition(ctx: ContextType, t: TransitionType, marking: MarkingType) -> tuple[
-    MarkingType, float, list[float]]:
-    """
-    Execute a transition in the Petri net and return the new marking, probability of the transition, and impacts.
-    :param ctx:
-    :param t:
-    :param marking:
-    :return: marking after transition execution, probability of the transition, impacts of the transition.
-    """
-    marking = ctx.semantic.execute(ctx.net, t, marking)
-    in_place = list(t.in_arcs)[0].source
-    probability = t.probability
-    impacts = in_place.impacts
-
-    return marking, probability, impacts
