@@ -194,9 +194,6 @@ def is_final_marking(ctx: ContextType, marking: MarkingType) -> bool:
 
     fm = ctx.final_marking
 
-    if fm.keys() != marking.keys():
-        return False
-
     for place in ctx.net.places:
         fm_token = fm[place].token
         marking_token = marking[place].token

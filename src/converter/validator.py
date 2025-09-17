@@ -10,7 +10,7 @@ def region_validator(region: RegionModel):
     def explore(_r: RegionModel, expected_impact_length: int = None):
         ##logger.debug(f"Esploro la Region: {_r.label} id:{_r.id}")
         # controlli per tutti i tipi di regione
-        if not _r.id or not isinstance(_r.type, RegionType):
+        if _r.id is None or not isinstance(_r.type, RegionType):
             logger.error(
                 f"Id o tipo della regione {region.label} id:{region.id} è None o vuota"
             )
@@ -86,7 +86,7 @@ def __sequential_validator(region: RegionModel, expected_impact_length: int = No
         return False, None
 
     # non devo avere distribuzioni di probabilità
-    if region.distribution:
+    if region.distribution is not None:
         logger.error(
             f"Regione Sequenziale {region.label} di id:{region.id} ha distribuzione di probabilità: {region.distribution}"
         )
@@ -144,7 +144,7 @@ def __task_validator(region: RegionModel, expected_impact_length: int = None):
 def __parallel_validator(region: RegionModel, expected_impact_length: int = None):
     #logger.debug("Validatore Parallelo")
     # devo avere almeno 2 children
-    if not region.children or len(region.children) < 2:
+    if region.children is None or len(region.children) < 2:
         logger.error(
             f"Regione Parallela {region.label} di id:{region.id} non ha almeno 2 children: {len(region.children or [])}"
         )
@@ -158,7 +158,7 @@ def __parallel_validator(region: RegionModel, expected_impact_length: int = None
         return False, None
 
     # non devo avere distribuzioni di probabilità
-    if region.distribution:
+    if region.distribution is not None:
         logger.error(
             f"Regione Parallela {region.label} di id:{region.id} ha distribuzione: {region.distribution}"
         )
@@ -172,20 +172,20 @@ def __parallel_validator(region: RegionModel, expected_impact_length: int = None
 def __nature_validator(region: RegionModel, expected_impact_length: int = None):
     #logger.debug("Validatore Natura")
     # devo avere almeno 2 children
-    if not region.children or len(region.children) < 2:
+    if region.children is None or len(region.children) < 2:
         logger.error(
             f"Regione Natura {region.label} di id:{region.id} non ha almeno 2 figli: {len(region.children or [])}"
         )
         return False, None
 
-    if not region.distribution and not isinstance(region.distribution, list):
+    if region.distribution is None and not isinstance(region.distribution, list):
         logger.error(
             f"Regione Scelta {region.label} di id:{region.id} non ha distribuzione di probabilità: {region.distribution}"
         )
         return False, None
 
     # devo avere la distribuzione di probabilità e  len(prob) = numero childern
-    if not region.distribution or not isinstance(region.distribution, list) or len(region.distribution) != len(
+    if region.distribution is None or not isinstance(region.distribution, list) or len(region.distribution) != len(
             region.children or []
     ):
         logger.error(
@@ -216,7 +216,7 @@ def __nature_validator(region: RegionModel, expected_impact_length: int = None):
 def __choice_validator(region: RegionModel, expected_impact_length: int = None):
     #logger.debug("Validatore Choice")
     # devo avere almeno 2 children
-    if not region.children or len(region.children) < 2:
+    if region.children is None or len(region.children) < 2:
         logger.error(
             f"Regione Scelta {region.label} di id:{region.id} non ha alemeno 2 figli: {len(region.children or [])}"
         )
