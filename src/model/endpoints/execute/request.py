@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Tuple, Any, TYPE_CHECKING
+from typing import Tuple, Any, TYPE_CHECKING, TypeAlias
 
 import pm4py
 import pydantic
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 logger = logging_utils.get_logger(__name__)
 
 # Marking
-type MarkingModel = dict[str, dict[str, Any]]
+MarkingModel: TypeAlias = dict[str, dict[str, Any]]
 
 
 def model_to_marking(petri_net_obj: PetriNetModel, marking_model: MarkingModel):
