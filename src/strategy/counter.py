@@ -43,7 +43,6 @@ class CounterExecution:
                 logger.debug(
                     f"After executing {t}, marking {current_marking}, probability {probability}, impacts {impacts}, execution_time {execution_time}")
 
-
         logger.debug(
             f"Saturation complete. Final marking {current_marking}, probability {probability}, impacts {impacts}, execution_time {execution_time}")
         return current_marking, probability, impacts, execution_time
@@ -82,32 +81,3 @@ class CounterExecution:
         logger.debug(
             f"Consumption complete. Final marking {new_marking}, probability {probability}, impacts {impacts}, execution_time {execution_time}")
         return new_marking, probability, impacts, execution_time
-
-
-# def transitions_to_saturation(ctx: "ContextType", marking: "MarkingType") -> list["TransitionType"]:
-#     logger.debug("Transitions to saturation")
-#
-#     semantic = ctx.semantic
-#     transitions = []
-#     current_marking = copy.deepcopy(marking)
-#
-#     while True:
-#         min_delta, min_delta_transitions = get_min_delta(ctx, current_marking)
-#         current_marking = current_marking.add_time(min_delta)
-#         logger.debug(f"Added {min_delta} time units to marking")
-#         active_transitions = min_delta_transitions
-#         logger.debug(f"Active transitions: {active_transitions}")
-#
-#         if any(map(lambda t: t.stop, active_transitions)) or not active_transitions:
-#             break
-#
-#         for t in active_transitions:
-#             transitions.append(t)
-#             current_marking = semantic.execute(ctx.net, t, current_marking)
-#
-#     logger.debug(f"Transitions to saturation: {transitions}")
-#     return transitions
-
-#
-# def get_input_places(t: "TransitionType") -> list["PlaceType"]:
-#     return [arc.source for arc in t.in_arcs]
