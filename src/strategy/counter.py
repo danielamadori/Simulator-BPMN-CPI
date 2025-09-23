@@ -21,13 +21,14 @@ class CounterExecution:
         execution_time = 0.0
         while True:
             min_delta, transitions_to_fire = get_min_delta(ctx, current_marking)
+            min_delta = max(min_delta, 0)
 
             if len(transitions_to_fire) == 0:
                 logger.debug("No transitions to fire")
                 break
 
             logger.debug("Adding %f time to marking", min_delta)
-            current_marking = current_marking.add_time(max(min_delta, 0))
+            current_marking = current_marking.add_time(min_delta)
 
             if any(map(lambda t: t.stop, transitions_to_fire)):
                 logger.debug("Stop transition found, exiting saturation")
