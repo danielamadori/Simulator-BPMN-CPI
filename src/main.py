@@ -10,8 +10,9 @@ from model.endpoints.execute.response import create_response
 from model.extree import ExecutionTree
 from model.extree.node import Snapshot
 from utils import logging_utils
+from utils.settings import settings
 
-api = FastAPI(title="BPMN-CPI Execution API", version="1.0.0", docs_url="/docs/", redoc_url=None)
+api = FastAPI(title=settings.title, version=settings.version, docs_url=settings.docs_url, redoc_url=None)
 
 logger = logging_utils.get_logger(__name__)
 
@@ -64,4 +65,4 @@ def execute(data: ExecuteRequest):
 if __name__ == '__main__':
     import uvicorn
 
-    uvicorn.run(api, port=8001)
+    uvicorn.run(api, host=settings.host, port=settings.port)
