@@ -10,9 +10,10 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install "fastapi[standard]"
 COPY src .
+COPY .env .env
 
 # Open 8001 port
 EXPOSE 8001
 
 # Start server
-CMD ["fastapi", "run", "main.py", "--port", "8001"]
+CMD ["python3", "main.py"]
