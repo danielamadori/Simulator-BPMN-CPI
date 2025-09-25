@@ -226,7 +226,7 @@ def from_region(region: RegionModel):
             # Children region
             child_entry_place, child_exit_place = rec(__region.children[0])
 
-            child_exit_place.visit_limit = __region.bound
+            child_exit_place.visit_limit = __region.bound + 1
 
             # Set properties for child
             child_exit_place.entry_id = __region.id
