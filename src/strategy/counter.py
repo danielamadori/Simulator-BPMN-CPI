@@ -29,6 +29,7 @@ class CounterExecution:
 
             logger.debug("Adding %f time to marking", min_delta)
             current_marking = current_marking.add_time(min_delta)
+            execution_time += min_delta
 
             if any(map(lambda t: t.stop, transitions_to_fire)):
                 logger.debug("Stop transition found, exiting saturation")
@@ -39,7 +40,6 @@ class CounterExecution:
                 current_marking, p, imp = execute_transition(ctx, t, current_marking)
                 probability *= p
                 impacts = add_impacts(impacts, imp or default_impacts)
-                execution_time += min_delta
                 logger.debug(
                     f"After executing {t}, marking {current_marking}, probability {probability}, impacts {impacts}, execution_time {execution_time}")
 
@@ -58,6 +58,7 @@ class CounterExecution:
 
         impacts = get_empty_impacts(ctx.net)
         default_impacts = get_empty_impacts(ctx.net)
+        # No extra time added for choices, assuming immediate execution
         execution_time = 0.0
         probability = 1.0
 
@@ -69,7 +70,6 @@ class CounterExecution:
             current_marking = ctx.semantic.execute(ctx.net, t, current_marking)
             probability *= t.probability
             impacts = [imp + imp_t for imp, imp_t in zip(impacts, in_place.impacts or default_impacts)]
-            execution_time += in_place.duration
             logger.debug(
                 f"After executing choice {t}, marking {current_marking}, probability {probability}, impacts {impacts}, execution_time {execution_time}")
 
