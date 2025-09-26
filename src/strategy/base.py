@@ -12,13 +12,25 @@ if TYPE_CHECKING:
 
 
 class StrategyProto(Protocol):
+    """Protocol for strategy classes."""
 
-    def saturate(self, ctx: "ContextType", marking: "MarkingType"):
-        """Saturate the Petri net based on the current marking."""
+    def saturate(self, ctx: "ContextType", marking: "MarkingType") -> tuple[MarkingType, float, list[float], float]:
+        """Saturate the Petri net based on the current marking.
+        :param ctx: Net context
+        :param marking: Current marking
+        :rtype: tuple[MarkingType, float, list[float], float]
+        :return: new marking, probability of the saturation, impacts of the saturation, execution time of the saturation
+        """
         raise NotImplementedError
 
-    def consume(self, ctx: "ContextType", marking: "MarkingType", choices: list["TransitionType"] | None = None):
-        """Consume the Petri net based on the current marking and choices."""
+    def consume(self, ctx: "ContextType", marking: "MarkingType", choices: list["TransitionType"] | None = None) -> tuple[MarkingType, float, list[float], float]:
+        """Consume the Petri net based on the current marking and choices.
+        :param ctx: Net context
+        :param marking: Current marking
+        :param choices: List of user choices (transitions to fire)
+        :rtype: tuple[MarkingType, float, list[float], float]
+        :return: new marking, probability of the consumption, impacts of the consumption, execution time of the consumption
+        """
         raise NotImplementedError
 
 def get_min_delta(ctx: "ContextType", m: "MarkingType") -> tuple[float, list["TransitionType"]]:
