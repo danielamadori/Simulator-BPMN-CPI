@@ -10,7 +10,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install "fastapi[standard]"
 COPY src .
-COPY .env .env
+COPY docker.env .env
 
 # Open 8001 port
 EXPOSE 8001
