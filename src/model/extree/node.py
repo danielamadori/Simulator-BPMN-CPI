@@ -11,6 +11,15 @@ if TYPE_CHECKING:
 
 
 class Snapshot:
+    """
+    Snapshot of a Petri net at a specific state during execution.
+
+    Attributes:
+        marking (MarkingType): The current marking of the Petri net.
+        probability (float): The probability of reaching this marking.
+        impacts (list[float]): The impacts associated with this marking.
+        execution_time (float): The time taken to reach this marking.
+    """
     __marking: MarkingType
     __probability: float
     __impacts: list[float]
@@ -55,6 +64,7 @@ class Snapshot:
 
 
 class NodeAttributes:
+
     snapshot: Snapshot
 
     def __init__(self, snapshot: Snapshot):
@@ -62,6 +72,16 @@ class NodeAttributes:
 
 
 class ExecutionTreeNode(NodeAttributes, NodeMixin):
+    """
+    Node in the execution tree representing a state in the execution of a Petri net.
+
+    Attributes:
+        name (str): Name of the node.
+        id (str): Unique identifier for the node.
+        snapshot (Snapshot): Snapshot of the Petri net at this node.
+        parent (ExecutionTreeNode | None): Parent node in the execution tree.
+        children (list[ExecutionTreeNode]): List of child nodes in the execution tree.
+    """
 
     def __init__(self, name: str, _id: str, snapshot: Snapshot, parent: ExecutionTreeNode | None = None,
                  children: list[ExecutionTreeNode] | None = None):

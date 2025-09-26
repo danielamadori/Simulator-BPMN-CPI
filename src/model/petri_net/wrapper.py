@@ -14,11 +14,31 @@ logger = logging_utils.get_logger(__name__)
 class WrapperPetriNet(pm4py.PetriNet):
     """
     Wrapper class for PetriNet to allow for custom properties.
+
+    Attributes:
+        name (str | None): The name of the PetriNet, default is None.
+        places (Collection[Place] | None): Collection of places in the PetriNet,
+        transitions (Collection[Transition] | None): Collection of transitions in the PetriNet,
+        arcs (Collection[Arc] | None): Collection of arcs in the PetriNet,
+        properties (Dict[str, Any] | None): A dictionary to hold additional properties.
     """
 
     class Place(pm4py.PetriNet.Place):
         """
         Custom Place class that can hold additional properties.
+
+        Attributes:
+            name (str): The name of the place, used as id.
+            in_arcs (Collection[Arc] | None): Collection of incoming arcs, default is
+            out_arcs (Collection[Arc] | None): Collection of outgoing arcs, default is None.
+            properties (dict): A dictionary to hold additional properties.
+            region_label (str | None): Label of the region associated with this place.
+            region_type (str | None): Type of the region associated with this place.
+            duration (float | None): Duration associated with this place.
+            entry_id (str | int | None): Entry region ID associated with this place.
+            exit_id (str | int | None): Exit region ID associated with this place.
+            impacts (list[float] | None): Impacts associated with this place.
+            visit_limit (int | None): Visit limit associated with this place.
         """
 
         def __init__(self, name, in_arcs=None, out_arcs=None, properties=None):
@@ -155,6 +175,18 @@ class WrapperPetriNet(pm4py.PetriNet):
     class Transition(pm4py.PetriNet.Transition):
         """
         Custom Transition class that can hold additional properties.
+
+        Attributes:
+            name (str): The name of the transition, used as id.
+            label (str | None): The label of the transition, default is None.
+            in_arcs (Collection[Arc] | None): Collection of incoming arcs, default is
+            out_arcs (Collection[Arc] | None): Collection of outgoing arcs, default is None.
+            properties (dict): A dictionary to hold additional properties.
+            region_label (str | None): Label of the region associated with this transition.
+            region_type (str | None): Type of the region associated with this transition.
+            region_id (str | int | None): ID of the region associated with this transition.
+            probability (float | None): Probability associated with this transition.
+            stop (bool | None): Stop condition associated with this transition.
         """
 
         def __init__(self, name, label=None, in_arcs=None, out_arcs=None, properties=None):
@@ -263,6 +295,12 @@ class WrapperPetriNet(pm4py.PetriNet):
     class Arc(pm4py.PetriNet.Arc):
         """
         Custom Arc class that can hold additional properties.
+
+        Attributes:
+            source (Place | Transition): The source node of the arc.
+            target (Place | Transition): The target node of the arc.
+            weight (int): The weight of the arc, default is 1.
+            properties (dict): A dictionary to hold additional properties.
         """
 
         def __init__(self, source, target, weight=1, properties=None):

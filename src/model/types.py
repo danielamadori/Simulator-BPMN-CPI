@@ -1,3 +1,7 @@
+"""
+This module defines various type variables useful for type hinting.
+"""
+
 from __future__ import annotations
 
 from typing import TypeVar

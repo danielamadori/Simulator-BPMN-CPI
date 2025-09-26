@@ -5,9 +5,9 @@ from typing import TYPE_CHECKING
 from converter.spin import from_region
 from model.petri_net.time_spin import TimeNetSematic
 from strategy import default_strategy
-from strategy.execution import ClassicExecution
 
 if TYPE_CHECKING:
+    from strategy.base import StrategyProto
     from model.types import RegionModelType, SemanticType, PetriNetType, MarkingType
 
 
@@ -22,13 +22,26 @@ class IDGenerator:
 
 
 class NetContext:
+    """
+    Used to encapsulate BPMN+CPI region, Petri net, initial marking, final marking, and execution strategy.
+
+    Attributes:
+        _id (str): Unique identifier for the net context.
+        region (RegionModelType): The BPMN+CPI region model.
+        semantic (SemanticType): The semantics associated with the Petri net.
+        net (PetriNetType): The Petri net model.
+        initial_marking (MarkingType): The initial marking of the Petri net.
+        final_marking (MarkingType): The final marking of the Petri net.
+        strategy (object): The execution strategy for the Petri net.
+    """
+
     _id: str
     region: RegionModelType
     semantic: SemanticType
     net: PetriNetType
     initial_marking: MarkingType
     final_marking: MarkingType
-    strategy: object
+    strategy: StrategyProto
 
     def __init__(self, region: RegionModelType, net: PetriNetType, im: MarkingType, fm: MarkingType,
                  strategy: object = None, _id: str = None, semantic: SemanticType = None):

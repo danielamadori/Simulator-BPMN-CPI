@@ -1,35 +1,36 @@
 # Simulator-CPI
 
-This project is a backend service for a simulator application based on [this paper](https://doi.org/10.48550/arXiv.2410.22760). It provides an API to
+This project is a backend service for a simulator application based
+on [this paper](https://doi.org/10.48550/arXiv.2410.22760). It provides an API to
 manage and execute BPMN+CPI models through Petri Nets.
 
 # Table of Contents
 
-1. [Installation](#installation)  
-   1. [Prerequisites](#prerequisites)  
-   2. [Using Docker](#using-docker)  
-   3. [Using Python](#using-python)  
-2. [API Documentation](#api-documentation)  
-3. [Endpoints](#endpoints)  
-4. [API Workflow](#api-workflow)  
-5. [Project Structure](#project-structure)  
-6. [Models](#models)  
-   1. [BPMN Structure](#bpmn-structureregion-models)  
-       - [Task](#task)  
-       - [Nature](#nature)  
-       - [Choice](#choice)  
-       - [Parallel](#parallel)  
-       - [Loop](#loop)  
-       - [Sequential](#sequential)  
-   2. [Petri Net Structure](#petri-net-structure)  
-       - [Place Structure](#place-structure)  
-       - [Transition Structure](#transition-structure)  
-       - [Arc Structure](#arc-structure)  
-       - [Petri Net Wrapper](#petri-net-wrapper)  
-   3. [Execution Tree Structure](#execution-tree-structure)  
-   4. [Strategy Structure](#strategy-structure)  
-       - [Create New Strategy](#create-new-strategy)  
-7. [Logging](#logging)  
+1. [Installation](#installation)
+    1. [Prerequisites](#prerequisites)
+    2. [Using Docker](#using-docker)
+    3. [Using Python](#using-python)
+2. [API Documentation](#api-documentation)
+3. [Endpoints](#endpoints)
+4. [API Workflow](#api-workflow)
+5. [Project Structure](#project-structure)
+6. [Models](#models)
+    1. [BPMN Structure](#bpmn-structureregion-models)
+        - [Task](#task)
+        - [Nature](#nature)
+        - [Choice](#choice)
+        - [Parallel](#parallel)
+        - [Loop](#loop)
+        - [Sequential](#sequential)
+    2. [Petri Net Structure](#petri-net-structure)
+        - [Place Structure](#place-structure)
+        - [Transition Structure](#transition-structure)
+        - [Arc Structure](#arc-structure)
+        - [Petri Net Wrapper](#petri-net-wrapper)
+    3. [Execution Tree Structure](#execution-tree-structure)
+    4. [Strategy Structure](#strategy-structure)
+        - [Create New Strategy](#create-new-strategy)
+7. [Logging](#logging)
 8. [Authors](#authors)
 
 ## Installation
@@ -94,7 +95,22 @@ The API provides the following endpoints:
 
 * `POST /execute`: Execute a simulation with the provided parameters. In src/model/endpoints you can find all models and
   method to convert request and response. Accept two types of input:
-    * You can pass only BPMN parse tree, and it will create petri net, execution tree and return all of them.
+    * You can pass only BPMN parse tree, and it will create petri net, execution tree and return all of them. For
+      example:
+  ```json
+    {
+        "bpmn": {
+          "duration": 1,
+          "id": 0,
+          "impacts": [
+            0.0
+          ],
+          "index_in_parent": 0,
+          "label": "TASK",
+          "type": "task"
+        }
+    }
+  ```
     * You can pass BPMN parse tree, petri net, execution tree and transitions to execute the simulation and return same
       BPMN, same petri net and execution tree with a possible new node.
 
@@ -125,10 +141,12 @@ The API provides the following endpoints:
 
 Let's describe the structure of the main models used in this project.
 
+**All models types used for type checking can be found in `src/models/types.py`**
+
 ## BPMN Structure/Region Models
 
 BPMN package contains all the classes to represent a BPMN diagram as a parse tree.
-Parse tree have 6 types of nodes(also called regions):
+The parse tree has 6 types of nodes(also called regions):
 
 * **Task**: represents a task in the BPMN diagram.
 * **Nature**: represents a nature in the BPMN diagram.
@@ -191,7 +209,7 @@ Petri Net package contains all wrapper classes of pm4py.
 
 ### Place Structure
 
-A place contains all method of pm4py Place class and also has some additional attributes to access easier in properties
+A place inherits all pm4py Place methods and also has some additional attributes to access easier in properties
 dictionary of pm4py Place class.
 
 * region_label: label of the region that generated this place.
@@ -204,7 +222,7 @@ dictionary of pm4py Place class.
 
 ### Transition Structure
 
-A transition contains all method of pm4py Transition class and also has some additional attributes to access easier in
+A transition inherits all pm4py Transition methods and also has some additional attributes to access easier in
 properties dictionary of pm4py Transition class.
 
 * region_label: label of the region that generated this transition.
@@ -216,12 +234,11 @@ properties dictionary of pm4py Transition class.
 
 ### Arc Structure
 
-An arc contains all method of pm4py Arc class.
+Inherits all pm4py Arc methods.
 
 ### Petri Net Wrapper
 
-Petri net wrapper doesn't add any additional attributes but overrides `__eq__`with a more suitable implementation for
-our use case.
+Inherits all pm4py PetriNet methods. Overrides __eq__ for project-specific comparison.
 
 ## Execution Tree Structure
 
@@ -259,7 +276,7 @@ Every class contains two methods:
 * `saturate`: it takes NetContext object and current marking/state of the petri net. Execute every transition until it
   reaches a transition with stop.
 * `consume`: it takes NetContext object, current marking/state of the petri net and a list of transitions(choices) to
-  execute. Call saturate, execute those choices and recall saturate.
+  execute. Call saturate, execute the selected transitions, then call saturate again..
 
 ### Create new Strategy
 
@@ -271,7 +288,9 @@ To create a new strategy for executing simulations, follow these steps:
 
 ## Logging
 
-The application uses Python's built-in logging module to log important events and errors in `logs/` folder or in the console.
+The application uses Python's built-in logging module to log important events and errors in `logs/` folder or in the
+console.
+
 * INFO: General information about the application's operation logged in console.
 * DEBUG: Detailed debugging information logged in `logs/detailed.log`.
 * ERROR: Error messages logged in `logs/errors.log`.

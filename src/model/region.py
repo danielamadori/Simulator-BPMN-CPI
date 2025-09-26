@@ -2,10 +2,22 @@ from __future__ import annotations
 
 from enum import Enum
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, ConfigDict
 
 
 class RegionType(Enum):
+    """
+    Enum for different types of BPMN+CPI regions.
+    1. SEQUENTIAL: Sequential execution of child regions.
+    2. PARALLEL: Parallel execution of child regions.
+    3. NATURE: Natural region, typically a single task.
+    4. CHOICE: Choice between child regions.
+    5. TASK: A single task region.
+    6. LOOP: A loop region that can repeat its child regions.
+
+    More types can be added as needed.
+    """
+
     SEQUENTIAL = "sequential"
     PARALLEL = "parallel"
     NATURE = "nature"
@@ -16,7 +28,17 @@ class RegionType(Enum):
 
 class RegionModel(BaseModel):
     """
-    Classe che rappresenta i dati ricevuti dal client
+    BPMN+CPI parse tree model.
+
+    Attributes:
+        id (str | int): Unique identifier for the region.
+        type (RegionType): Type of the region defined in RegionType enum.
+        label (str | None): Optional label for the region.
+        duration (float): Duration of the region, default is 0.
+        children (list[RegionModel] | None): List of child regions, default is None
+        distribution (list[float] | float | None): Distribution of the region, default is None.
+        impacts (list[float] | None): Impacts of the region, default is None
+        bound (int | None): Bound for loop regions, default is None.
     """
 
     id: str | int
@@ -27,6 +49,8 @@ class RegionModel(BaseModel):
     distribution: list[float] | float | None = None
     impacts: list[float] | None = None
     bound: int | None = None
+
+    model_config = ConfigDict(extra='allow')
 
     def is_parallel(self) -> bool:
         return self.type == RegionType.PARALLEL

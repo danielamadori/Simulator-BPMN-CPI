@@ -33,8 +33,7 @@ class ExecutionTree:
 
     Attributes:
         current_node (Node): The current node in the tree.
-        __root (Node): The root node of the tree.
-        __id_generator (Iterator[int]): Iterator for generating unique node IDs.
+        root (Node): The root node of the tree.
     """
     __separator: str = '/'
     current_node: NodeType
