@@ -279,14 +279,20 @@ class ExecuteRequest(pydantic.BaseModel):
 
         def convert_node(node: ExecutionTreeModel.NodeModel, parent: ExecutionTreeNode | None = None) -> Node:
             logger.debug("Converting node %s, parent %s", node.name, parent.name if parent else None)
+            print("convert_node:", node.snapshot.status, node.snapshot.decisions, node.snapshot.choices)
+
+
             current_node = ExecutionTreeNode(
                 name=node.name,
                 _id=node.id,
-                snapshot=Snapshot(
+                snapshot=Snapshot(#TODO Daniel
                     marking=model_to_marking(self.petri_net_obj, node.snapshot.marking),
                     probability=node.snapshot.probability,
                     impacts=node.snapshot.impacts,
-                    time=node.snapshot.execution_time
+                    time=node.snapshot.execution_time,
+					status=node.snapshot.status,
+					decisions=node.snapshot.decisions,
+					choices=node.snapshot.choices
                 ),
                 parent=parent
             )
