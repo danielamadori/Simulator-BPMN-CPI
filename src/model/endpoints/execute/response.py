@@ -89,7 +89,11 @@ def petri_net_to_dot(petri_net: PetriNetType, im: MarkingType, fm: MarkingType) 
         token, age, visit_count = im[place]
         marking[place] = (token, age, visit_count)
     gviz = pn_visualizer.apply(petri_net, marking, fm)
-    dot_string = gviz.pipe(format="dot").decode()
+    try:
+        dot_string = gviz.pipe(format="dot").decode()
+    except Exception as exc:  # pragma: no cover - fallback for environments without Graphviz binaries
+        logger.warning("Falling back to raw DOT source: %s", exc)
+        dot_string = getattr(gviz, "source", "")
 
     return dot_string
 

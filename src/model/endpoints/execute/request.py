@@ -5,7 +5,7 @@ import pm4py
 import pydantic
 from anytree import Node
 from pm4py.objects.petri_net.utils.petri_utils import get_transition_by_name
-from pydantic import model_validator, BaseModel, ConfigDict
+from pydantic import model_validator, BaseModel, ConfigDict, Field
 
 from model.extree import ExecutionTree
 from model.petri_net.time_spin import TimeMarking
@@ -118,7 +118,7 @@ class ExecutionTreeModel(pydantic.BaseModel):
         name: str
         id: str
         snapshot: SnapshotModel
-        children: list['ExecutionTreeModel.NodeModel'] = []
+        children: list['ExecutionTreeModel.NodeModel'] = Field(default_factory=list)
 
     root: NodeModel
     current_node: str

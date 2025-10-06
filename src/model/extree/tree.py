@@ -123,13 +123,19 @@ class ExecutionTree:
 
 		print("add_snapshot", snapshot.status, snapshot.decisions, snapshot.choices)
 
+		merged_status = {}
+		if parent is not None:
+			merged_status.update(parent.snapshot.status)
+		if snapshot.status:
+			merged_status.update(snapshot.status)
+
 		cumulative_snapshot = Snapshot(marking=snapshot.marking, probability=parent_probability * snapshot.probability,
-									   impacts=add_impacts(parent_impacts, snapshot.impacts),
-									   time=parent_time + snapshot.execution_time,
-									   status={},#snapshot.status
-									   decisions=snapshot.decisions,
-									   choices=snapshot.choices
-									   )#TODO Daniel
+										   impacts=add_impacts(parent_impacts, snapshot.impacts),
+										   time=parent_time + snapshot.execution_time,
+										   status=merged_status,
+										   decisions=snapshot.decisions,
+										   choices=snapshot.choices
+										   )#TODO Daniel
 
 		child_node = ExecutionTreeNode(name=str(_id), _id=str(_id), snapshot=cumulative_snapshot, parent=parent)
 

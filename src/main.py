@@ -34,8 +34,11 @@ class ActivityState(enum.IntEnum):
 	COMPLETED = 2
 	COMPLETED_WITHOUT_PASSING_OVER = 3
 
-def parse(region, activated_nodes_ids:list[str]):
-	if region.type != RegionType.SEQUENTIAL and region.id not in activated_nodes_ids:
+def parse(region, activated_nodes_ids:list[str | int]):
+	if not isinstance(activated_nodes_ids, set):
+		activated_nodes_ids = {str(_id) for _id in activated_nodes_ids if _id is not None}
+
+	if region.type != RegionType.SEQUENTIAL and str(region.id) not in activated_nodes_ids:
 		return []
 
 	if region.children is None:
@@ -56,7 +59,7 @@ def execute(data: ExecuteRequest):
 		region, net, im, fm, extree, decisions = data.to_object()
 		logger.info("Request received:")
 		if not net:
-			logger.info(f"No net defined. Creating new context and execution tree.")
+			logger.info("No net defined. Creating new context and execution tree.")
 			ctx = NetContext.from_region(region)
 			net = ctx.net
 			im = ctx.initial_marking
@@ -68,32 +71,41 @@ def execute(data: ExecuteRequest):
 			if not all(decisions):
 				raise ValueError("One or more decisions are not valid transitions in the Petri net.")
 
-			logger.info(f"Net defined, using provided markings and execution tree.")
+			logger.info("Net defined, using provided markings and execution tree.")
 			ctx = NetContext(region=region, net=net, im=im, fm=fm)
-			logger.info(f"Strategy Type: {type(ctx.strategy)}")
+			logger.info("Strategy Type: %s", type(ctx.strategy))
 			current_marking = extree.current_node.snapshot.marking
-			logger.info(f"Current marking: {current_marking}")
+			logger.info("Current marking: %s", current_marking)
 
-			logger.info(f"Consuming decisions: {decisions}")
-			new_marking, probability, impacts, execution_time, choices, fired_transitions = ctx.strategy.consume(ctx, current_marking, decisions)
+			logger.info("Consuming decisions: %s", decisions)
+			new_marking, probability, impacts, execution_time, choices, fired_transitions = ctx.strategy.consume(
+				ctx, current_marking, decisions
+			)
+
+			decision_ids = [transition.name for transition in decisions]
 
 			status = {}
-			for active in parse(region, [t.get_region_id() for t in fired_transitions]): #Finding active regions in the parse_tree
+			for active in parse(region, [t.get_region_id() for t in fired_transitions]):
 				status[active.id] = ActivityState.ACTIVE
 
-			choices_node_id = []
-			for place in get_choices(ctx, new_marking).keys():
-				choices_node_id.append(place.entry_id) #is string; todo convert to int
+			choices_node_id = [place.entry_id for place in get_choices(ctx, new_marking).keys()]
 
 			print("execute:", status, decisions, choices_node_id)
-			#filter loop to increase bound/visit_limit
-			new_snapshot = Snapshot(marking=new_marking, probability=probability, impacts=impacts, time=execution_time,
-									status=status, decisions=decisions, choices=choices_node_id)
+			new_snapshot = Snapshot(
+				marking=new_marking,
+				probability=probability,
+				impacts=impacts,
+				time=execution_time,
+				status=status,
+				decisions=decision_ids,
+				choices=choices_node_id,
+			)
 
 			extree.add_snapshot(ctx, new_snapshot)
 
-		return create_response(region, net, im, fm, extree).model_dump(exclude_unset=True, exclude_none=True,
-																	   exclude_defaults=True)
+		return create_response(region, net, im, fm, extree).model_dump(
+			exclude_unset=True, exclude_none=True, exclude_defaults=True
+		)
 	except Exception as e:
 		logging.error(f"Error processing request: {e}")
 		return {
