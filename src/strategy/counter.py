@@ -19,6 +19,8 @@ class CounterExecution:
         impacts = get_empty_impacts(ctx.net)
         default_impacts = get_empty_impacts(ctx.net)
         execution_time = 0.0
+
+        fired_transitions = []
         while True:
             min_delta, transitions_to_fire = get_min_delta(ctx, current_marking)
             min_delta = max(min_delta, 0)
@@ -35,6 +37,7 @@ class CounterExecution:
                 logger.debug("Stop transition found, exiting saturation")
                 break
 
+            fired_transitions.extend(transitions_to_fire)
             for t in transitions_to_fire:
                 logger.debug(f"Executing transition {t}")
                 current_marking, p, imp = execute_transition(ctx, t, current_marking)
@@ -45,16 +48,16 @@ class CounterExecution:
 
         logger.debug(
             f"Saturation complete. Final marking {current_marking}, probability {probability}, impacts {impacts}, execution_time {execution_time}")
-        return current_marking, probability, impacts, execution_time
+        return current_marking, probability, impacts, execution_time, fired_transitions
 
-    def consume(self, ctx: "ContextType", marking: "MarkingType", choices: list["TransitionType"] | None = None):
+    def consume(self, ctx: "ContextType", marking: "MarkingType", decisions: list["TransitionType"] | None = None):
         logger.debug(f"Consuming marking {marking}")
-        if choices is None:
-            choices = []
+        if decisions is None:
+            decisions = []
 
-        logger.debug("User choices: %s", choices)
-        choices = get_default_choices(ctx, marking, choices)
-        logger.debug("Final choices after adding defaults and filter: %s", choices)
+        logger.debug("User decisions: %s", decisions)
+        decisions = get_default_choices(ctx, marking, decisions)
+        logger.debug("Final decisions after adding defaults and filter: %s", decisions)
 
         impacts = get_empty_impacts(ctx.net)
         default_impacts = get_empty_impacts(ctx.net)
@@ -64,20 +67,22 @@ class CounterExecution:
 
         current_marking = copy.deepcopy(marking)
 
-        for t in choices:
-            logger.debug(f"Executing choice transition {t}")
+        for t in decisions:
+            logger.debug(f"Executing decisions transition {t}")
             in_place = list(t.in_arcs)[0].source
             current_marking = ctx.semantic.execute(ctx.net, t, current_marking)
             probability *= t.probability
             impacts = [imp + imp_t for imp, imp_t in zip(impacts, in_place.impacts or default_impacts)]
             logger.debug(
-                f"After executing choice {t}, marking {current_marking}, probability {probability}, impacts {impacts}, execution_time {execution_time}")
+                f"After executing decisions {t}, marking {current_marking}, probability {probability}, impacts {impacts}, execution_time {execution_time}")
 
-        new_marking, prob, imp, exec_time = self.saturate(ctx, current_marking)
+        new_marking, prob, imp, exec_time, fired_transitions = self.saturate(ctx, current_marking)
         probability *= prob
         impacts = [imp1 + imp2 for imp1, imp2 in zip(impacts, imp)]
         execution_time += exec_time
 
+        fired_transitions.extend(decisions)
+
         logger.debug(
             f"Consumption complete. Final marking {new_marking}, probability {probability}, impacts {impacts}, execution_time {execution_time}")
-        return new_marking, probability, impacts, execution_time
+        return new_marking, probability, impacts, execution_time, decisions, fired_transitions

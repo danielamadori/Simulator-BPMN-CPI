@@ -152,6 +152,8 @@ class TimeNetSematic:
             token, age, _ = marking[input_place]
             if token < arc.weight or age < duration:
                 return False
+
+            # TODO Daniel Remove the condition to have unstopable loops
             if (transition.stop
                     and input_place.visit_limit is not None
                     and input_place.visit_limit <= marking[input_place].visit_count

@@ -5,7 +5,7 @@ import pm4py
 import pydantic
 from anytree import Node
 from pm4py.objects.petri_net.utils.petri_utils import get_transition_by_name
-from pydantic import model_validator, BaseModel, ConfigDict
+from pydantic import model_validator, BaseModel, ConfigDict, Field
 
 from model.extree import ExecutionTree
 from model.petri_net.time_spin import TimeMarking
@@ -110,11 +110,15 @@ class ExecutionTreeModel(pydantic.BaseModel):
             probability: float
             impacts: list[float]
             execution_time: float
+            #TODO Daniel add parameters
+            status:dict
+            decisions:list
+            choices:list
 
         name: str
         id: str
         snapshot: SnapshotModel
-        children: list['ExecutionTreeModel.NodeModel'] = []
+        children: list['ExecutionTreeModel.NodeModel'] = Field(default_factory=list)
 
     root: NodeModel
     current_node: str
@@ -275,14 +279,20 @@ class ExecuteRequest(pydantic.BaseModel):
 
         def convert_node(node: ExecutionTreeModel.NodeModel, parent: ExecutionTreeNode | None = None) -> Node:
             logger.debug("Converting node %s, parent %s", node.name, parent.name if parent else None)
+            print("convert_node:", node.snapshot.status, node.snapshot.decisions, node.snapshot.choices)
+
+
             current_node = ExecutionTreeNode(
                 name=node.name,
                 _id=node.id,
-                snapshot=Snapshot(
+                snapshot=Snapshot(#TODO Daniel
                     marking=model_to_marking(self.petri_net_obj, node.snapshot.marking),
                     probability=node.snapshot.probability,
                     impacts=node.snapshot.impacts,
-                    time=node.snapshot.execution_time
+                    time=node.snapshot.execution_time,
+					status=node.snapshot.status,
+					decisions=node.snapshot.decisions,
+					choices=node.snapshot.choices
                 ),
                 parent=parent
             )

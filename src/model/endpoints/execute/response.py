@@ -89,7 +89,11 @@ def petri_net_to_dot(petri_net: PetriNetType, im: MarkingType, fm: MarkingType) 
         token, age, visit_count = im[place]
         marking[place] = (token, age, visit_count)
     gviz = pn_visualizer.apply(petri_net, marking, fm)
-    dot_string = gviz.pipe(format="dot").decode()
+    try:
+        dot_string = gviz.pipe(format="dot").decode()
+    except Exception as exc:  # pragma: no cover - fallback for environments without Graphviz binaries
+        logger.warning("Falling back to raw DOT source: %s", exc)
+        dot_string = getattr(gviz, "source", "")
 
     return dot_string
 
@@ -140,4 +144,8 @@ def snapshot_to_model(snapshot: SnapshotType) -> ExecutionTreeModel.NodeModel.Sn
     return ExecutionTreeModel.NodeModel.SnapshotModel(marking=marking_to_model(snapshot.marking),
                                                       probability=snapshot.probability,
                                                       impacts=snapshot.impacts,
-                                                      execution_time=snapshot.execution_time)
+                                                      execution_time=snapshot.execution_time,
+                                                      status=snapshot.status,
+                                                      decisions=snapshot.decisions,
+                                                      choices=snapshot.choices
+                                                      )#TODO Daniel add param
