@@ -140,4 +140,8 @@ def snapshot_to_model(snapshot: SnapshotType) -> ExecutionTreeModel.NodeModel.Sn
     return ExecutionTreeModel.NodeModel.SnapshotModel(marking=marking_to_model(snapshot.marking),
                                                       probability=snapshot.probability,
                                                       impacts=snapshot.impacts,
-                                                      execution_time=snapshot.execution_time)
+                                                      execution_time=snapshot.execution_time,
+                                                      status=snapshot.status,
+                                                      decisions=snapshot.decisions,
+                                                      choices=snapshot.choices
+                                                      )#TODO Daniel add param

@@ -74,8 +74,8 @@ class ExecutionTree:
 
         place_impacts = place.impacts
         impacts = [0] * len(place_impacts)
-
-        extree = ExecutionTree(Snapshot(marking=ctx.initial_marking, probability=1, impacts=impacts, time=0))
+        #TODO Daniel
+        extree = ExecutionTree(Snapshot(marking=ctx.initial_marking, probability=1, impacts=impacts, time=0, status={}, decisions=[], choices=[]))
 
         return extree
 
