@@ -1,6 +1,5 @@
 from __future__ import annotations
 from typing import Tuple, Any, TYPE_CHECKING, TypeAlias
-
 import pm4py
 import pydantic
 from anytree import Node
@@ -12,7 +11,6 @@ from model.petri_net.time_spin import TimeMarking
 from model.petri_net.wrapper import WrapperPetriNet
 from utils import logging_utils
 from utils.net_utils import add_arc_from_to, get_place_by_name
-from model.region import RegionModel, RegionType
 from model.extree.node import Snapshot, ExecutionTreeNode
 
 if TYPE_CHECKING:
@@ -20,7 +18,6 @@ if TYPE_CHECKING:
 
 logger = logging_utils.get_logger(__name__)
 
-# Marking
 MarkingModel: TypeAlias = dict[str, dict[str, Any]]
 
 
@@ -44,7 +41,6 @@ def model_to_marking(petri_net_obj: PetriNetModel, marking_model: MarkingModel):
 	return TimeMarking(im, age, visit_count)
 
 
-# PetriNetModel
 class PetriNetModel(pydantic.BaseModel):
 	"""
 	Represents a Petri net structure.
@@ -91,7 +87,6 @@ class PetriNetModel(pydantic.BaseModel):
 	model_config = ConfigDict(use_enum_values=True)
 
 
-# ExecutionTreeModel
 class ExecutionTreeModel(pydantic.BaseModel):
 	"""
 	Represents an execution tree structure.
@@ -125,8 +120,6 @@ class ExecutionTreeModel(pydantic.BaseModel):
 
 	model_config = ConfigDict(use_enum_values=True)
 
-
-from numbers import Number
 from pydantic import field_validator
 from model.region import RegionModel, RegionType
 
@@ -145,20 +138,14 @@ class ExecuteRequest(pydantic.BaseModel):
 
 	@classmethod
 	def _coerce_bpmn_parse_tree_to_regionmodel(cls, v):
-		print("\n[VALIDATOR] called with type:", type(v))
 		if isinstance(v, RegionModel):
-			print("[VALIDATOR] already RegionModel")
 			return v
 
 		if not isinstance(v, dict):
-			print("[VALIDATOR] invalid type, expected dict or RegionModel")
 			raise TypeError("bpmn must be a dict or RegionModel.")
 
 		if "id" not in v or "type" not in v:
-			print("[VALIDATOR] missing id/type keys,  keys:", list(v.keys())[:10])
 			raise TypeError("bpmn dict must be a parse-tree node with keys 'id' and 'type'.")
-
-		print("[VALIDATOR] root keys:", list(v.keys())[:10])
 
 		type_map = {
 			"sequential": RegionType.SEQUENTIAL,
@@ -172,10 +159,8 @@ class ExecuteRequest(pydantic.BaseModel):
 		def normalize_duration(value, node_id):
 			from numbers import Number
 			if isinstance(value, Number):
-				print(f"[VALIDATOR] node {node_id} duration numeric:", value)
 				return float(value)
 			if isinstance(value, list):
-				print(f"[VALIDATOR] node {node_id} duration list:", value)
 				if len(value) == 2:
 					return float(value[1])
 				if len(value) == 1:
@@ -187,7 +172,6 @@ class ExecuteRequest(pydantic.BaseModel):
 			node = dict(node)
 			node_id = node.get("id")
 			node_type = node.get("type")
-			print(f"[VALIDATOR] normalizing node id={node_id}, type={node_type}")
 
 			if isinstance(node_type, str):
 				t_lower = node_type.lower()
@@ -205,9 +189,7 @@ class ExecuteRequest(pydantic.BaseModel):
 			return node
 
 		normalized = normalize_node(v)
-		print("[VALIDATOR] normalized root type:", type(normalized))
 		result = RegionModel.model_validate(normalized)
-		print("[VALIDATOR] validated RegionModel")
 		return result
 
 
@@ -352,8 +334,6 @@ class ExecuteRequest(pydantic.BaseModel):
 
 		def convert_node(node: ExecutionTreeModel.NodeModel, parent: ExecutionTreeNode | None = None) -> Node:
 			logger.debug("Converting node %s, parent %s", node.name, parent.name if parent else None)
-			print("convert_node:", node.snapshot.status, node.snapshot.decisions, node.snapshot.choices)
-
 
 			current_node = ExecutionTreeNode(
 				name=node.name,

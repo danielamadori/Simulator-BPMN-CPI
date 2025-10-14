@@ -34,21 +34,9 @@ class Snapshot:
 		self.__impacts = impacts
 		self.__exec_time = time
 
-		print("Snapshot.__init__:",
-			status,
-			decisions,
-			choices
-		)
-
 		self.__status = status
 		self.__decisions = decisions
 		self.__choices = choices
-
-		print("Snapshot.__init__ end:",
-			self.__status,
-			self.__decisions,
-			self.__choices
-		)
 
 	@property
 	def marking(self) -> MarkingType:

@@ -27,8 +27,6 @@ def root():
 	return RedirectResponse("/docs/", status_code=status.HTTP_303_SEE_OTHER)
 
 
-
-
 class ActivityState(enum.IntEnum):
 	WILL_NOT_BE_EXECUTED = -1
 	WAITING = 0
@@ -36,41 +34,37 @@ class ActivityState(enum.IntEnum):
 	COMPLETED = 2
 	COMPLETED_WITHOUT_PASSING_OVER = 3
 
-def parse(region: RegionModelType, status: dict, activated_nodes_ids:list[str | int]):
-	if not isinstance(activated_nodes_ids, set):
-		activated_nodes_ids = {str(_id) for _id in activated_nodes_ids if _id is not None}
+	def __str__(self):
+		if self.value > 2:
+			return "Completed"
+		return self.name.lower().replace("_", " ").capitalize()
 
-	print("parse:", region.id, region.type, status, activated_nodes_ids)
+
+
+def parse(region: RegionModelType, status: dict, activated_nodes_ids:list[str]):
+	region_id = str(region.id)
 	current_region_status = ActivityState.WAITING
-	if region.id in status:# Already present
-		print("present:", region.id, status[region.id])
-		if region.type != RegionType.SEQUENTIAL and str(region.id) not in activated_nodes_ids:# No changes
-			print("no changes:", region.id)
-			return {}
-
+	if region_id in activated_nodes_ids:# Already present
 		current_region_status = ActivityState.ACTIVE
 
-	print("current_region_status:", region.id, current_region_status)
 	if region.children is None:
-		#if current_region_status == ActivityState.ACTIVE: #check if the task is completed
-		print("task:", region.id, current_region_status)
-		return { region.id : current_region_status }
+		if current_region_status == ActivityState.ACTIVE: #check if the task is completed
+			current_region_status = ActivityState.COMPLETED
+
+		return { region_id : current_region_status }
 
 	#check if all children are completed
 	all_completed = True
 	sub_status = {}
 	for sub_region in region.children:
 		sub_status.update(parse(sub_region, status, activated_nodes_ids))
-		if sub_status[sub_region.id] == ActivityState.ACTIVE:
+		if str(sub_region.id) in sub_status.keys() and sub_status[str(sub_region.id)] <= ActivityState.ACTIVE:
 			all_completed = False
 
 	if all_completed:
 		current_region_status = ActivityState.COMPLETED
-	print("sub_status:", { **sub_status, region.id: current_region_status })
-	return { **sub_status, region.id: current_region_status }
 
-
-
+	return { **sub_status, region_id: current_region_status }
 
 
 @api.post("/execute")
@@ -104,8 +98,10 @@ def execute(data: ExecuteRequest):
 			)
 
 			decision_ids = [transition.name for transition in decisions]
-
-			new_status = parse(region, copy.deepcopy(current_status), [t.get_region_id() for t in fired_transitions])
+			activated_nodes_ids = [str(t.get_region_id()) for t in fired_transitions]
+			print("Active: ", activated_nodes_ids)
+			print("Current status:", current_status)
+			new_status = parse(region, copy.deepcopy(current_status), activated_nodes_ids)
 			print("new_status:", new_status)
 
 			choices_node_id = [place.entry_id for place in get_choices(ctx, new_marking).keys()]
