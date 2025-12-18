@@ -105,7 +105,6 @@ class ExecutionTreeModel(pydantic.BaseModel):
 			probability: float
 			impacts: list[float]
 			execution_time: float
-			#TODO Daniel add parameters
 			status:dict
 			decisions:list
 			choices:list

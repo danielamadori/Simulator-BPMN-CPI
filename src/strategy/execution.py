@@ -4,13 +4,14 @@ import copy
 from typing import Collection, TYPE_CHECKING
 
 from model.region import RegionType
+from model.status import ActivityState
 from strategy.base import execute_transition
 from utils import logging_utils
 from utils.default import get_default_transition
 from utils.net_utils import get_region_by_id, get_empty_impacts
 
 if TYPE_CHECKING:
-    from model.types import ContextType, MarkingType, TransitionType, PlaceType
+    from model.types import ContextType, MarkingType, TransitionType, PlaceType, RegionModelType
 
 logger = logging_utils.get_logger(__name__)
 
@@ -80,8 +81,7 @@ class ClassicExecution:
 
         return new_marking, probability, impacts, delta
 
-    def raw_consume(self, ctx: ContextType, marking: MarkingType,
-                    user_choices: Collection[TransitionType] | None = None) -> tuple[
+    def raw_consume(self, ctx: ContextType, marking: MarkingType, status: dict[RegionModelType, ActivityState], user_choices: Collection[TransitionType] | None = None) -> tuple[
         MarkingType, int, list[float], float]:
         """
         Recursive function to consume the current marking until there's one (or more)
@@ -96,7 +96,7 @@ class ClassicExecution:
         if user_choices is None:
             user_choices = []
 
-        saturated_marking, time_delta = ctx.strategy.saturate(ctx, marking)
+        saturated_marking, time_delta = ctx.strategy.saturate(ctx, marking, status)
         logger.debug(f"Saturated marking: {saturated_marking}, time_delta: {time_delta}")
         enabled_transitions = ctx.semantic.enabled_transitions(ctx.net, saturated_marking)
         user_choices = set(user_choices) & enabled_transitions
@@ -152,7 +152,8 @@ class ClassicExecution:
             return marking, 1, default_impacts, time_delta
 
         # Recursive call
-        result_marking, new_probability, impacts, delta = self.raw_consume(ctx, result_marking, user_choices)
+        status = {} #TODO: Dummy status, not used in this strategy
+        result_marking, new_probability, impacts, delta = self.raw_consume(ctx, result_marking, status, user_choices)
 
         logger.debug(f"After recursive consume, new marking: {result_marking}, new_probability: {new_probability}, impacts: {impacts}, delta: {delta}")
         logger.debug(f"Returning from consume with marking: {result_marking}, total probability: {probability * new_probability}, total impacts: {add_impacts(expected_impacts, impacts)}, total time delta: {time_delta + delta}")

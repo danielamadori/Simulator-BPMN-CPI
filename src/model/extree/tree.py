@@ -8,13 +8,14 @@ from typing import Iterator, TYPE_CHECKING
 from anytree import Node, PreOrderIter, RenderTree, findall_by_attr, findall
 
 from model.extree import ExecutionTreeNode
+from model.status import ActivityState
 from strategy.execution import add_impacts
 from utils import logging_utils
 from utils.net_utils import get_empty_impacts, is_final_marking
 from model.extree.node import Snapshot
 
 if TYPE_CHECKING:
-	from model.types import SnapshotType, NodeType, ContextType, MarkingType
+	from model.types import SnapshotType, NodeType, ContextType, MarkingType, RegionModelType
 
 logger = logging_utils.get_logger(__name__)
 
@@ -25,6 +26,9 @@ def serial_generator(initial: int = 1):
 	while True:
 		yield n
 		n += 1
+
+
+
 
 
 class ExecutionTree:
@@ -63,7 +67,7 @@ class ExecutionTree:
 		self.current_node = _root
 
 	@classmethod
-	def from_context(cls, ctx: ContextType):
+	def from_context(cls, ctx: ContextType, region: "RegionModelType") -> ExecutionTree:
 		places = ctx.net.places
 
 		place = None
@@ -74,8 +78,17 @@ class ExecutionTree:
 
 		place_impacts = place.impacts
 		impacts = [0] * len(place_impacts)
-		#TODO Daniel
-		extree = ExecutionTree(Snapshot(marking=ctx.initial_marking, probability=1, impacts=impacts, time=0, status={}, decisions=[], choices=[]))
+
+
+		status = {}
+		def build_status(r: RegionModelType):
+			status[r.id] = ActivityState.WAITING
+			if r.children:
+				for child in r.children:
+					build_status(child)
+		build_status(region)
+
+		extree = ExecutionTree(Snapshot(marking=ctx.initial_marking, probability=1, impacts=impacts, time=0, status=status, decisions=[], choices=[]))
 
 		return extree
 
@@ -123,16 +136,10 @@ class ExecutionTree:
 
 		print("add_snapshot", snapshot.status, snapshot.decisions, snapshot.choices)
 
-		merged_status = {}
-		if parent is not None:
-			merged_status.update(parent.snapshot.status)
-		if snapshot.status:
-			merged_status.update(snapshot.status)
-
 		cumulative_snapshot = Snapshot(marking=snapshot.marking, probability=parent_probability * snapshot.probability,
 										   impacts=add_impacts(parent_impacts, snapshot.impacts),
 										   time=parent_time + snapshot.execution_time,
-										   status=merged_status,
+										   status=snapshot.status,
 										   decisions=snapshot.decisions,
 										   choices=snapshot.choices
 										   )#TODO Daniel

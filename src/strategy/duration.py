@@ -6,13 +6,14 @@ from typing import TYPE_CHECKING
 import deprecation
 from pm4py.objects.petri_net.semantics import ClassicSemantics
 
+from model.status import ActivityState
 from strategy.execution import add_impacts, get_default_choices
 from utils import logging_utils
 from utils.exceptions import MaxIterationsError
 from utils.net_utils import get_empty_impacts
 
 if TYPE_CHECKING:
-    from model.types import MarkingType, TransitionType, ContextType
+    from model.types import MarkingType, TransitionType, ContextType, RegionModelType
 
 logger = logging_utils.get_logger(__name__)
 
@@ -71,7 +72,7 @@ class DurationExecution:
 
         return marking, probability, impact, original_duration - duration, duration
 
-    def consume(self, ctx: ContextType, marking: MarkingType, choices: list[TransitionType] | None = None) -> tuple[
+    def consume(self, ctx: ContextType, marking: MarkingType, status: dict[RegionModelType, ActivityState], choices: list[TransitionType] | None = None) -> tuple[
         MarkingType, float, list[float], float]:
         """
         Consume the Petri net based on the current marking and choices.
@@ -101,7 +102,7 @@ class DurationExecution:
             logger.debug(f"Firing choice {choice}, new marking {new_marking}, probability {probability}, impact {impact}, duration {duration}")
 
         logger.debug(f"Saturating after user choices with marking {new_marking}")
-        new_marking, new_probability, new_impact, new_time_delta, _ = ctx.strategy.saturate(ctx, new_marking)
+        new_marking, new_probability, new_impact, new_time_delta, _ = ctx.strategy.saturate(ctx, new_marking, status)
         duration += new_time_delta
         probability *= new_probability
         impact = add_impacts(impact, new_impact)

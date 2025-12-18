@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 class StrategyProto(Protocol):
     """Protocol for strategy classes."""
 
-    def saturate(self, ctx: "ContextType", marking: "MarkingType") -> tuple[MarkingType, float, list[float], float]:
+    def saturate(self, ctx: "ContextType", marking: "MarkingType", regions:dict[int: "RegionModelType"], status: dict["RegionModelType", "ActivityState"]) -> tuple[MarkingType, float, list[float], float]:
         """Saturate the Petri net based on the current marking.
         :param ctx: Net context
         :param marking: Current marking
@@ -23,7 +23,7 @@ class StrategyProto(Protocol):
         """
         raise NotImplementedError
 
-    def consume(self, ctx: "ContextType", marking: "MarkingType", choices: list["TransitionType"] | None = None) -> tuple[MarkingType, float, list[float], float]:
+    def consume(self, ctx: "ContextType", marking: "MarkingType", regions:dict[int: "RegionModelType"], status: dict["RegionModelType", "ActivityState"], choices: list["TransitionType"] | None = None) -> tuple[MarkingType, float, list[float], float]:
         """Consume the Petri net based on the current marking and choices.
         :param ctx: Net context
         :param marking: Current marking

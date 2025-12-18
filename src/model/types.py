@@ -36,3 +36,4 @@ MarkingItemType = TypeVar("MarkingItemType", bound=MarkingItem)
 ExTreeType = TypeVar("ExTreeType", bound=ExecutionTree)
 SnapshotType = TypeVar("SnapshotType", bound=Snapshot)
 NodeType = TypeVar("NodeType", bound=ExecutionTreeNode)
+

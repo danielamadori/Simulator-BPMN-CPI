@@ -52,6 +52,14 @@ class RegionModel(BaseModel):
 
     model_config = ConfigDict(extra='allow')
 
+    def __eq__(self, other):
+	    if not isinstance(other, RegionModel):
+		    return NotImplemented
+	    return self.id == other.id
+
+    def __hash__(self):
+	    return hash(self.id)
+
     def is_parallel(self) -> bool:
         return self.type == RegionType.PARALLEL
 
@@ -75,6 +83,8 @@ class RegionModel(BaseModel):
             return False
 
         return len(self.children) != 0
+
+
 
 
 def find_region_by_id(root: RegionModel, _id: str) -> RegionModel | None:

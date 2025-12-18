@@ -148,4 +148,4 @@ def snapshot_to_model(snapshot: SnapshotType) -> ExecutionTreeModel.NodeModel.Sn
                                                       status=snapshot.status,
                                                       decisions=snapshot.decisions,
                                                       choices=snapshot.choices
-                                                      )#TODO Daniel add param
+                                                      )
