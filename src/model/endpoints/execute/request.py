@@ -130,6 +130,7 @@ class ExecuteRequest(pydantic.BaseModel):
 	petri_net: PetriNetModel | None = None
 	execution_tree: ExecutionTreeModel | None = None
 	choices: list[str] | None = None
+	time_step: float | None = None  # Time step for TimeStrategy (None = use saturation/CounterExecution)
 
 	model_config = ConfigDict(use_enum_values=True)
 

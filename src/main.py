@@ -64,20 +64,51 @@ def execute(data: ExecuteRequest):
 			new_status = {regions[int(r_id)] : r_status for r_id, r_status in current_status.items() }
 
 			current_marking = extree.current_node.snapshot.marking
+			previous_time = extree.current_node.snapshot.execution_time  # Get previous cumulative time
 			logger.info("Current marking: %s", current_marking)
+			logger.info("Previous cumulative time: %s", previous_time)
 			logger.info("Consuming decisions: %s", decisions)
 
-			new_marking, probability, impacts, execution_time, choices = ctx.strategy.consume(
-				ctx, current_marking, regions, new_status, decisions
-			)
+			# Check if time_step was provided (TimeStrategy mode)
+			time_step = data.time_step
+			if time_step is not None:
+				logger.info("Using TimeStrategy with time_step: %s", time_step)
+				from strategy.time import TimeStrategy
+				time_strategy = TimeStrategy()
+				new_marking, probability, impacts, step_time, choices = time_strategy.consume(
+					ctx, current_marking, regions, new_status, time_step, decisions
+				)
+			else:
+				logger.info("Using CounterExecution (saturation mode)")
+				new_marking, probability, impacts, step_time, choices = ctx.strategy.consume(
+					ctx, current_marking, regions, new_status, decisions
+				)
+
+			# Calculate cumulative execution time
+			execution_time = previous_time + step_time
+			logger.info("Step time: %s, Cumulative time: %s", step_time, execution_time)
 
 			decision_ids = [transition.name for transition in decisions]
 			choices_node_id = [place.entry_id for place in get_choices(ctx, new_marking).keys()]
 
+			def get_formatted_label(r: RegionModelType) -> str:
+				if r.label:
+					return r.label
+				
+				if r.children:
+					children_labels = [get_formatted_label(child) for child in r.children]
+					if r.is_sequential():
+						return f"({', '.join(children_labels)})"
+					elif r.is_parallel():
+						return f"({' || '.join(children_labels)})"
+				
+				return "None"
+
 			status = {}
 			for r, s in new_status.items():
 				status[r.id] = s
-				print(r.label, ": ", s)
+				label = get_formatted_label(r)
+				print(label, ": ", s)
 
 
 			new_snapshot = Snapshot(

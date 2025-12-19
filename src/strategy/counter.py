@@ -2,45 +2,13 @@
 import copy
 
 from model.region import RegionType
-from model.status import ActivityState
+from model.status import ActivityState, propagate_status
 from strategy.base import get_min_delta, execute_transition
 from strategy.execution import get_default_choices, add_impacts
 from utils import logging_utils
 from utils.net_utils import get_empty_impacts
 
 logger = logging_utils.get_logger(__name__)
-
-def parse(region: "RegionModelType", status:dict["RegionModelType", "ActivityState"]):
-    if region.is_task():
-        return
-
-    status[region] = ActivityState.WAITING
-
-    for child in region.children:
-        parse(child, status)
-
-    if region.is_sequential():
-        if status[region.children[0]] == ActivityState.ACTIVE or status[region.children[1]] == ActivityState.ACTIVE:
-            status[region] = ActivityState.ACTIVE
-        elif status[region.children[1]] == ActivityState.COMPLETED:
-            status[region] = ActivityState.COMPLETED
-
-    if region.is_parallel():
-        all_completed = True
-        for child in region.children:
-            if status[child] == ActivityState.ACTIVE:
-                all_completed = False
-                status[child] = ActivityState.ACTIVE
-
-        if all_completed:
-            status[region.children[0]] = ActivityState.COMPLETED
-
-    # Exclusive gateway
-    if region.children:
-        for child in region.children:
-            if status[child] == ActivityState.ACTIVE or status[child] == ActivityState.COMPLETED:
-                status[region] = status[child]
-                break
 
 class CounterExecution:
 
@@ -81,17 +49,28 @@ class CounterExecution:
 
         # Update completed tasks status
         for p in ctx.net.places:
-            if int(p.name) in regions and regions[int(p.name)].is_task() and status[regions[int(p.name)]] == ActivityState.ACTIVE: #regions:dict[int: "RegionModelType"],
-                region = regions[int(p.name)] #Place name is region id
+            entry_id = getattr(p, "entry_id", None)
+            exit_id = getattr(p, "exit_id", None)
 
-                remaining_time = float(p.duration) - current_marking[p].age
+            # Check Active/Running state via Entry Place
+            if entry_id is not None and int(entry_id) in regions:
+                region = regions[int(entry_id)]
+                if current_marking[p].token > 0:
+                    status[region] = ActivityState.ACTIVE
 
-                #print("Checking: ", p.name, region.label,"remaining_time:",  remaining_time, str(status[region]))
-                if remaining_time <= 0:
-                    print("Completed: ", p.name, region.label,str(status[region]))
-                    status[region] = ActivityState.COMPLETED
-
-        parse(regions[0], status)
+            # Check Status via Exit Place
+            if exit_id is not None and int(exit_id) in regions:
+                region = regions[int(exit_id)]
+                if region.is_task():
+                    item = current_marking[p]
+                    
+                    # If token is at exit or visited, regarding it as Completed
+                    if item.token > 0 or item.visit_count > 0:
+                         status[region] = ActivityState.COMPLETED
+                         
+        propagate_status(regions[0], status)
+                         
+        propagate_status(regions[0], status)
 
         logger.debug(
             f"Saturation complete. Final marking {current_marking}, probability {probability}, impacts {impacts}, execution_time {execution_time}")

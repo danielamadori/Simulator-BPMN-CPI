@@ -152,7 +152,7 @@ class ClassicExecution:
             return marking, 1, default_impacts, time_delta
 
         # Recursive call
-        status = {} #TODO: Dummy status, not used in this strategy
+        # status = {} #TODO: Dummy status, not used in this strategy
         result_marking, new_probability, impacts, delta = self.raw_consume(ctx, result_marking, status, user_choices)
 
         logger.debug(f"After recursive consume, new marking: {result_marking}, new_probability: {new_probability}, impacts: {impacts}, delta: {delta}")
