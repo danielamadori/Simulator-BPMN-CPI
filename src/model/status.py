@@ -34,9 +34,13 @@ def propagate_status(region: "RegionModel", status: dict["RegionModel", "Activit
 		propagate_status(child, status)
 
 	if region.is_sequential():
-		if status[region.children[0]] == ActivityState.ACTIVE or status[region.children[1]] == ActivityState.ACTIVE:
+		child1 = status[region.children[0]]
+		child2 = status[region.children[1]]
+		if child1 == ActivityState.ACTIVE or child2 == ActivityState.ACTIVE:
 			status[region] = ActivityState.ACTIVE
-		elif status[region.children[1]] == ActivityState.COMPLETED:
+		elif child1 == ActivityState.COMPLETED and child2 != ActivityState.COMPLETED:
+			status[region] = ActivityState.ACTIVE
+		elif child2 == ActivityState.COMPLETED:
 			status[region] = ActivityState.COMPLETED
 
 	elif region.is_parallel():

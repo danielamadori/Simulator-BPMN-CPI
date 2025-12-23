@@ -183,6 +183,8 @@ class ExecuteRequest(pydantic.BaseModel):
 
 			if "duration" in node:
 				node["duration"] = normalize_duration(node["duration"], node_id)
+			elif "max_delay" in node:
+				node["duration"] = normalize_duration(node["max_delay"], node_id)
 
 			if "children" in node and isinstance(node["children"], list):
 				node["children"] = [normalize_node(c) for c in node["children"]]

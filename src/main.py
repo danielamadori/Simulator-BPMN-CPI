@@ -115,7 +115,7 @@ def execute(data: ExecuteRequest):
 				marking=new_marking,
 				probability=probability,
 				impacts=impacts,
-				time=execution_time,
+				time=step_time,
 				status=status,
 				decisions=decision_ids,
 				choices=choices_node_id,

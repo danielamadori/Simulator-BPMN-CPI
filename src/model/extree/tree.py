@@ -8,7 +8,7 @@ from typing import Iterator, TYPE_CHECKING
 from anytree import Node, PreOrderIter, RenderTree, findall_by_attr, findall
 
 from model.extree import ExecutionTreeNode
-from model.status import ActivityState
+from model.status import ActivityState, propagate_status
 from strategy.execution import add_impacts
 from utils import logging_utils
 from utils.net_utils import get_empty_impacts, is_final_marking
@@ -80,13 +80,41 @@ class ExecutionTree:
 		impacts = [0] * len(place_impacts)
 
 
-		status = {}
+		status_by_region: dict[RegionModelType, ActivityState] = {}
 		def build_status(r: RegionModelType):
-			status[r.id] = ActivityState.WAITING
+			status_by_region[r] = ActivityState.WAITING
 			if r.children:
 				for child in r.children:
 					build_status(child)
 		build_status(region)
+
+		regions: dict[int, RegionModelType] = {}
+		def build_region_dict(r: RegionModelType):
+			regions[int(r.id)] = r
+			if r.children:
+				for child in r.children:
+					build_region_dict(child)
+		build_region_dict(region)
+
+		# Initialize statuses from the initial marking so the first snapshot is meaningful.
+		initial_marking = ctx.initial_marking
+		for place in ctx.net.places:
+			entry_id = getattr(place, "entry_id", None)
+			if entry_id is not None:
+				region_entry = regions.get(int(entry_id))
+				if region_entry and initial_marking[place].token > 0:
+					status_by_region[region_entry] = ActivityState.ACTIVE
+
+			exit_id = getattr(place, "exit_id", None)
+			if exit_id is not None:
+				region_exit = regions.get(int(exit_id))
+				if region_exit and region_exit.is_task():
+					item = initial_marking[place]
+					if item.token > 0 or item.visit_count > 0:
+						status_by_region[region_exit] = ActivityState.COMPLETED
+
+		propagate_status(region, status_by_region)
+		status = {r.id: s for r, s in status_by_region.items()}
 
 		extree = ExecutionTree(Snapshot(marking=ctx.initial_marking, probability=1, impacts=impacts, time=0, status=status, decisions=[], choices=[]))
 
@@ -133,8 +161,6 @@ class ExecutionTree:
 		parent_time = parent.snapshot.execution_time if parent is not None else 0
 
 		_id = next(self.__id_generator)
-
-		print("add_snapshot", snapshot.status, snapshot.decisions, snapshot.choices)
 
 		cumulative_snapshot = Snapshot(marking=snapshot.marking, probability=parent_probability * snapshot.probability,
 										   impacts=add_impacts(parent_impacts, snapshot.impacts),

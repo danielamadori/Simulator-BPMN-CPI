@@ -27,7 +27,6 @@ class TimeStrategy:
             marking: Current marking state
             regions: Dictionary mapping region IDs to RegionModel objects
             status: Dictionary mapping regions to their ActivityState
-            time_step: The time duration to advance (n)
         """
         logger.debug(f"TimeStrategy: Advancing by {time_step} time units")
 
@@ -38,7 +37,7 @@ class TimeStrategy:
         execution_time = 0.0
         remaining_time = time_step
 
-        while remaining_time > 0:
+        while remaining_time >= 0:
             min_delta, transitions_to_fire = get_min_delta(ctx, current_marking)
             min_delta = max(min_delta, 0)
 
