@@ -352,3 +352,231 @@ def get_path_to_current_node(tree_root, current_node_id):
 
 	return None
 
+
+# Petri Net Visualization
+
+def get_place_style(place):
+	"""
+	Determine component style for a Place.
+	"""
+	label = "▷"  # Default 'play' icon
+	shape = "circle"
+	style = "filled"
+	fillcolor = "white"
+	fontsize = 20
+	penwidth = 1.5
+	fontcolor = "black"
+
+	# Check if Start or End place
+	if not place.in_arcs:
+		label = "▷"
+		fontsize = 24
+	elif not place.out_arcs:
+		label = "▶" # Filled stop/end
+		fontsize = 24
+	
+	# Internal places (often just routing)
+	# based on image, they are all circles with play icon
+	
+	return f'shape={shape} label="{label}" fontsize={fontsize} style="{style}" fillcolor="{fillcolor}" penwidth={penwidth} fontcolor="{fontcolor}" fixedsize=false width=0.6'
+
+
+def get_transition_style(transition, petri_net=None):
+	"""
+	Determine component style for a Transition.
+	"""
+	label = transition.label or ""
+	shape = "box"
+	style = "rounded,filled"
+	fillcolor = "white"
+	color = "black"
+	fontcolor = "black"
+	penwidth = 1.5
+	fontsize = 14
+	
+	# Extract type and properties
+	# Note: transition is a WrapperPetriNet.Transition which has .properties['custom']
+	region_type = transition.get_region_type()
+	probability = transition.get_probability()
+	
+	# Count incoming/outgoing arcs from the net (since transition.in_arcs may not be updated)
+	n_in = 0
+	n_out = 0
+	if petri_net is not None:
+		for arc in petri_net.arcs:
+			if arc.target.name == transition.name:
+				n_in += 1
+			if arc.source.name == transition.name:
+				n_out += 1
+	
+	# Logic
+	if region_type == "task":
+		# Task: Rounded Box
+		shape = "box"
+		style = "rounded,filled"
+		fillcolor = "white"
+		color = "black"
+		# Label is already the name
+		
+	else:
+		# Routing / Gateway / Logic
+		# These are generally Triangles
+		shape = "triangle"
+		
+		# Default Style (e.g. for unknown types)
+		style = "filled"
+		fillcolor = "#2E8B57" # SeaGreen
+		color = "#2E8B57"
+		fontcolor = "white"
+		label = "" 
+		
+		is_probabilistic = False
+		# Check for near-1 probability to handle floating point issues
+		if probability is not None and probability < 0.999:
+			is_probabilistic = True
+		
+		# Determine if Split or Join based on arc counts
+		is_join = n_in > 1
+		is_split = n_out > 1
+			
+		if region_type == "parallel":
+			# Parallel: Split = White/Black, Join = Black Filled
+			if is_join:
+				# Join: Black Filled
+				fillcolor = "black"
+				color = "black"
+				fontcolor = "white"
+			else:
+				# Split: White with Black Border
+				fillcolor = "white"
+				color = "black"
+				fontcolor = "black"
+				
+		elif region_type in ["choice", "nature"]:
+			# Choice/Nature:
+			# Split (probabilistic): White with colored border + probability label
+			# Join (deterministic): Colored filled
+			if is_probabilistic:
+				# Probabilistic Split: White with colored border
+				if region_type == "nature":
+					fillcolor = "white"
+					color = "#2E8B57" # SeaGreen
+					fontcolor = "black"
+				else:
+					fillcolor = "white"
+					color = "#ffa500" # Orange
+					fontcolor = "black"
+				label = f"{probability}"
+				fontsize = 12
+			else:
+				# Deterministic Join: Colored filled
+				if region_type == "nature":
+					fillcolor = "#2E8B57" # SeaGreen
+					color = "#2E8B57"
+					fontcolor = "white"
+				else:
+					fillcolor = "#ffa500" # Orange
+					color = "#ffa500"
+					fontcolor = "white"
+					
+		elif region_type == "loop":
+			# Loop: All are Green by default
+			# (Probabilistic loop back/exit handled by is_probabilistic)
+			if is_probabilistic:
+				fillcolor = "white"
+				color = "#2E8B57" # SeaGreen
+				fontcolor = "black"
+				label = f"{probability}"
+				fontsize = 12
+			else:
+				fillcolor = "#2E8B57" # SeaGreen
+				color = "#2E8B57"
+				fontcolor = "white"
+		else:
+			# Unknown routing type: Green filled
+			pass
+
+	base = f'shape={shape} label="{label}" style="{style}" fillcolor="{fillcolor}" color="{color}" fontcolor="{fontcolor}" penwidth={penwidth} fontsize={fontsize}'
+	
+	if shape == "triangle":
+		base += " orientation=-90"
+		
+	return base
+
+
+def petri_net_to_dot(petri_net, marking=None, final_marking=None):
+	"""
+	Generate DOT code for the Petri net with custom visualization.
+	Supports region boundaries via subgraph clusters.
+	"""
+	code = "digraph G {\n"
+	code += "rankdir=LR;\n"
+	code += "splines=ortho;\n"
+	code += "nodesep=0.5;\n"
+	code += "ranksep=0.8;\n"
+	code += "compound=true;\n"  # Required for cluster edges
+	code += 'node [fontname="Arial"];\n'
+	code += 'edge [fontname="Arial"];\n'
+	
+	# Group elements by region_label
+	regions = {}  # region_label -> {"places": [], "transitions": []}
+	ungrouped_places = []
+	ungrouped_transitions = []
+	
+	for place in petri_net.places:
+		region_label = place.get_region_label() if hasattr(place, 'get_region_label') else None
+		if region_label:
+			if region_label not in regions:
+				regions[region_label] = {"places": [], "transitions": []}
+			regions[region_label]["places"].append(place)
+		else:
+			ungrouped_places.append(place)
+			
+	for t in petri_net.transitions:
+		region_label = t.get_region_label() if hasattr(t, 'get_region_label') else None
+		if region_label:
+			if region_label not in regions:
+				regions[region_label] = {"places": [], "transitions": []}
+			regions[region_label]["transitions"].append(t)
+		else:
+			ungrouped_transitions.append(t)
+	
+	# Generate clusters for each region
+	for region_label, elements in regions.items():
+		cluster_name = region_label.replace(" ", "_").replace("-", "_")
+		code += f'\nsubgraph cluster_{cluster_name} {{\n'
+		code += f'label="{region_label}";\n'
+		code += 'style="rounded";\n'
+		code += 'color="black";\n'
+		code += 'bgcolor="white";\n'
+		code += 'penwidth=1.5;\n'
+		
+		for place in elements["places"]:
+			style = get_place_style(place)
+			code += f'"{place.name}" [{style}];\n'
+			
+		for t in elements["transitions"]:
+			style = get_transition_style(t, petri_net)
+			code += f'"{t.name}" [{style}];\n'
+			
+		code += '}\n'
+	
+	# Ungrouped elements (not in any region)
+	for place in ungrouped_places:
+		style = get_place_style(place)
+		code += f'"{place.name}" [{style}];\n'
+		
+	for t in ungrouped_transitions:
+		style = get_transition_style(t, petri_net)
+		code += f'"{t.name}" [{style}];\n'
+		
+	# Arcs
+	for arc in petri_net.arcs:
+		color = "black"
+		arrowhead = "normal"
+		
+		code += f'"{arc.source.name}" -> "{arc.target.name}" [color="{color}" arrowhead="{arrowhead}"];\n'
+		
+	code += "}"
+	return code
+

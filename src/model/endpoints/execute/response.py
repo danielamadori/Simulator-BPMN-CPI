@@ -22,6 +22,7 @@ class ExecuteResponse(BaseModel):
     bpmn: RegionModel
     petri_net: PetriNetModel
     petri_net_dot: str | None = None
+    spin_svg: str | None = None  # SVG visualization
     execution_tree: ExecutionTreeModel
 
 
@@ -33,9 +34,19 @@ def create_response(region: RegionModelType, petri_net: PetriNetType, im: Markin
     logger.debug("Creating response")
     petri_net_model = petri_net_to_model(petri_net, im, fm)
     execution_tree_model = extree_to_model(extree)
+    
+    # Generate SVG visualization
+    try:
+        from svg_viz import spin_to_svg
+        spin_svg = spin_to_svg(petri_net, width=800, height=400, region=region)
+    except Exception as e:
+        import traceback
+        logger.error(f"Failed to generate SVG: {e}\n{traceback.format_exc()}")
+        spin_svg = None
 
     return ExecuteResponse(bpmn=region, petri_net=petri_net_model,
                            petri_net_dot=petri_net_to_dot(petri_net, extree.current_node.snapshot.marking, fm.tokens),
+                           spin_svg=spin_svg,
                            execution_tree=execution_tree_model)
 
 
@@ -76,26 +87,15 @@ def petri_net_to_model(petri_net: PetriNetType, im: MarkingType, fm: MarkingType
                          initial_marking=model_im, final_marking=model_fm)
 
 
+
 def petri_net_to_dot(petri_net: PetriNetType, im: MarkingType, fm: MarkingType) -> str:
-    """
-    Converts a Petri net to its DOT representation.
-    """
-    logger.debug("Converting Petri net model to DOT representation")
-
-    from pm4py.visualization.petri_net import visualizer as pn_visualizer
-
-    marking = {}
-    for place in im.keys():
-        token, age, visit_count = im[place]
-        marking[place] = (token, age, visit_count)
-    gviz = pn_visualizer.apply(petri_net, marking, fm)
-    try:
-        dot_string = gviz.pipe(format="dot").decode()
-    except Exception as exc:  # pragma: no cover - fallback for environments without Graphviz binaries
-        logger.warning("Falling back to raw DOT source: %s", exc)
-        dot_string = getattr(gviz, "source", "")
-
-    return dot_string
+	"""
+	Converts a Petri net to its DOT representation.
+	"""
+	logger.debug("Converting Petri net model to DOT representation")
+	
+	from dot import petri_net_to_dot as custom_pn_to_dot
+	return custom_pn_to_dot(petri_net, im, fm)
 
 
 def marking_to_model(marking: MarkingType) -> dict[str, dict[str, float]]:

@@ -60,6 +60,9 @@ def create_transition(trans_id: str, region: RegionModel, probability: float = 1
     trans.region_type = region.type
     trans.probability = probability
     trans.stop = stop
+    # Copy duration and impacts for Task transitions (for SVG display)
+    trans.duration = region.duration
+    trans.impacts = region.impacts
 
     return trans
 
@@ -118,14 +121,16 @@ def from_region(region: RegionModel):
             exit_place = create_exit_place(exit_task_id, __region)
             net.places.add(exit_place)
 
-            # Entry transition
+            # Entry transition (split)
             entry_trans_id = str(next(id_generator))
             entry_trans = create_transition(entry_trans_id, __region)
+            entry_trans.gateway_role = "split"
             net.transitions.add(entry_trans)
 
-            # Exit Transition
+            # Exit Transition (join)
             exit_trans_id = str(next(id_generator))
             exit_trans = create_transition(exit_trans_id, __region)
+            exit_trans.gateway_role = "join"
             net.transitions.add(exit_trans)
 
             # Add entry and exit arc
@@ -175,7 +180,7 @@ def from_region(region: RegionModel):
                 child = __region.children[i]
                 child_entry, child_exit = rec(child)
 
-                # Entry transition for a child
+                # Entry transition for a child (split)
                 entry_child_trans_id = str(next(id_generator))
                 entry_child_trans = create_transition(
                     entry_child_trans_id,
@@ -185,15 +190,17 @@ def from_region(region: RegionModel):
                     ),
                     stop=True,
                 )
+                entry_child_trans.gateway_role = "split"
                 net.transitions.add(entry_child_trans)
 
-                # Exit transition for a child
+                # Exit transition for a child (join)
                 exit_child_trans_id = str(next(id_generator))
                 exit_child_trans = create_transition(
                     exit_child_trans_id,
                     __region,
                     1,
                 )
+                exit_child_trans.gateway_role = "join"
                 net.transitions.add(exit_child_trans)
 
                 add_arc_from_to(entry_place, entry_child_trans, net)
@@ -219,7 +226,7 @@ def from_region(region: RegionModel):
             # Entry transition
             entry_trans_id = str(next(id_generator))
             entry_trans = create_transition(entry_trans_id, __region)
-            entry_trans.label = "Entry " + region.label
+            entry_trans.label = "Entry " + str(__region.label)
             entry_trans.region_label = "Entry " + __region.label
             net.transitions.add(entry_trans)
 
@@ -239,14 +246,14 @@ def from_region(region: RegionModel):
             # Loop transition
             loop_trans_id = str(next(id_generator))
             loop_trans = create_transition(loop_trans_id, __region, probability=__region.distribution, stop=True)
-            loop_trans.label = "Loop " + region.label
+            loop_trans.label = "Loop " + str(__region.label)
             loop_trans.region_label = "Loop " + __region.label
             net.transitions.add(loop_trans)
 
             # Exit transition
             exit_trans_id = str(next(id_generator))
             exit_trans = create_transition(exit_trans_id, __region, probability=1 - __region.distribution, stop=True)
-            exit_trans.label = "Exit " + region.label
+            exit_trans.label = "Exit " + str(__region.label)
             exit_trans.region_label = "Exit " + __region.label
             net.transitions.add(exit_trans)
 
