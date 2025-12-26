@@ -315,9 +315,9 @@ def layout_node_recursive(node, x, y, positions, transitions, places):
             child_centers_y.append(current_y + ch/2)
             current_y += ch + LAYOUT_SPACING_Y
         
-        # Position Splits
-        split_x = current_x + GATEWAY_WIDTH/2 + 20 # after prefix, before content
-        join_x = x + w - GATEWAY_WIDTH/2 - 20
+        # Position Splits (Increased distance from edge places - was 20)
+        split_x = current_x + GATEWAY_WIDTH/2 + 80 
+        join_x = x + w - GATEWAY_WIDTH/2 - 80
         
         if node.node_type in ['nature', 'choice']:
             # Distribute prob/exit/choice transitions to align with branches
@@ -517,8 +517,8 @@ def draw_hierarchical_regions(node, svg_parts, depth=0):
         # Also skip 'sequential' boxes inside parallel/choice - they're organizational only
         # Only draw boxes for: task, parallel, choice, nature, loop
         drawable_types = ['task', 'parallel', 'choice', 'nature', 'loop']
-        # Allow Task at depth=0 (single task patterns), but skip sequential root
-        should_draw = node.node_type in drawable_types and (depth > 0 or node.node_type == 'task')
+        # Allow drawing for all drawable_types even at depth 0 (e.g. root Parallel)
+        should_draw = node.node_type in drawable_types
         if should_draw:
             # Styles by node type
             stroke_color = "black"
@@ -532,7 +532,7 @@ def draw_hierarchical_regions(node, svg_parts, depth=0):
             elif node.node_type == 'nature':
                 stroke_color = "#009900" # Green
                 fill_color = "rgba(0, 153, 0, 0.05)"
-                stroke_dash = 'stroke-dasharray="5,5"'
+                stroke_dash = 'stroke-dasharray: 5, 5;'
             elif node.node_type == 'parallel':
                 stroke_color = "black"
                 fill_color = "none"
@@ -596,10 +596,10 @@ def draw_place(px, py, place, place_radius, incoming, outgoing, svg_parts):
         p2 = f"{px + triangle_size},{py}"
         p3 = f"{px - triangle_size},{py + triangle_size}"
         svg_parts.append(f'<polygon points="{p1} {p2} {p3}" style="fill: none; stroke: black; stroke-width: 1.5" />')
-        # Region ID only on TRUE start place
-        if is_true_start:
-            region_id = getattr(place, 'entry_id', None) or getattr(place, 'region_id', 'R') or 'R'
-            svg_parts.append(f'<text x="{px + 25}" y="{py + 25}" class="label" style="font-style: italic; font-size: 14px">{region_id}</text>')
+        # Region ID - show if present (don't restrict to true start)
+        region_id = getattr(place, 'entry_id', None) or getattr(place, 'region_id', None)
+        if region_id:
+             svg_parts.append(f'<text x="{px + 25}" y="{py + 25}" class="label" style="font-style: italic; font-size: 14px">{region_id}</text>')
             
     elif is_exit_style:
         # Exit triangle - always FILLED for exit places (including tasks)
@@ -610,9 +610,9 @@ def draw_place(px, py, place, place_radius, incoming, outgoing, svg_parts):
         # Filled triangle for all exit places
         svg_parts.append(f'<polygon points="{p1} {p2} {p3}" style="fill: black; stroke: black" />')
         
-        # Region ID only on TRUE end place
-        if is_true_end:
-            region_id = getattr(place, 'exit_id', None) or getattr(place, 'region_id', 'R') or 'R'
+        # Region ID - show if present (don't restrict to true end)
+        region_id = getattr(place, 'exit_id', None) or getattr(place, 'region_id', None)
+        if region_id:
             svg_parts.append(f'<text x="{px + 25}" y="{py + 25}" class="label" style="font-style: italic; font-size: 14px">{region_id}</text>')
             
     elif hasattr(place, 'has_token') and place.has_token:
@@ -648,8 +648,6 @@ def draw_task_transition(tx, ty, transition, svg_parts):
     # if label:
     #    svg_parts.append(f'<text x="{tx}" y="{ty + triangle_size + 15}" class="label" style="font-size: 12px; font-style: italic">{label}</text>')
     
-    # Add mathematical notation for impacts and duration below
-    text_y = ty + triangle_size + 30
     
     # Helper to draw small entry place symbol (circle with inscribed outline triangle)
     def draw_small_place_symbol(cx, cy, size=6):
@@ -666,7 +664,9 @@ def draw_task_transition(tx, ty, transition, svg_parts):
         return "".join(parts)
     
     # I⃗(place_symbol_t) = [values] - vector notation with arrow above
+    # Position TOP (Impacts)
     if impacts:
+        text_y = ty - 25  # Near top border
         impact_str = ",".join([f"{v:.1f}" for v in impacts]) if isinstance(impacts, list) else str(impacts)
         # Get region ID for subscript (use ONLY numeric region_id, not label)
         region_id = getattr(transition, 'region_id', None)
@@ -674,34 +674,35 @@ def draw_task_transition(tx, ty, transition, svg_parts):
             region_id = 't'  # Fallback
         # Draw: I with arrow ( [small place] region_id ) = [values]
         # Draw I with arrow using SVG (arrow above the letter)
-        i_x = tx - 35
+        i_x = tx - 60  # Moved left (-15 more, total -25)
         svg_parts.append(f'<text x="{i_x}" y="{text_y}" class="label" style="font-size: 10px; font-style: italic">I</text>')
         # Arrow above I: small line with arrowhead pointing right
         svg_parts.append(f'<line x1="{i_x - 3}" y1="{text_y - 10}" x2="{i_x + 5}" y2="{text_y - 10}" style="stroke: black; stroke-width: 0.8" />')
         svg_parts.append(f'<polygon points="{i_x + 5},{text_y - 10} {i_x + 2},{text_y - 12} {i_x + 2},{text_y - 8}" style="fill: black" />')
         # Opening parenthesis
-        svg_parts.append(f'<text x="{tx - 22}" y="{text_y}" class="label" style="font-size: 10px">(</text>')
+        svg_parts.append(f'<text x="{tx - 47}" y="{text_y}" class="label" style="font-size: 10px">(</text>')  # Moved left (-15)
         # Small place symbol centered between parentheses (moved slightly left)
-        svg_parts.append(draw_small_place_symbol(tx - 13, text_y - 3, size=5))
+        svg_parts.append(draw_small_place_symbol(tx - 38, text_y - 3, size=5))  # Moved left (-15)
         # Subscript with region ID (positioned as subscript relative to place symbol)
-        svg_parts.append(f'<text x="{tx - 5}" y="{text_y + 2}" class="label" style="font-size: 7px; font-style: italic">{region_id}</text>')
+        svg_parts.append(f'<text x="{tx - 30}" y="{text_y + 2}" class="label" style="font-size: 7px; font-style: italic">{region_id}</text>')  # Moved left (-15)
         # Closing parenthesis and equals (moved right for more spacing)
-        svg_parts.append(f'<text x="{tx + 15}" y="{text_y}" class="label" style="font-size: 10px">) = [{impact_str}]</text>')
-        text_y += 16
+        svg_parts.append(f'<text x="{tx - 10}" y="{text_y}" class="label" style="font-size: 10px">) = [{impact_str}]</text>')  # Moved left (-15)
     
     # 🕐(place_symbol_region_id) = d - clock symbol for time/duration
+    # Position BOTTOM (Duration)
     if duration is not None:
+        text_y = ty + 30  # Near bottom border (moved down to 30)
         region_id = getattr(transition, 'region_id', None)
         if region_id is None:
             region_id = 't'  # Fallback
         # Clock symbol
-        svg_parts.append(f'<text x="{tx - 28}" y="{text_y}" class="label" style="font-size: 10px">🕐(</text>')
+        svg_parts.append(f'<text x="{tx - 53}" y="{text_y}" class="label" style="font-size: 10px">🕐(</text>')  # Moved left (-15)
         # Small place symbol centered (moved slightly left)
-        svg_parts.append(draw_small_place_symbol(tx - 13, text_y - 3, size=5))
+        svg_parts.append(draw_small_place_symbol(tx - 38, text_y - 3, size=5))  # Moved left (-15)
         # Subscript with region ID
-        svg_parts.append(f'<text x="{tx - 5}" y="{text_y + 2}" class="label" style="font-size: 7px; font-style: italic">{region_id}</text>')
+        svg_parts.append(f'<text x="{tx - 30}" y="{text_y + 2}" class="label" style="font-size: 7px; font-style: italic">{region_id}</text>')  # Moved left (-15)
         # Closing parenthesis and equals (moved right for more spacing)
-        svg_parts.append(f'<text x="{tx + 15}" y="{text_y}" class="label" style="font-size: 10px">) = {duration}</text>')
+        svg_parts.append(f'<text x="{tx - 10}" y="{text_y}" class="label" style="font-size: 10px">) = {duration}</text>')  # Moved left (-15)
 
 
 def draw_gateway_transition(tx, ty, transition, svg_parts):
@@ -771,6 +772,18 @@ def draw_gateway_transition(tx, ty, transition, svg_parts):
             fill_style = 'style="fill: black; stroke: black"'
     
     svg_parts.append(f'<polygon points="{p1} {p2} {p3}" {fill_style} />')
+    
+    # Show probability for splits (e.g. Nature/Choice)
+    if is_split:
+         prob = getattr(transition, 'probability', None)
+         if prob is not None:
+             try:
+                 prob_val = float(prob)
+                 if prob_val < 0.999: # Show only if < 1 (significant probability)
+                     # Show above the triangle (ty - 18)
+                     svg_parts.append(f'<text x="{tx}" y="{ty - 18}" class="label" style="font-size: 11px; fill: black; text-anchor: middle;">{prob_val}</text>')
+             except (ValueError, TypeError):
+                 pass
     if label:
         svg_parts.append(f'<text x="{tx}" y="{ty}" class="label">{label}</text>')
 
@@ -865,42 +878,46 @@ def draw_arc(arc, positions, places, transitions, place_radius, transition_width
         x2_adj, y2_adj = x2 + 15, y2
     elif is_from_loop_up:
         if any(p.name == tgt_name for p in places):
-            x2_adj, y2_adj = x2, y2 - place_radius - 10
+            x2_adj, y2_adj = x2, y2 - place_radius
         else:
-            x2_adj, y2_adj = x2, y2 - 15 - 10
+            x2_adj, y2_adj = x2, y2 - 15
     elif is_backward:
         if any(p.name == tgt_name for p in places):
-            x2_adj, y2_adj = x2, y2 + place_radius + 10
+            x2_adj, y2_adj = x2, y2 + place_radius
         else:
-            x2_adj, y2_adj = x2, y2 + 15 + 10
+            x2_adj, y2_adj = x2, y2 + 15
     else:
         if any(p.name == tgt_name for p in places):
             dx = x2 - x1_adj
             dy = y2 - y1_adj
             dist = (dx**2 + dy**2)**0.5
             if dist > 0:
-                x2_adj = x2 - (place_radius + 10) * dx / dist
-                y2_adj = y2 - (place_radius + 10) * dy / dist
+                x2_adj = x2 - place_radius * dx / dist
+                y2_adj = y2 - place_radius * dy / dist
             else:
                 x2_adj, y2_adj = x2, y2
         else:
-            x2_adj = x2 - transition_width // 2 - 10
+            x2_adj = x2 - transition_width // 2
             y2_adj = y2
     
+    # Determine style: Place->Transition gets WHITE arrow, Transition->Place gets BLACK arrow
+    is_source_place = any(p.name == src_name for p in places)
+    arc_class = "arc-white" if is_source_place else "arc"
+
     # Draw the path
     if is_to_loop_up:
         ctrl_x, ctrl_y = x1_adj, y2_adj
-        svg_parts.append(f'<path d="M{x1_adj},{y1_adj} Q{ctrl_x},{ctrl_y} {x2_adj},{y2_adj}" class="arc" />')
+        svg_parts.append(f'<path d="M{x1_adj},{y1_adj} Q{ctrl_x},{ctrl_y} {x2_adj},{y2_adj}" class="{arc_class}" />')
     elif is_from_loop_up:
         ctrl_x, ctrl_y = x2_adj, y1_adj
-        svg_parts.append(f'<path d="M{x1_adj},{y1_adj} Q{ctrl_x},{ctrl_y} {x2_adj},{y2_adj}" class="arc" />')
+        svg_parts.append(f'<path d="M{x1_adj},{y1_adj} Q{ctrl_x},{ctrl_y} {x2_adj},{y2_adj}" class="{arc_class}" />')
     elif is_backward:
         curve_depth = 60
         mid_x = (x1_adj + x2_adj) / 2
         ctrl_y = min(y1_adj, y2_adj) - curve_depth
-        svg_parts.append(f'<path d="M{x1_adj},{y1_adj} Q{mid_x},{ctrl_y} {x2_adj},{y2_adj}" class="arc" />')
+        svg_parts.append(f'<path d="M{x1_adj},{y1_adj} Q{mid_x},{ctrl_y} {x2_adj},{y2_adj}" class="{arc_class}" />')
     else:
-        svg_parts.append(f'<path d="M{x1_adj},{y1_adj} L{x2_adj},{y2_adj}" class="arc" />')
+        svg_parts.append(f'<path d="M{x1_adj},{y1_adj} L{x2_adj},{y2_adj}" class="{arc_class}" />')
 
 
 def draw_region_box(region_label, node_names, positions, transitions, petri_net, places, transition_height, svg_parts):
@@ -1211,13 +1228,22 @@ def petri_net_to_svg(petri_net, width=800, height=400, region_tree=None):
     svg_parts.append('  .place { fill: white; stroke: black; stroke-width: 1.5; }')
     svg_parts.append('  .transition { fill: white; stroke: black; stroke-width: 1.5; }')
     svg_parts.append('  .region { fill: none; stroke: black; stroke-width: 2; rx: 10; }')
-    svg_parts.append('  .arc { fill: none; stroke: black; stroke-width: 1; marker-end: url(#arrowhead); }')
+    svg_parts.append('  .arc { fill: none; stroke: black; stroke-width: 1; marker-end: url(#doubleArrowhead); }')
+    svg_parts.append('  .arc-white { fill: none; stroke: black; stroke-width: 1; marker-end: url(#doubleArrowheadWhite); }')
     svg_parts.append('  .label { font-family: Arial; font-size: 12px; text-anchor: middle; dominant-baseline: middle; }')
     svg_parts.append('</style>')
     
     svg_parts.append('<defs>')
-    svg_parts.append('  <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">')
-    svg_parts.append('    <polygon points="0 0, 10 3.5, 0 7" fill="black" />')
+    # Doppia punta unidirezionale NERA (>>)
+    svg_parts.append('  <marker id="doubleArrowhead" markerWidth="15" markerHeight="7" refX="14" refY="3.5" orient="auto">')
+    svg_parts.append('    <polygon points="0 0, 7 3.5, 0 7" fill="black" />')
+    svg_parts.append('    <polygon points="7 0, 14 3.5, 7 7" fill="black" />')
+    svg_parts.append('  </marker>')
+    
+    # Doppia punta unidirezionale BIANCA (>>)
+    svg_parts.append('  <marker id="doubleArrowheadWhite" markerWidth="15" markerHeight="7" refX="14" refY="3.5" orient="auto">')
+    svg_parts.append('    <polygon points="0 0, 7 3.5, 0 7" fill="white" stroke="black" stroke-width="1" />')
+    svg_parts.append('    <polygon points="7 0, 14 3.5, 7 7" fill="white" stroke="black" stroke-width="1" />')
     svg_parts.append('  </marker>')
     svg_parts.append('</defs>')
     
@@ -1295,8 +1321,24 @@ def region_model_to_region_node(region, depth: int = 0):
         for i, child in enumerate(region.children):
             children.append(region_model_to_region_node(child, depth + 1))
     
-    # Get label
-    label = getattr(region, 'label', None) or f"R{getattr(region, 'id', depth)}"
+    # Get label with smart fallback
+    explicit_label = getattr(region, 'label', None)
+    if explicit_label:
+        label = explicit_label
+    else:
+        # Generate label based on type
+        rid = getattr(region, 'id', depth)
+        prefix_map = {
+            'nature': 'N',
+            'choice': 'C',
+            'parallel': 'P',
+            'loop': 'L',
+            'task': 'T',
+            'sequential': 'R'
+        }
+        # Default to 'R' if type not found
+        prefix = prefix_map.get(node_type, 'R')
+        label = f"{prefix}{rid}"
     
     # Get node_id
     node_id = getattr(region, 'id', depth)

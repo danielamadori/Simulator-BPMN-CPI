@@ -17,10 +17,35 @@ def new_id():
 
 # Task counter for T1, T2, T3... labels
 _task_counter = 0
+_parallel_counter = 0
+_choice_counter = 0
+_nature_counter = 0
+_loop_counter = 0
+
 def _next_task_label():
     global _task_counter
     _task_counter += 1
     return f"T{_task_counter}"
+
+def _next_parallel_label():
+    global _parallel_counter
+    _parallel_counter += 1
+    return f"P{_parallel_counter}"
+
+def _next_choice_label():
+    global _choice_counter
+    _choice_counter += 1
+    return f"C{_choice_counter}"
+
+def _next_nature_label():
+    global _nature_counter
+    _nature_counter += 1
+    return f"N{_nature_counter}"
+
+def _next_loop_label():
+    global _loop_counter
+    _loop_counter += 1
+    return f"L{_loop_counter}"
 
 def task(label=None, duration=1.0, impacts=None):
     if impacts is None: impacts = [1.0]
@@ -42,38 +67,46 @@ def sequential(children):
         "children": children
     }
 
-def parallel(children):
+def parallel(children, label=None):
+    if label is None: label = _next_parallel_label()
     return {
         "id": new_id(),
         "type": "parallel",
+        "label": label,
         "children": children
     }
 
-def choice(children, max_delay=0.0):
+def choice(children, max_delay=0.0, label=None):
+    if label is None: label = _next_choice_label()
     return {
         "id": new_id(),
         "type": "choice",
+        "label": label,
         "children": children,
         "max_delay": max_delay
     }
 
-def nature(children, distribution):
+def nature(children, distribution, label=None):
+    if label is None: label = _next_nature_label()
     return {
         "id": new_id(),
         "type": "nature",
+        "label": label,
         "children": children,
         "distribution": distribution
     }
 
-def loop(child, probability=0.5, bound=5):
+def loop(child, label=None, probability=0.5, bound=5):
+    if label is None: label = _next_loop_label()
     return {
         "id": new_id(),
         "type": "loop",
+        "label": label,
         "children": [child],
-        "distribution": probability,
-        "bound": bound,
-        "label": child.get("label", "Loop") 
-    }
+        "probability": probability,
+        "bound": bound
+    } 
+
 
 # --- Patterns Definitions ---
 
