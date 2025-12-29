@@ -1,7 +1,7 @@
 import json
 import os
 
-OUTPUT_NB = r"C:\Users\danie\Projects\GitHub\Simulator-CPI\src\json_patterns_test.ipynb"
+OUTPUT_NB = r"C:\Users\danie\Projects\GitHub\Simulator-CPI\json_patterns_test.ipynb"
 
 # --- JSON Builders (Helper Functions) ---
 
@@ -103,7 +103,7 @@ def loop(child, label=None, probability=0.5, bound=5):
         "type": "loop",
         "label": label,
         "children": [child],
-        "probability": probability,
+        "distribution": probability,
         "bound": bound
     } 
 
@@ -167,8 +167,10 @@ patterns.append({
     "expr": "R1, (R2 || R3), R4",
     "json": sequential([
         task(),
-        parallel([task(), task()]),
-        task()
+        sequential([
+            parallel([task(), task()]),
+            task()
+        ])
     ])
 })
 
@@ -179,8 +181,10 @@ patterns.append({
     "expr": "R1, (R2 /[C1] R3), R4",
     "json": sequential([
         task(),
-        choice([task(), task()]),
-        task()
+        sequential([
+            choice([task(), task()]),
+            task()
+        ])
     ])
 })
 
@@ -191,8 +195,10 @@ patterns.append({
     "expr": "R1, <R2 [L1]>, R3",
     "json": sequential([
         task(),
-        loop(task()),
-        task()
+        sequential([
+            loop(task()),
+            task()
+        ])
     ])
 })
 
@@ -203,8 +209,10 @@ patterns.append({
     "expr": "R1, ^[N1] (R2, R3), R4",
     "json": sequential([
         task(),
-        nature([task(), task()], distribution=[0.4, 0.6]),
-        task()
+        sequential([
+            nature([task(), task()], distribution=[0.4, 0.6]),
+            task()
+        ])
     ])
 })
 
@@ -215,11 +223,13 @@ patterns.append({
     "expr": "R1, ((R2 /[C1] R3) || <R4 [L1]>), R5",
     "json": sequential([
         task(),
-        parallel([
-            choice([task(), task()]),
-            loop(task())
-        ]),
-        task()
+        sequential([
+            parallel([
+                choice([task(), task()]),
+                loop(task())
+            ]),
+            task()
+        ])
     ])
 })
 
@@ -295,7 +305,7 @@ def create_notebook(pattern_list):
             "from IPython.display import SVG, display\n",
             "\n",
             "# Ensure src path is available\n",
-            "sys.path.append(os.getcwd())\n",
+            "sys.path.append(os.path.abspath(os.path.join(os.getcwd(), 'src')))\n",
             "\n",
             "from model.region import RegionModel\n",
             "from converter.spin import from_region\n",

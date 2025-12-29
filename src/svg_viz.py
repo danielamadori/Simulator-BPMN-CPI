@@ -63,14 +63,27 @@ def calculate_node_size(node):
         # Height: max of children heights
         w = 0
         h = 0
-        for child in node.children:
+        types_sharing_border = ['task', 'nature', 'parallel', 'choice', 'loop', 'sequential']
+        
+        for i, child in enumerate(node.children):
             calculate_node_size(child)
             cw, ch = child.size
-            if w > 0:
-                w += LAYOUT_SPACING_X
+            
+            spacing = LAYOUT_SPACING_X
+            if i > 0:
+                prev_child = node.children[i-1]
+                if child.node_type in types_sharing_border and prev_child.node_type in types_sharing_border:
+                    spacing = 0
+            
+            if i > 0:
+                w += spacing
+                
+                
             w += cw
             h = max(h, ch)
-        node.size = (w + LAYOUT_MARGIN*2, h + LAYOUT_MARGIN*2)
+            
+        # Asymmetric vertical margin: Top=30, Bottom=0
+        node.size = (w, h + 30)
         
     elif node.node_type in ['parallel', 'choice', 'nature', 'loop']:
         # Width: max of children widths + gateway overhead
@@ -173,12 +186,18 @@ def layout_node_recursive(node, x, y, positions, transitions, places):
         
     elif node.node_type == 'sequential':
         # Layout children left to right
-        current_x = x + LAYOUT_MARGIN
+        current_x = x
+        
+        # Calculate max height of children derived from node.size
+        # node.h = max_h + 30 => max_h = node.h - 30
+        max_h = h - 30
+        content_start_y = y + 30
         
         for i, child in enumerate(node.children):
             cw, ch = child.size
-            # Center child vertically in the sequential block
-            child_y = center_y - ch / 2
+            # Center child vertically relative to the CONTENT block (max_h)
+            # This aligns centers of all items, but shifted down by TOP_MARGIN
+            child_y = content_start_y + (max_h - ch) / 2
             
             layout_node_recursive(child, current_x, child_y, positions, transitions, places)
             
@@ -315,9 +334,12 @@ def layout_node_recursive(node, x, y, positions, transitions, places):
             child_centers_y.append(current_y + ch/2)
             current_y += ch + LAYOUT_SPACING_Y
         
-        # Position Splits (Increased distance from edge places - was 20)
-        split_x = current_x + GATEWAY_WIDTH/2 + 80 
-        join_x = x + w - GATEWAY_WIDTH/2 - 80
+        # Position Splits (Centered in the allocated gateway space)
+        # Space allocated is GATEWAY_WIDTH + LAYOUT_SPACING_X
+        # We want to center it: start + (WIDTH + SPACING)/2
+        offset = (GATEWAY_WIDTH + LAYOUT_SPACING_X) / 2
+        split_x = current_x + offset
+        join_x = x + w - offset
         
         if node.node_type in ['nature', 'choice']:
             # Distribute prob/exit/choice transitions to align with branches
@@ -397,8 +419,8 @@ def layout_node_recursive(node, x, y, positions, transitions, places):
         # Exit/End/Back group at Right
         
         # Find start/end places by ID first
-        p_start_loop = None
-        p_end_loop = None
+        p_start_candidates = []
+        p_end_candidates = []
         
         for e in node.elements:
              p_obj = next((p for p in places if p.name == e), None)
@@ -406,10 +428,21 @@ def layout_node_recursive(node, x, y, positions, transitions, places):
                  p_entry_id = getattr(p_obj, 'entry_id', None)
                  p_exit_id = getattr(p_obj, 'exit_id', None)
                  if p_entry_id is not None and str(p_entry_id) == str(node.node_id):
-                     p_start_loop = e
+                     p_start_candidates.append(e)
                  if p_exit_id is not None and str(p_exit_id) == str(node.node_id):
-                     p_end_loop = e
+                     p_end_candidates.append(e)
 
+        # Sort candidates to ensure deterministic selection (usually lower ID is the outer one)
+        def safe_int_key(val):
+            try: return int(val)
+            except: return val
+            
+        p_start_candidates.sort(key=safe_int_key)
+        p_end_candidates.sort(key=safe_int_key)
+        
+        p_start_loop = p_start_candidates[0] if p_start_candidates else None
+        p_end_loop = p_end_candidates[0] if p_end_candidates else None
+                 
         # Identify Transitions using Object Attributes (Labels)
         # IDs are numeric strings, so 'entry' in e fails.
         t_entry = None
@@ -437,9 +470,6 @@ def layout_node_recursive(node, x, y, positions, transitions, places):
         # spin.py order: Entry, Loop, Exit
         if not t_entry and not t_back and not t_exit and len(loop_transitions) == 3:
              # Sort by int ID
-             def safe_int_key(val):
-                try: return int(val)
-                except: return val
              sorted_loop_t = sorted(loop_transitions, key=safe_int_key)
              t_entry = sorted_loop_t[0]
              t_back = sorted_loop_t[1] 
@@ -447,29 +477,49 @@ def layout_node_recursive(node, x, y, positions, transitions, places):
         
         center_y = y + h/2
         
-        # Position Start Sequence: [p_start] -> [t_entry] -> [Child]
+        # Position Start Sequence with centering: [p_start] <-> [t_entry] <-> [Child]
         current_left = x
         if p_start_loop:
             positions[p_start_loop] = (x, center_y) # On border
-            current_left += 30 # Space
-            
-        if t_entry:
-            positions[t_entry] = (current_left + 10, center_y) # Between start and child
-            
-        # Position End Sequence: [Child] -> [t_exit] -> [p_end]
+            # Calculate t_entry position: centered between p_start and child start (child_x)
+            if t_entry:
+                p_x = x
+                child_start_x = child_x # child_x from earlier calculation
+                # Ensure enough space
+                if child_start_x - p_x < 60:
+                     # Tight squeeze, just offset
+                     positions[t_entry] = (p_x + 30, center_y)
+                else:
+                     positions[t_entry] = (p_x + (child_start_x - p_x)/2, center_y)
+        elif t_entry:
+             # No start place, just place near child
+             positions[t_entry] = (child_x - 30, center_y)
+
+        # Position End Sequence with centering: [Child] <-> [t_exit] <-> [p_end]
         # And [t_back]
         current_right = x + w
         
         if p_end_loop:
-            positions[p_end_loop] = (x + w, center_y) # On border
-            current_right -= 30
-            
-        if t_exit:
-            positions[t_exit] = (current_right - 10, center_y)
+             positions[p_end_loop] = (x + w, center_y) # On border
+             # Calculate t_exit position: centered between child end (child_x + cw) and p_end (current_right)
+             if t_exit:
+                 p_x = x + w
+                 child_end_x = child_x + cw
+                 if p_x - child_end_x < 60:
+                      positions[t_exit] = (p_x - 30, center_y)
+                 else:
+                      positions[t_exit] = (child_end_x + (p_x - child_end_x)/2, center_y)
+        elif t_exit:
+             positions[t_exit] = (child_x + cw + 30, center_y)
             
         if t_back:
-            # Visually, place it above as requested
-            positions[t_back] = (x + w/2, y + 25) # Top center
+            # Visually, place it WAY above as requested
+            # Use midpoint between entry and exit if available, else center
+            if t_entry and t_exit:
+                mid_x = (positions[t_entry][0] + positions[t_exit][0]) / 2
+                positions[t_back] = (mid_x, positions[t_entry][1] - 80)
+            else:
+                positions[t_back] = (x + w/2, positions[t_entry][1] - 80)
 
 
 def calculate_region_bounds(node, positions, depth=0):
@@ -516,7 +566,8 @@ def draw_hierarchical_regions(node, svg_parts, depth=0):
         # Draw box (Skip root node to avoid 'Sequential' wrapper look for non-tasks)
         # Also skip 'sequential' boxes inside parallel/choice - they're organizational only
         # Only draw boxes for: task, parallel, choice, nature, loop
-        drawable_types = ['task', 'parallel', 'choice', 'nature', 'loop']
+        # Only draw boxes for: task, parallel, choice, nature, loop, sequential
+        drawable_types = ['task', 'parallel', 'choice', 'nature', 'loop', 'sequential']
         # Allow drawing for all drawable_types even at depth 0 (e.g. root Parallel)
         should_draw = node.node_type in drawable_types
         if should_draw:
@@ -539,6 +590,10 @@ def draw_hierarchical_regions(node, svg_parts, depth=0):
             elif node.node_type == 'loop':
                 stroke_color = "black" 
                 fill_color = "none"
+            elif node.node_type == 'sequential':
+                stroke_color = "black"
+                fill_color = "none"
+                stroke_dash = 'stroke-dasharray: 5, 2;' # Different dash for sequential
                 
             # Label
             label_y = y - 5
@@ -835,11 +890,38 @@ def draw_arc(arc, positions, places, transitions, place_radius, transition_width
     x1, y1 = positions[src_name]
     x2, y2 = positions[tgt_name]
     
-    # Check arc type
+    # Detect arc type
     is_backward = x2 < x1
     is_to_loop_up = False
     is_from_loop_up = False
     
+    # Check for Loop Back Transition specifically (Heuristic: it's high up!)
+    # Or strict check if we passed identification info.
+    # Heuristic: t_back is usually much higher (y < y1-40 or y < y2-40)
+    # Better: Detect if one node is the designated "back" transition.
+    # Since we don't have the region tree here easily, check if one node is 't' and positions indicate it's above.
+    
+    is_loop_back_arc = False
+    # If one node is a transition and is positioned largely above the other (e.g. > 60px)
+    # AND it's physically between them in X (roughly) or backward flow?
+    # Loop Back Logic: 
+    #   End Place -> Back Trans (Going Left-ish/Up)
+    #   Back Trans -> Start Place (Going Left-ish/Down)
+    
+    mid_y = (y1 + y2) / 2
+    
+    # 2025-12-27 Fix: Refined heuristic.
+    # Original 'abs(y1 - y2) > 50' was capturing "Choice" forward splits which are also steep.
+    # Added 'x2 - x1 < 20' to ensure we only capture BACKWARD or VERTICAL (loop back) arcs.
+    # Forward arcs (Choice/Parallel) will have x2 >> x1.
+    if abs(y1 - y2) > 50 and (x2 - x1) < 20: 
+         # Likely a loop back transition involved
+         is_loop_back_arc = True
+    
+    # Determine style first to use in adjustments
+    is_source_place = any(p.name == src_name for p in places)
+    arc_class = "arc-white" if is_source_place else "arc"
+
     for t in transitions:
         if t.name == tgt_name and hasattr(t, 'get_region_type') and t.get_region_type() == 'loop_up':
             is_to_loop_up = True
@@ -848,17 +930,30 @@ def draw_arc(arc, positions, places, transitions, place_radius, transition_width
     
     # Calculate adjusted coordinates based on arc type
     if is_to_loop_up:
-        if any(p.name == src_name for p in places):
-            x1_adj, y1_adj = x1, y1 - place_radius
-        else:
-            x1_adj, y1_adj = x1, y1 - 15
+        x1_adj, y1_adj = x1, y1 - 15
     elif is_from_loop_up:
         x1_adj, y1_adj = x1 - 15, y1
+    elif is_loop_back_arc:
+         # Special handling for loop back: connect to top/bottom of nodes
+         # If src is lower than tgt (End -> Back), output from Top
+         if y1 > y2:
+             if is_source_place:
+                 x1_adj, y1_adj = x1, y1 - place_radius
+             else:
+                 x1_adj, y1_adj = x1, y1 - 15
+         # If src is higher than tgt (Back -> Start), output from Left/Bottom?
+         else:
+             if is_source_place:
+                 x1_adj, y1_adj = x1 - place_radius, y1
+             else:
+                 x1_adj, y1_adj = x1 - 15, y1
+             
     elif is_backward:
         if any(p.name == src_name for p in places):
             x1_adj, y1_adj = x1, y1 + place_radius
         else:
             x1_adj, y1_adj = x1, y1 + 15
+            
     else:
         if any(p.name == src_name for p in places):
             dx = x2 - x1
@@ -877,10 +972,19 @@ def draw_arc(arc, positions, places, transitions, place_radius, transition_width
     if is_to_loop_up:
         x2_adj, y2_adj = x2 + 15, y2
     elif is_from_loop_up:
-        if any(p.name == tgt_name for p in places):
-            x2_adj, y2_adj = x2, y2 - place_radius
-        else:
-            x2_adj, y2_adj = x2, y2 - 15
+        x2_adj, y2_adj = x2, y2 - 15
+    elif is_loop_back_arc:
+         # If tgt is higher than src (End -> Back), input at Right/Bottom?
+         if y2 < y1:
+             x2_adj, y2_adj = x2 + 15, y2 # Input side of back trans
+         # If tgt is lower than src (Back -> Start), input at Top
+         else:
+             is_tgt_place = any(p.name == tgt_name for p in places)
+             if is_tgt_place:
+                 x2_adj, y2_adj = x2, y2 - place_radius
+             else:
+                 x2_adj, y2_adj = x2, y2 - 15
+
     elif is_backward:
         if any(p.name == tgt_name for p in places):
             x2_adj, y2_adj = x2, y2 + place_radius
@@ -900,10 +1004,9 @@ def draw_arc(arc, positions, places, transitions, place_radius, transition_width
             x2_adj = x2 - transition_width // 2
             y2_adj = y2
     
-    # Determine style: Place->Transition gets WHITE arrow, Transition->Place gets BLACK arrow
-    is_source_place = any(p.name == src_name for p in places)
-    arc_class = "arc-white" if is_source_place else "arc"
-
+    # Determine style
+    # Done earlier
+    
     # Draw the path
     if is_to_loop_up:
         ctrl_x, ctrl_y = x1_adj, y2_adj
@@ -911,6 +1014,19 @@ def draw_arc(arc, positions, places, transitions, place_radius, transition_width
     elif is_from_loop_up:
         ctrl_x, ctrl_y = x2_adj, y1_adj
         svg_parts.append(f'<path d="M{x1_adj},{y1_adj} Q{ctrl_x},{ctrl_y} {x2_adj},{y2_adj}" class="{arc_class}" />')
+    elif is_loop_back_arc:
+        # Custom curve for the "High" back transition
+        # Case 1: End -> Back (Up and Left)
+        if y1 > y2:
+            # Control point: Corner approach (x1, y2)
+            ctrl_x, ctrl_y = x1_adj, y2_adj
+            svg_parts.append(f'<path d="M{x1_adj},{y1_adj} Q{ctrl_x},{ctrl_y} {x2_adj},{y2_adj}" class="{arc_class}" />')
+        # Case 2: Back -> Start (Down and Left)
+        else:
+            # Control point: Corner approach (x2, y1)
+            ctrl_x, ctrl_y = x2_adj, y1_adj
+            svg_parts.append(f'<path d="M{x1_adj},{y1_adj} Q{ctrl_x},{ctrl_y} {x2_adj},{y2_adj}" class="{arc_class}" />')
+            
     elif is_backward:
         curve_depth = 60
         mid_x = (x1_adj + x2_adj) / 2
@@ -1325,6 +1441,15 @@ def region_model_to_region_node(region, depth: int = 0):
     explicit_label = getattr(region, 'label', None)
     if explicit_label:
         label = explicit_label
+    elif node_type == 'sequential':
+        # User request: "first label followed by , and then the second label"
+        # Concatenate labels of all children
+        child_labels = [child.label for child in children if child.label]
+        label = ", ".join(child_labels)
+        if not label:
+            # Fallback if no children labels
+            rid = getattr(region, 'id', depth)
+            label = f"R{rid}"
     else:
         # Generate label based on type
         rid = getattr(region, 'id', depth)
