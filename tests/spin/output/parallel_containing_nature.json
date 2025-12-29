@@ -1,0 +1,45 @@
+{
+  "id": "134",
+  "type": "parallel",
+  "label": "P13",
+  "children": [
+    {
+      "id": "130",
+      "type": "task",
+      "label": "T74",
+      "duration": 1.0,
+      "impacts": [
+        1.0
+      ]
+    },
+    {
+      "id": "133",
+      "type": "nature",
+      "label": "N8",
+      "children": [
+        {
+          "id": "131",
+          "type": "task",
+          "label": "T75",
+          "duration": 1.0,
+          "impacts": [
+            1.0
+          ]
+        },
+        {
+          "id": "132",
+          "type": "task",
+          "label": "T76",
+          "duration": 1.0,
+          "impacts": [
+            1.0
+          ]
+        }
+      ],
+      "distribution": [
+        0.5,
+        0.5
+      ]
+    }
+  ]
+}

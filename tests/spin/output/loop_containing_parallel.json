@@ -1,0 +1,34 @@
+{
+  "id": "83",
+  "type": "loop",
+  "label": "L5",
+  "children": [
+    {
+      "id": "82",
+      "type": "parallel",
+      "label": "P9",
+      "children": [
+        {
+          "id": "80",
+          "type": "task",
+          "label": "T47",
+          "duration": 1.0,
+          "impacts": [
+            1.0
+          ]
+        },
+        {
+          "id": "81",
+          "type": "task",
+          "label": "T48",
+          "duration": 1.0,
+          "impacts": [
+            1.0
+          ]
+        }
+      ]
+    }
+  ],
+  "distribution": 0.5,
+  "bound": 5
+}

@@ -24,7 +24,8 @@ class RegionNode:
         self.children = children or []
         self.elements = elements or []  # List of place/transition names
         self.bounds = None  # Will be set during layout: (x, y, w, h)
-    
+        self.baseline_offset = 0 # Vertical distance from top (y) to the flow center line
+
     def add_child(self, child):
         self.children.append(child)
         return self
@@ -48,26 +49,44 @@ LAYOUT_SPACING_Y = 60  # Vertical spacing between parallel branches
 TASK_WIDTH = 200
 TASK_HEIGHT = 80
 GATEWAY_WIDTH = 50  # Split/Join width
+LOOP_TOP_MARGIN = 120 # Space for t_back above child
+LOOP_BOTTOM_MARGIN = 20
 
 def calculate_node_size(node):
     """
     Recursively calculate the required width and height for each node.
     Stores size in node.size = (w, h).
+    Calculates node.baseline_offset based on flow line.
     """
     if node.node_type == 'task':
         # Fixed size for simple tasks
         node.size = (TASK_WIDTH, TASK_HEIGHT)
+        node.baseline_offset = TASK_HEIGHT / 2
         
     elif node.node_type == 'sequential':
         # Width: sum of children widths + spacing
-        # Height: max of children heights
-        w = 0
-        h = 0
+        # Height: max of children heights? NO.
+        # Height is constrained by aligning baselines.
+        # We need max ascent (distance from baseline to top) and max descent (baseline to bottom)
+        
         types_sharing_border = ['task', 'nature', 'parallel', 'choice', 'loop', 'sequential']
+        
+        max_ascent = 0
+        max_descent = 0
+        w = 0
         
         for i, child in enumerate(node.children):
             calculate_node_size(child)
             cw, ch = child.size
+            child_base = child.baseline_offset
+            
+            # Update max ascent/descent
+            if child_base > max_ascent:
+                max_ascent = child_base
+            
+            child_descent = ch - child_base
+            if child_descent > max_descent:
+                max_descent = child_descent
             
             spacing = LAYOUT_SPACING_X
             if i > 0:
@@ -77,15 +96,46 @@ def calculate_node_size(node):
             
             if i > 0:
                 w += spacing
-                
-                
             w += cw
-            h = max(h, ch)
             
-        # Asymmetric vertical margin: Top=30, Bottom=0
-        node.size = (w, h + 30)
+        # Total height = max_ascent + max_descent
+        # Add pure vertical padding (30 top, 30 bottom) to the calculated bounding box
+        top_padding = 30
+        bottom_padding = 30
         
-    elif node.node_type in ['parallel', 'choice', 'nature', 'loop']:
+        total_h = max_ascent + max_descent + top_padding + bottom_padding
+        node.size = (w, total_h)
+        
+        # Baseline is at top_padding + max_ascent
+        node.baseline_offset = top_padding + max_ascent
+        
+    elif node.node_type == 'loop':
+        # Loop: Single child usually
+        # Width: child width + overhead (gateways + margin)
+        # Height: child height + TOP_MARGIN (for t_back) + BOTTOM_MARGIN
+        if not node.children:
+            node.size = (200, 200)
+            node.baseline_offset = 100
+            return node.size
+            
+        child = node.children[0]
+        calculate_node_size(child)
+        cw, ch = child.size
+        
+        # Width logic (similar to parallel/nature but simpler)
+        # Entry + Child + Exit overhead
+        overhead_x = 2 * (GATEWAY_WIDTH + LAYOUT_SPACING_X)
+        w = cw + overhead_x
+        
+        # Height logic: Explicit dynamic reservation
+        h = ch + LOOP_TOP_MARGIN + LOOP_BOTTOM_MARGIN
+        
+        node.size = (w, h)
+        # Baseline: The child is placed at y + LOOP_TOP_MARGIN.
+        # So the Flow Line is LOOP_TOP_MARGIN + child.baseline_offset
+        node.baseline_offset = LOOP_TOP_MARGIN + child.baseline_offset
+
+    elif node.node_type in ['parallel', 'choice', 'nature']:
         # Width: max of children widths + gateway overhead
         # Height: sum of children heights + spacing
         w = 0
@@ -99,11 +149,8 @@ def calculate_node_size(node):
             h += ch
         
         # Check for prefix tasks (transitions in elements that are not split/join)
-        # Heuristic: simple check. Real implementation might need more robust filtering.
-        # Splits: split, prob, start. Joins: join, exit, end.
         has_prefix_task = False
         for elem in node.elements:
-            # Assume prefix tasks are 't' something or specific names not involving split/join keywords
             if elem.startswith('t') and 'split' not in elem and 'join' not in elem and 'prob' not in elem and 'exit' not in elem:
                 has_prefix_task = True
                 break
@@ -113,11 +160,16 @@ def calculate_node_size(node):
         # Add space for split/join transitions on left/right
         total_w = w + 2 * (GATEWAY_WIDTH + LAYOUT_SPACING_X) + prefix_width
         total_h = h + LAYOUT_MARGIN*2
+            
         node.size = (total_w, total_h)
+        # For Parallel/Choice/Nature, we flow through the CENTER of the block.
+        # The split/join are usually vertically centered.
+        node.baseline_offset = total_h / 2
         
     else:
         # Default
         node.size = (100, 100)
+        node.baseline_offset = 50
         
     return node.size
 
@@ -189,8 +241,8 @@ def layout_node_recursive(node, x, y, positions, transitions, places):
         current_x = x
         
         # Calculate max height of children derived from node.size
-        # node.h = max_h + 30 => max_h = node.h - 30
-        max_h = h - 30
+        # node.h = max_h + 60 (30 top + 30 bottom)
+        max_h = h - 60
         content_start_y = y + 30
         
         for i, child in enumerate(node.children):
@@ -263,80 +315,68 @@ def layout_node_recursive(node, x, y, positions, transitions, places):
             #    create exit (join)
             # So the IDs are: Split1, Join1, Split2, Join2...
             
+            # Strategy: Alternating assignment based on sort order (Entry < Exit)
+            
             for i, t in enumerate(sorted_trans):
                 if i % 2 == 0:
                     splits.append(t)
                 else:
                     joins.append(t)
+                    
+        # Layout children vertically, centered horizontally
+        # Use baseline_offset of children to align connection points (flow lines)
         
-        # Remaining heuristic for safety if empty
-        if not splits and not joins:
-             for e in node.elements:
-                if ('split' in e or 'prob' in e or 'start' in e) and not any(p.name == e for p in places):
-                    splits.append(e)
-                elif ('join' in e or 'exit' in e or 'end' in e) and not any(p.name == e for p in places):
-                    joins.append(e)
+        # Calculate offsets
+        current_x = x
         
-        # Identify prefix tasks
+        # Identify prefix tasks (transitions in elements that are not split/join)
         prefix_tasks = [e for e in node.elements if e.startswith('t') 
                         and 'split' not in e and 'join' not in e 
                         and 'prob' not in e and 'exit' not in e]
         prefix_task = prefix_tasks[0] if prefix_tasks else None
         
-        # Calculate offsets
-        current_x = x
         if prefix_task:
-            # Layout prefix task: Task -> Arc -> (Start Place?) -> Arc -> Split
-            # Actually, usually: [Start] -> Task -> [Place] -> Split
-            # The 'start' place might be in elements too?
-            # heuristic: place task at x + margin
-            positions[prefix_task] = (current_x + 30 + 50, y + h/2) # 50 = half task width? no task width is 200? center?
-            # TASK_WIDTH = 200. Center = 100.
-            # Let's say we reserve area for task. 
-            positions[prefix_task] = (current_x + TASK_WIDTH/2, y + h/2)
+            # Position prefix task centered on OUR baseline
+            positions[prefix_task] = (current_x + TASK_WIDTH/2, y + node.baseline_offset)
             current_x += TASK_WIDTH + LAYOUT_SPACING_X
             
-            # Position the intermediate place (between Task and Split)
-            # Find place that is NOT pre, NOT post, but in elements?
-            # Or just assume it's the one at roughly current_x
-            # Heuristic: the place named in elements that isn't 'start'/'entry' and isn't 'p_a'/'p_b' (branches)
-            # Better: The place that is target of prefix_task?
-            # We don't have easy arc access here.
-            # But usually it's 'p1' or similar. 
-            # Check elements that haven't been positioned yet and aren't splits/joins/branches
-            # Or just place 'p1' if present.
+            # Intermediate place logic (simplified)
+            intermediate_place_x = current_x - LAYOUT_SPACING_X/2
             p1_candidates = [e for e in node.elements if e not in positions and not e.startswith('t') 
                              and 'split' not in e and 'join' not in e and 'prob' not in e and 'exit' not in e
                              and 'start' not in e and 'end' not in e]
-            
-            # Specifically for R1^[N1], it's p1.
-            # Place it between Task (x-spacing) and Split (x)
-            place_x = positions[prefix_task][0] + TASK_WIDTH/2 + (current_x - (positions[prefix_task][0] + TASK_WIDTH/2))/2
-            # Actually easier: current_x is now start of gateway area.
-            # Task center is at current_x - LAYOUT_SPACING_X - TASK_WIDTH/2
-            # Place should be at current_x - LAYOUT_SPACING_X/2
-            
-            intermediate_place_x = current_x - LAYOUT_SPACING_X/2
-            
             if p1_candidates:
-                # Take the first candidate (e.g. p1)
-                positions[p1_candidates[0]] = (intermediate_place_x, y + h/2)
+                positions[p1_candidates[0]] = (intermediate_place_x, y + node.baseline_offset)
         
         content_start_x = current_x + GATEWAY_WIDTH + LAYOUT_SPACING_X
         current_y = y + LAYOUT_MARGIN
         
-        # Store Y-center of each child to align gateways
+        # Store Y-center of each child to align gateways. 
+        # Crucially, use the child's baseline_offset, not h/2.
         child_centers_y = []
         
         for child in node.children:
             cw, ch = child.size
+            # Center child horizontally in the content area
+            # We assume total width is enough. 
+            # Total content width = w - 2*(GATEWAY+MARGIN) - prefix
+            # This is simpler: just placing them.
+            # Let's align them left for now as per original code.
+            
             layout_node_recursive(child, content_start_x, current_y, positions, transitions, places)
-            child_centers_y.append(current_y + ch/2)
+            
+            # The flow line for this child is at child.baseline_offset relative to current_y
+            child_centers_y.append(current_y + child.baseline_offset)
+            
             current_y += ch + LAYOUT_SPACING_Y
         
         # Position Splits (Centered in the allocated gateway space)
-        # Space allocated is GATEWAY_WIDTH + LAYOUT_SPACING_X
-        # We want to center it: start + (WIDTH + SPACING)/2
+        # Vertical Position:
+        # If we have N children, we usually have N splits? (For Nature?)
+        # Or 1 split.
+        # If 1 split, place at baseline_offset.
+        # If N splits, align with children.
+        
         offset = (GATEWAY_WIDTH + LAYOUT_SPACING_X) / 2
         split_x = current_x + offset
         join_x = x + w - offset
@@ -357,8 +397,14 @@ def layout_node_recursive(node, x, y, positions, transitions, places):
                     positions[join] = (join_x, child_centers_y[-1])
                     
         else:
-            # Parallel/Choice: Single split/join (usually) centered
-            center_y_block = y + h / 2
+            # Parallel: Single split/join (usually) centered on OUR baseline 
+            # Wait, parallel flow is usually splits -> children -> joins.
+            # If we have 1 split, it connects to all children. 
+            # Where should it be? Vertically centered on the BLOCK or aligned with something?
+            # Standard is vertically centered on the block's geometric center OR baseline.
+            # Baseline offset for parallel is total_h / 2.
+            
+            center_y_block = y + node.baseline_offset
             
             # Use the first identified split/join
             if splits:
@@ -403,9 +449,11 @@ def layout_node_recursive(node, x, y, positions, transitions, places):
         child = node.children[0]
         cw, ch = child.size
         
-        # Center child in the loop box
+        # New Layout Logic: Top-Aligned with Header Space
+        # Reserve LOOP_TOP_MARGIN at the top for t_back
         child_x = x + (w - cw)/2
-        child_y = y + (h - ch)/2
+        child_y = y + LOOP_TOP_MARGIN 
+        
         layout_node_recursive(child, child_x, child_y, positions, transitions, places)
         
         # Identify Loop elements
@@ -413,10 +461,6 @@ def layout_node_recursive(node, x, y, positions, transitions, places):
         #   start place (p_loop_start) -> entry transition (loop_entry)
         #   exit transition (loop_exit) -> end place (p_loop_end)
         #   back transition (loop_back)
-        
-        # Heuristic:
-        # Start/Entry group at Left
-        # Exit/End/Back group at Right
         
         # Find start/end places by ID first
         p_start_candidates = []
@@ -444,7 +488,6 @@ def layout_node_recursive(node, x, y, positions, transitions, places):
         p_end_loop = p_end_candidates[0] if p_end_candidates else None
                  
         # Identify Transitions using Object Attributes (Labels)
-        # IDs are numeric strings, so 'entry' in e fails.
         t_entry = None
         t_back = None
         t_exit = None
@@ -466,8 +509,7 @@ def layout_node_recursive(node, x, y, positions, transitions, places):
                 elif 'exit' in full_lbl:
                     t_exit = e
         
-        # Fallback by sorted order if labels missing (Entry < Loop < Exit or similar?)
-        # spin.py order: Entry, Loop, Exit
+        # Fallback by sorted order if labels missing
         if not t_entry and not t_back and not t_exit and len(loop_transitions) == 3:
              # Sort by int ID
              sorted_loop_t = sorted(loop_transitions, key=safe_int_key)
@@ -475,51 +517,43 @@ def layout_node_recursive(node, x, y, positions, transitions, places):
              t_back = sorted_loop_t[1] 
              t_exit = sorted_loop_t[2]
         
-        center_y = y + h/2
+        # Flow Line (aligned with child's baseline, NOT geometric center)
+        flow_y = child_y + child.baseline_offset
         
-        # Position Start Sequence with centering: [p_start] <-> [t_entry] <-> [Child]
-        current_left = x
+        # Position Start Sequence: [p_start] <-> [t_entry] <-> [Child]
         if p_start_loop:
-            positions[p_start_loop] = (x, center_y) # On border
-            # Calculate t_entry position: centered between p_start and child start (child_x)
+            positions[p_start_loop] = (x, flow_y) # On border
+            # Calculate t_entry position
             if t_entry:
                 p_x = x
-                child_start_x = child_x # child_x from earlier calculation
-                # Ensure enough space
+                child_start_x = child_x
                 if child_start_x - p_x < 60:
-                     # Tight squeeze, just offset
-                     positions[t_entry] = (p_x + 30, center_y)
+                     positions[t_entry] = (p_x + 30, flow_y)
                 else:
-                     positions[t_entry] = (p_x + (child_start_x - p_x)/2, center_y)
+                     positions[t_entry] = (p_x + (child_start_x - p_x)/2, flow_y)
         elif t_entry:
              # No start place, just place near child
-             positions[t_entry] = (child_x - 30, center_y)
+             positions[t_entry] = (child_x - 30, flow_y)
 
-        # Position End Sequence with centering: [Child] <-> [t_exit] <-> [p_end]
-        # And [t_back]
-        current_right = x + w
-        
+        # Position End Sequence: [Child] <-> [t_exit] <-> [p_end]
         if p_end_loop:
-             positions[p_end_loop] = (x + w, center_y) # On border
-             # Calculate t_exit position: centered between child end (child_x + cw) and p_end (current_right)
+             positions[p_end_loop] = (x + w, flow_y) # On border
              if t_exit:
                  p_x = x + w
                  child_end_x = child_x + cw
                  if p_x - child_end_x < 60:
-                      positions[t_exit] = (p_x - 30, center_y)
+                      positions[t_exit] = (p_x - 30, flow_y)
                  else:
-                      positions[t_exit] = (child_end_x + (p_x - child_end_x)/2, center_y)
+                      positions[t_exit] = (child_end_x + (p_x - child_end_x)/2, flow_y)
         elif t_exit:
-             positions[t_exit] = (child_x + cw + 30, center_y)
+             positions[t_exit] = (child_x + cw + 30, flow_y)
             
         if t_back:
-            # Visually, place it WAY above as requested
-            # Use midpoint between entry and exit if available, else center
-            if t_entry and t_exit:
-                mid_x = (positions[t_entry][0] + positions[t_exit][0]) / 2
-                positions[t_back] = (mid_x, positions[t_entry][1] - 80)
-            else:
-                positions[t_back] = (x + w/2, positions[t_entry][1] - 80)
+            # Place in header space
+            # Use horizontal mid-point
+            mid_x = x + w/2
+            t_back_y = y + 40 # Fixed header position inside the reserved margin
+            positions[t_back] = (mid_x, t_back_y)
 
 
 def calculate_region_bounds(node, positions, depth=0):
@@ -588,8 +622,8 @@ def draw_hierarchical_regions(node, svg_parts, depth=0):
                 stroke_color = "black"
                 fill_color = "none"
             elif node.node_type == 'loop':
-                stroke_color = "black" 
-                fill_color = "none"
+                stroke_color = "#009900" # Green (same as Nature)
+                fill_color = "rgba(0, 153, 0, 0.05)"
             elif node.node_type == 'sequential':
                 stroke_color = "black"
                 fill_color = "none"
@@ -796,11 +830,11 @@ def draw_gateway_transition(tx, ty, transition, svg_parts):
     
     # Determine style based on region type and entry/exit
     if region_type == "loop":
-        # Loop: all black
+        # Loop: green (matching Nature)
         if is_split:
-            fill_style = 'style="fill: none; stroke: black; stroke-width: 2"'
+            fill_style = 'style="fill: none; stroke: #2E7D32; stroke-width: 2"'
         else:
-            fill_style = 'style="fill: black; stroke: black"'
+            fill_style = 'style="fill: #2E7D32; stroke: #2E7D32"'
     elif region_type == "nature":
         # Nature: green
         if is_split:
@@ -1317,6 +1351,24 @@ def petri_net_to_svg(petri_net, width=800, height=400, region_tree=None):
             max_y = max(max_y, y)
             
         region_tree.size  # Root size
+        
+        # Calculate max extent from regions as well
+        def get_tree_max_extent(node):
+            mx, my = 0, 0
+            if node.bounds:
+                x, y, w, h = node.bounds
+                mx = x + w
+                my = y + h
+            
+            for child in node.children:
+                cmx, cmy = get_tree_max_extent(child)
+                mx = max(mx, cmx)
+                my = max(my, cmy)
+            return mx, my
+
+        rmx, rmy = get_tree_max_extent(region_tree)
+        max_x = max(max_x, rmx)
+        max_y = max(max_y, rmy)
         
         # Adjust SVG size if needed
         # We can pass calculate_node_size result back or just trust positions

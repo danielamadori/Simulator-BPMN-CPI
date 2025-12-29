@@ -1,0 +1,64 @@
+{
+  "id": "129",
+  "type": "sequential",
+  "children": [
+    {
+      "id": "122",
+      "type": "task",
+      "label": "T70",
+      "duration": 1.0,
+      "impacts": [
+        1.0
+      ]
+    },
+    {
+      "id": "128",
+      "type": "sequential",
+      "children": [
+        {
+          "id": "126",
+          "type": "loop",
+          "label": "L12",
+          "children": [
+            {
+              "id": "125",
+              "type": "parallel",
+              "label": "P12",
+              "children": [
+                {
+                  "id": "123",
+                  "type": "task",
+                  "label": "T71",
+                  "duration": 1.0,
+                  "impacts": [
+                    1.0
+                  ]
+                },
+                {
+                  "id": "124",
+                  "type": "task",
+                  "label": "T72",
+                  "duration": 1.0,
+                  "impacts": [
+                    1.0
+                  ]
+                }
+              ]
+            }
+          ],
+          "distribution": 0.5,
+          "bound": 5
+        },
+        {
+          "id": "127",
+          "type": "task",
+          "label": "T73",
+          "duration": 1.0,
+          "impacts": [
+            1.0
+          ]
+        }
+      ]
+    }
+  ]
+}

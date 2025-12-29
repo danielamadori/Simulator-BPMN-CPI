@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1050" height="590" viewBox="0 0 1050 590">
+<style>
+  .place { fill: white; stroke: black; stroke-width: 1.5; }
+  .transition { fill: white; stroke: black; stroke-width: 1.5; }
+  .region { fill: none; stroke: black; stroke-width: 2; rx: 10; }
+  .arc { fill: none; stroke: black; stroke-width: 1; marker-end: url(#doubleArrowhead); }
+  .arc-white { fill: none; stroke: black; stroke-width: 1; marker-end: url(#doubleArrowheadWhite); }
+  .label { font-family: Arial; font-size: 12px; text-anchor: middle; dominant-baseline: middle; }
+</style>
+<defs>
+  <marker id="doubleArrowhead" markerWidth="15" markerHeight="7" refX="14" refY="3.5" orient="auto">
+    <polygon points="0 0, 7 3.5, 0 7" fill="black" />
+    <polygon points="7 0, 14 3.5, 7 7" fill="black" />
+  </marker>
+  <marker id="doubleArrowheadWhite" markerWidth="15" markerHeight="7" refX="14" refY="3.5" orient="auto">
+    <polygon points="0 0, 7 3.5, 0 7" fill="white" stroke="black" stroke-width="1" />
+    <polygon points="7 0, 14 3.5, 7 7" fill="white" stroke="black" stroke-width="1" />
+  </marker>
+</defs>
+<rect x="50" y="50" width="900" height="440.0" rx="10" style="fill: none; stroke: black; stroke-width: 2; stroke-dasharray: 5, 2;" />
+<text x="500.0" y="45" class="label" style="font-size: 10px;">T11, P2, T14</text>
+<rect x="50" y="230.0" width="200" height="80" rx="10" style="fill: none; stroke: black; stroke-width: 2; " />
+<text x="150.0" y="225.0" class="label" style="font-size: 10px;">T11</text>
+<rect x="250" y="80.0" width="700" height="380.0" rx="10" style="fill: none; stroke: black; stroke-width: 2; stroke-dasharray: 5, 2;" />
+<text x="600.0" y="75.0" class="label" style="font-size: 10px;">P2, T14</text>
+<rect x="250" y="110.0" width="500" height="320" rx="10" style="fill: none; stroke: black; stroke-width: 2; " />
+<text x="500.0" y="105.0" class="label" style="font-size: 10px;">P2</text>
+<rect x="400" y="160.0" width="200" height="80" rx="10" style="fill: none; stroke: black; stroke-width: 2; " />
+<text x="500.0" y="155.0" class="label" style="font-size: 10px;">T12</text>
+<rect x="400" y="300.0" width="200" height="80" rx="10" style="fill: none; stroke: black; stroke-width: 2; " />
+<text x="500.0" y="295.0" class="label" style="font-size: 10px;">T13</text>
+<rect x="750" y="230.0" width="200" height="80" rx="10" style="fill: none; stroke: black; stroke-width: 2; " />
+<text x="850.0" y="225.0" class="label" style="font-size: 10px;">T14</text>
+<path d="M345.0,270.0 L387.64356896136195,215.72636677644846" class="arc" />
+<path d="M520.0,200.0 L580.0,200.0" class="arc" />
+<path d="M870.0,270.0 L930.0,270.0" class="arc" />
+<path d="M520.0,340.0 L580.0,340.0" class="arc" />
+<path d="M420.0,340.0 L480.0,340.0" class="arc-white" />
+<path d="M270.0,270.0 L305.0,270.0" class="arc-white" />
+<path d="M614.6211053648574,326.35363499279975 L655.0,270.0" class="arc-white" />
+<path d="M170.0,270.0 L230.0,270.0" class="arc" />
+<path d="M770.0,270.0 L830.0,270.0" class="arc-white" />
+<path d="M345.0,270.0 L387.64356896136195,324.27363322355154" class="arc" />
+<path d="M614.6211053648574,213.64636500720022 L655.0,270.0" class="arc-white" />
+<path d="M420.0,200.0 L480.0,200.0" class="arc-white" />
+<path d="M695.0,270.0 L730.0,270.0" class="arc" />
+<path d="M70.0,270.0 L130.0,270.0" class="arc-white" />
+<circle cx="950" cy="270.0" r="20" class="place" />
+<polygon points="938,258.0 962,270.0 938,282.0" style="fill: black; stroke: black" />
+<text x="975" y="295.0" class="label" style="font-style: italic; font-size: 14px">19</text>
+<circle cx="250" cy="270.0" r="20" class="place" />
+<polygon points="238,258.0 262,270.0 238,282.0" style="fill: none; stroke: black; stroke-width: 1.5" />
+<text x="275" y="295.0" class="label" style="font-style: italic; font-size: 14px">18</text>
+<circle cx="400" cy="200.0" r="20" class="place" />
+<polygon points="388,188.0 412,200.0 388,212.0" style="fill: none; stroke: black; stroke-width: 1.5" />
+<text x="425" y="225.0" class="label" style="font-style: italic; font-size: 14px">16</text>
+<circle cx="400" cy="340.0" r="20" class="place" />
+<polygon points="388,328.0 412,340.0 388,352.0" style="fill: none; stroke: black; stroke-width: 1.5" />
+<text x="425" y="365.0" class="label" style="font-style: italic; font-size: 14px">17</text>
+<circle cx="750" cy="270.0" r="20" class="place" />
+<polygon points="738,258.0 762,270.0 738,282.0" style="fill: none; stroke: black; stroke-width: 1.5" />
+<text x="775" y="295.0" class="label" style="font-style: italic; font-size: 14px">19</text>
+<circle cx="600" cy="200.0" r="20" class="place" />
+<polygon points="588,188.0 612,200.0 588,212.0" style="fill: black; stroke: black" />
+<text x="625" y="225.0" class="label" style="font-style: italic; font-size: 14px">16</text>
+<circle cx="50" cy="270.0" r="20" class="place" />
+<polygon points="38,258.0 62,270.0 38,282.0" style="fill: none; stroke: black; stroke-width: 1.5" />
+<text x="75" y="295.0" class="label" style="font-style: italic; font-size: 14px">15</text>
+<circle cx="600" cy="340.0" r="20" class="place" />
+<polygon points="588,328.0 612,340.0 588,352.0" style="fill: black; stroke: black" />
+<text x="625" y="365.0" class="label" style="font-style: italic; font-size: 14px">17</text>
+<polygon points="660.0,255.0 690.0,270.0 660.0,285.0" style="fill: black; stroke: black" />
+<text x="675.0" y="270.0" class="label">P2</text>
+<polygon points="485.0,185.0 515.0,200.0 485.0,215.0" style="fill: none; stroke: black; stroke-width: 2" />
+<text x="440.0" y="175.0" class="label" style="font-size: 10px; font-style: italic">I</text>
+<line x1="437.0" y1="165.0" x2="445.0" y2="165.0" style="stroke: black; stroke-width: 0.8" />
+<polygon points="445.0,165.0 442.0,163.0 442.0,167.0" style="fill: black" />
+<text x="453.0" y="175.0" class="label" style="font-size: 10px">(</text>
+<circle cx="462.0" cy="172.0" r="5" style="fill: none; stroke: black; stroke-width: 1" /><polygon points="458.5,168.5 465.5,172.0 458.5,175.5" style="fill: none; stroke: black; stroke-width: 0.8" />
+<text x="470.0" y="177.0" class="label" style="font-size: 7px; font-style: italic">16</text>
+<text x="490.0" y="175.0" class="label" style="font-size: 10px">) = [1.0]</text>
+<text x="447.0" y="230.0" class="label" style="font-size: 10px">🕐(</text>
+<circle cx="462.0" cy="227.0" r="5" style="fill: none; stroke: black; stroke-width: 1" /><polygon points="458.5,223.5 465.5,227.0 458.5,230.5" style="fill: none; stroke: black; stroke-width: 0.8" />
+<text x="470.0" y="232.0" class="label" style="font-size: 7px; font-style: italic">16</text>
+<text x="490.0" y="230.0" class="label" style="font-size: 10px">) = 1.0</text>
+<polygon points="135.0,255.0 165.0,270.0 135.0,285.0" style="fill: none; stroke: black; stroke-width: 2" />
+<text x="90.0" y="245.0" class="label" style="font-size: 10px; font-style: italic">I</text>
+<line x1="87.0" y1="235.0" x2="95.0" y2="235.0" style="stroke: black; stroke-width: 0.8" />
+<polygon points="95.0,235.0 92.0,233.0 92.0,237.0" style="fill: black" />
+<text x="103.0" y="245.0" class="label" style="font-size: 10px">(</text>
+<circle cx="112.0" cy="242.0" r="5" style="fill: none; stroke: black; stroke-width: 1" /><polygon points="108.5,238.5 115.5,242.0 108.5,245.5" style="fill: none; stroke: black; stroke-width: 0.8" />
+<text x="120.0" y="247.0" class="label" style="font-size: 7px; font-style: italic">15</text>
+<text x="140.0" y="245.0" class="label" style="font-size: 10px">) = [1.0]</text>
+<text x="97.0" y="300.0" class="label" style="font-size: 10px">🕐(</text>
+<circle cx="112.0" cy="297.0" r="5" style="fill: none; stroke: black; stroke-width: 1" /><polygon points="108.5,293.5 115.5,297.0 108.5,300.5" style="fill: none; stroke: black; stroke-width: 0.8" />
+<text x="120.0" y="302.0" class="label" style="font-size: 7px; font-style: italic">15</text>
+<text x="140.0" y="300.0" class="label" style="font-size: 10px">) = 1.0</text>
+<polygon points="485.0,325.0 515.0,340.0 485.0,355.0" style="fill: none; stroke: black; stroke-width: 2" />
+<text x="440.0" y="315.0" class="label" style="font-size: 10px; font-style: italic">I</text>
+<line x1="437.0" y1="305.0" x2="445.0" y2="305.0" style="stroke: black; stroke-width: 0.8" />
+<polygon points="445.0,305.0 442.0,303.0 442.0,307.0" style="fill: black" />
+<text x="453.0" y="315.0" class="label" style="font-size: 10px">(</text>
+<circle cx="462.0" cy="312.0" r="5" style="fill: none; stroke: black; stroke-width: 1" /><polygon points="458.5,308.5 465.5,312.0 458.5,315.5" style="fill: none; stroke: black; stroke-width: 0.8" />
+<text x="470.0" y="317.0" class="label" style="font-size: 7px; font-style: italic">17</text>
+<text x="490.0" y="315.0" class="label" style="font-size: 10px">) = [1.0]</text>
+<text x="447.0" y="370.0" class="label" style="font-size: 10px">🕐(</text>
+<circle cx="462.0" cy="367.0" r="5" style="fill: none; stroke: black; stroke-width: 1" /><polygon points="458.5,363.5 465.5,367.0 458.5,370.5" style="fill: none; stroke: black; stroke-width: 0.8" />
+<text x="470.0" y="372.0" class="label" style="font-size: 7px; font-style: italic">17</text>
+<text x="490.0" y="370.0" class="label" style="font-size: 10px">) = 1.0</text>
+<polygon points="310.0,255.0 340.0,270.0 310.0,285.0" style="fill: none; stroke: black; stroke-width: 2" />
+<text x="325.0" y="270.0" class="label">P2</text>
+<polygon points="835.0,255.0 865.0,270.0 835.0,285.0" style="fill: none; stroke: black; stroke-width: 2" />
+<text x="790.0" y="245.0" class="label" style="font-size: 10px; font-style: italic">I</text>
+<line x1="787.0" y1="235.0" x2="795.0" y2="235.0" style="stroke: black; stroke-width: 0.8" />
+<polygon points="795.0,235.0 792.0,233.0 792.0,237.0" style="fill: black" />
+<text x="803.0" y="245.0" class="label" style="font-size: 10px">(</text>
+<circle cx="812.0" cy="242.0" r="5" style="fill: none; stroke: black; stroke-width: 1" /><polygon points="808.5,238.5 815.5,242.0 808.5,245.5" style="fill: none; stroke: black; stroke-width: 0.8" />
+<text x="820.0" y="247.0" class="label" style="font-size: 7px; font-style: italic">19</text>
+<text x="840.0" y="245.0" class="label" style="font-size: 10px">) = [1.0]</text>
+<text x="797.0" y="300.0" class="label" style="font-size: 10px">🕐(</text>
+<circle cx="812.0" cy="297.0" r="5" style="fill: none; stroke: black; stroke-width: 1" /><polygon points="808.5,293.5 815.5,297.0 808.5,300.5" style="fill: none; stroke: black; stroke-width: 0.8" />
+<text x="820.0" y="302.0" class="label" style="font-size: 7px; font-style: italic">19</text>
+<text x="840.0" y="300.0" class="label" style="font-size: 10px">) = 1.0</text>
+</svg>

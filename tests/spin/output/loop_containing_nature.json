@@ -1,0 +1,38 @@
+{
+  "id": "91",
+  "type": "loop",
+  "label": "L7",
+  "children": [
+    {
+      "id": "90",
+      "type": "nature",
+      "label": "N3",
+      "children": [
+        {
+          "id": "88",
+          "type": "task",
+          "label": "T51",
+          "duration": 1.0,
+          "impacts": [
+            1.0
+          ]
+        },
+        {
+          "id": "89",
+          "type": "task",
+          "label": "T52",
+          "duration": 1.0,
+          "impacts": [
+            1.0
+          ]
+        }
+      ],
+      "distribution": [
+        0.5,
+        0.5
+      ]
+    }
+  ],
+  "distribution": 0.5,
+  "bound": 5
+}

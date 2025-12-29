@@ -1,0 +1,48 @@
+{
+  "id": "34",
+  "type": "sequential",
+  "children": [
+    {
+      "id": "29",
+      "type": "task",
+      "label": "T19",
+      "duration": 1.0,
+      "impacts": [
+        1.0
+      ]
+    },
+    {
+      "id": "33",
+      "type": "sequential",
+      "children": [
+        {
+          "id": "31",
+          "type": "loop",
+          "label": "L2",
+          "children": [
+            {
+              "id": "30",
+              "type": "task",
+              "label": "T20",
+              "duration": 1.0,
+              "impacts": [
+                1.0
+              ]
+            }
+          ],
+          "distribution": 0.5,
+          "bound": 5
+        },
+        {
+          "id": "32",
+          "type": "task",
+          "label": "T21",
+          "duration": 1.0,
+          "impacts": [
+            1.0
+          ]
+        }
+      ]
+    }
+  ]
+}

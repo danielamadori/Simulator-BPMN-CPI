@@ -1,0 +1,25 @@
+{
+  "id": "9",
+  "type": "parallel",
+  "label": "P1",
+  "children": [
+    {
+      "id": "7",
+      "type": "task",
+      "label": "T6",
+      "duration": 1.0,
+      "impacts": [
+        1.0
+      ]
+    },
+    {
+      "id": "8",
+      "type": "task",
+      "label": "T7",
+      "duration": 1.0,
+      "impacts": [
+        1.0
+      ]
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "id": "79",
+  "type": "choice",
+  "label": "C7",
+  "children": [
+    {
+      "id": "77",
+      "type": "choice",
+      "label": "C6",
+      "children": [
+        {
+          "id": "75",
+          "type": "task",
+          "label": "T44",
+          "duration": 1.0,
+          "impacts": [
+            1.0
+          ]
+        },
+        {
+          "id": "76",
+          "type": "task",
+          "label": "T45",
+          "duration": 1.0,
+          "impacts": [
+            1.0
+          ]
+        }
+      ],
+      "max_delay": 0.0
+    },
+    {
+      "id": "78",
+      "type": "task",
+      "label": "T46",
+      "duration": 1.0,
+      "impacts": [
+        1.0
+      ]
+    }
+  ],
+  "max_delay": 0.0
+}

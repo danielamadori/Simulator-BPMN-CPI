@@ -1,0 +1,36 @@
+{
+  "id": "198",
+  "type": "loop",
+  "label": "L17",
+  "children": [
+    {
+      "id": "197",
+      "type": "loop",
+      "label": "L16",
+      "children": [
+        {
+          "id": "196",
+          "type": "loop",
+          "label": "L15",
+          "children": [
+            {
+              "id": "195",
+              "type": "task",
+              "label": "T119",
+              "duration": 1.0,
+              "impacts": [
+                1.0
+              ]
+            }
+          ],
+          "distribution": 0.5,
+          "bound": 5
+        }
+      ],
+      "distribution": 0.5,
+      "bound": 5
+    }
+  ],
+  "distribution": 0.5,
+  "bound": 5
+}

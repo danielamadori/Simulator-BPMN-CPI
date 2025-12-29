@@ -1,0 +1,44 @@
+{
+  "id": "149",
+  "type": "nature",
+  "label": "N9",
+  "children": [
+    {
+      "id": "147",
+      "type": "sequential",
+      "children": [
+        {
+          "id": "145",
+          "type": "task",
+          "label": "T83",
+          "duration": 1.0,
+          "impacts": [
+            1.0
+          ]
+        },
+        {
+          "id": "146",
+          "type": "task",
+          "label": "T84",
+          "duration": 1.0,
+          "impacts": [
+            1.0
+          ]
+        }
+      ]
+    },
+    {
+      "id": "148",
+      "type": "task",
+      "label": "T85",
+      "duration": 1.0,
+      "impacts": [
+        1.0
+      ]
+    }
+  ],
+  "distribution": [
+    0.6,
+    0.4
+  ]
+}

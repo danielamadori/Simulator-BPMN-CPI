@@ -1,0 +1,42 @@
+{
+  "id": "56",
+  "type": "parallel",
+  "label": "P4",
+  "children": [
+    {
+      "id": "54",
+      "type": "choice",
+      "label": "C4",
+      "children": [
+        {
+          "id": "52",
+          "type": "task",
+          "label": "T31",
+          "duration": 1.0,
+          "impacts": [
+            1.0
+          ]
+        },
+        {
+          "id": "53",
+          "type": "task",
+          "label": "T32",
+          "duration": 1.0,
+          "impacts": [
+            1.0
+          ]
+        }
+      ],
+      "max_delay": 0.0
+    },
+    {
+      "id": "55",
+      "type": "task",
+      "label": "T33",
+      "duration": 1.0,
+      "impacts": [
+        1.0
+      ]
+    }
+  ]
+}

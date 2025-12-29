@@ -1,0 +1,35 @@
+{
+  "id": "117",
+  "type": "choice",
+  "label": "C11",
+  "children": [
+    {
+      "id": "115",
+      "type": "loop",
+      "label": "L11",
+      "children": [
+        {
+          "id": "114",
+          "type": "task",
+          "label": "T65",
+          "duration": 1.0,
+          "impacts": [
+            1.0
+          ]
+        }
+      ],
+      "distribution": 0.5,
+      "bound": 5
+    },
+    {
+      "id": "116",
+      "type": "task",
+      "label": "T66",
+      "duration": 1.0,
+      "impacts": [
+        1.0
+      ]
+    }
+  ],
+  "max_delay": 0.0
+}

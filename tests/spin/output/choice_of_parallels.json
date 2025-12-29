@@ -1,0 +1,58 @@
+{
+  "id": "63",
+  "type": "choice",
+  "label": "C5",
+  "children": [
+    {
+      "id": "59",
+      "type": "parallel",
+      "label": "P5",
+      "children": [
+        {
+          "id": "57",
+          "type": "task",
+          "label": "T34",
+          "duration": 1.0,
+          "impacts": [
+            1.0
+          ]
+        },
+        {
+          "id": "58",
+          "type": "task",
+          "label": "T35",
+          "duration": 1.0,
+          "impacts": [
+            1.0
+          ]
+        }
+      ]
+    },
+    {
+      "id": "62",
+      "type": "parallel",
+      "label": "P6",
+      "children": [
+        {
+          "id": "60",
+          "type": "task",
+          "label": "T36",
+          "duration": 1.0,
+          "impacts": [
+            1.0
+          ]
+        },
+        {
+          "id": "61",
+          "type": "task",
+          "label": "T37",
+          "duration": 1.0,
+          "impacts": [
+            1.0
+          ]
+        }
+      ]
+    }
+  ],
+  "max_delay": 0.0
+}

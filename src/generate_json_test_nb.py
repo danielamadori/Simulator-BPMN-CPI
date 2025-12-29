@@ -110,183 +110,398 @@ def loop(child, label=None, probability=0.5, bound=5):
 
 # --- Patterns Definitions ---
 
-patterns = []
-
-# 1. Single Task
-# Expression: R1
-patterns.append({
-    "name": "Single Task",
-    "expr": "R1",
-    "json": task() # Root task
-})
-
-# 2. Sequence Two
-# Expression: R1, R2
-patterns.append({
-    "name": "Sequence Two",
-    "expr": "R1, R2",
-    "json": sequential([task(), task()])
-})
-
-# 3. Choice
-# Expression: R1 /[C1] R2
-patterns.append({
-    "name": "Choice",
-    "expr": "R1 /[C1] R2",
-    "json": choice([task(), task()])
-})
-
-# 4. Parallel
-# Expression: R1 || R2
-patterns.append({
-    "name": "Parallel",
-    "expr": "R1 || R2",
-    "json": parallel([task(), task()])
-})
-
-# 5. Loop
-# Expression: <R1 [L1]>
-patterns.append({
-    "name": "Loop",
-    "expr": "<R1 [L1]>",
-    "json": loop(task(), probability=0.7)
-})
-
-# 6. Nature
-# Expression: ^[N1] (R1, R2)
-patterns.append({
-    "name": "Nature",
-    "expr": "^[N1] (R1, R2)",
-    "json": nature([task(), task()], distribution=[0.3, 0.7])
-})
-
-# 7. Sequential + Parallel
-# Expression: R1, (R2 || R3), R4
-patterns.append({
-    "name": "Sequential + Parallel",
-    "expr": "R1, (R2 || R3), R4",
-    "json": sequential([
-        task(),
-        sequential([
-            parallel([task(), task()]),
-            task()
+def get_patterns():
+    patterns = []
+    
+    # 1. Single Task
+    # Expression: R1
+    patterns.append({
+        "name": "Single Task",
+        "expr": "R1",
+        "json": task() # Root task
+    })
+    
+    # 2. Sequence Two
+    # Expression: R1, R2
+    patterns.append({
+        "name": "Sequence Two",
+        "expr": "R1, R2",
+        "json": sequential([task(), task()])
+    })
+    
+    # 3. Choice
+    # Expression: R1 /[C1] R2
+    patterns.append({
+        "name": "Choice",
+        "expr": "R1 /[C1] R2",
+        "json": choice([task(), task()])
+    })
+    
+    # 4. Parallel
+    # Expression: R1 || R2
+    patterns.append({
+        "name": "Parallel",
+        "expr": "R1 || R2",
+        "json": parallel([task(), task()])
+    })
+    
+    # 5. Loop
+    # Expression: <R1 [L1]>
+    patterns.append({
+        "name": "Loop",
+        "expr": "<R1 [L1]>",
+        "json": loop(task(), probability=0.7)
+    })
+    
+    # 6. Nature
+    # Expression: ^[N1] (R1, R2)
+    patterns.append({
+        "name": "Nature",
+        "expr": "^[N1] (R1, R2)",
+        "json": nature([task(), task()], distribution=[0.3, 0.7])
+    })
+    
+    # 7. Sequential + Parallel
+    # Expression: R1, (R2 || R3), R4
+    patterns.append({
+        "name": "Sequential + Parallel",
+        "expr": "R1, (R2 || R3), R4",
+        "json": sequential([
+            task(),
+            sequential([
+                parallel([task(), task()]),
+                task()
+            ])
         ])
-    ])
-})
-
-# 8. Sequential + Choice
-# Expression: R1, (R2 /[C1] R3), R4
-patterns.append({
-    "name": "Sequential + Choice",
-    "expr": "R1, (R2 /[C1] R3), R4",
-    "json": sequential([
-        task(),
-        sequential([
+    })
+    
+    # 8. Sequential + Choice
+    # Expression: R1, (R2 /[C1] R3), R4
+    patterns.append({
+        "name": "Sequential + Choice",
+        "expr": "R1, (R2 /[C1] R3), R4",
+        "json": sequential([
+            task(),
+            sequential([
+                choice([task(), task()]),
+                task()
+            ])
+        ])
+    })
+    
+    # 9. Sequential + Loop
+    # Expression: R1, <R2 [L1]>, R3
+    patterns.append({
+        "name": "Sequential + Loop",
+        "expr": "R1, <R2 [L1]>, R3",
+        "json": sequential([
+            task(),
+            sequential([
+                loop(task()),
+                task()
+            ])
+        ])
+    })
+    
+    # 10. Sequential + Nature
+    # Expression: R1, ^[N1] (R2, R3), R4
+    patterns.append({
+        "name": "Sequential + Nature",
+        "expr": "R1, ^[N1] (R2, R3), R4",
+        "json": sequential([
+            task(),
+            sequential([
+                nature([task(), task()], distribution=[0.4, 0.6]),
+                task()
+            ])
+        ])
+    })
+    
+    # 11. Complex Parallel
+    # Expression: R1, ((R2 /[C1] R3) || <R4 [L1]>), R5
+    patterns.append({
+        "name": "Complex Parallel",
+        "expr": "R1, ((R2 /[C1] R3) || <R4 [L1]>), R5",
+        "json": sequential([
+            task(),
+            sequential([
+                parallel([
+                    choice([task(), task()]),
+                    loop(task())
+                ]),
+                task()
+            ])
+        ])
+    })
+    
+    # 12. Parallel Choice Simple
+    # Expression: ((R2 /[C1] R3) || R4)
+    patterns.append({
+        "name": "Parallel Choice Simple",
+        "expr": "((R2 /[C1] R3) || R4)",
+        "json": parallel([
             choice([task(), task()]),
             task()
         ])
-    ])
-})
-
-# 9. Sequential + Loop
-# Expression: R1, <R2 [L1]>, R3
-patterns.append({
-    "name": "Sequential + Loop",
-    "expr": "R1, <R2 [L1]>, R3",
-    "json": sequential([
-        task(),
-        sequential([
-            loop(task()),
+    })
+    
+    # 13. Choice of Parallels
+    # Expression: (R1 || R2) /[C1] (R3 || R4)
+    patterns.append({
+        "name": "Choice of Parallels",
+        "expr": "(R1 || R2) /[C1] (R3 || R4)",
+        "json": choice([
+            parallel([task(), task()]),
+            parallel([task(), task()])
+        ])
+    })
+    
+    # 14. Parallel with Loop
+    # Expression: R1 || <R2 [L1]>
+    patterns.append({
+        "name": "Parallel with Loop",
+        "expr": "R1 || <R2 [L1]>",
+        "json": parallel([
+            task(),
+            loop(task())
+        ])
+    })
+    
+    # 15. Sequential in Parallel
+    # Expression: (R1, R2) || (R3, R4)
+    patterns.append({
+        "name": "Sequential in Parallel",
+        "expr": "(R1, R2) || (R3, R4)",
+        "json": parallel([
+            sequential([task(), task()]),
+            sequential([task(), task()])
+        ])
+    })
+    
+    # 16. Nested Choice
+    # Expression: (R1 /[C1] R2) /[C2] R3
+    patterns.append({
+        "name": "Nested Choice",
+        "expr": "(R1 /[C1] R2) /[C2] R3",
+        "json": choice([
+            choice([task(), task()]),
             task()
         ])
-    ])
-})
-
-# 10. Sequential + Nature
-# Expression: R1, ^[N1] (R2, R3), R4
-patterns.append({
-    "name": "Sequential + Nature",
-    "expr": "R1, ^[N1] (R2, R3), R4",
-    "json": sequential([
-        task(),
-        sequential([
-            nature([task(), task()], distribution=[0.4, 0.6]),
+    })
+    
+    # 17. Loop containing Parallel
+    # Expression: <(R1 || R2) [L1]>
+    patterns.append({
+        "name": "Loop containing Parallel",
+        "expr": "<(R1 || R2) [L1]>",
+        "json": loop(parallel([task(), task()]))
+    })
+    
+    # 18. Loop containing Choice
+    # Expression: <(R1 /[C1] R2) [L1]>
+    patterns.append({
+        "name": "Loop containing Choice",
+        "expr": "<(R1 /[C1] R2) [L1]>",
+        "json": loop(choice([task(), task()]))
+    })
+    
+    # 19. Loop containing Nature
+    # Expression: <^[N1] (R1, R2) [L1]>
+    patterns.append({
+        "name": "Loop containing Nature",
+        "expr": "<^[N1] (R1, R2) [L1]>",
+        "json": loop(nature([task(), task()], distribution=[0.5, 0.5]))
+    })
+    
+    # 20. Nested Loops
+    # Expression: <<R1 [L1]> [L2]>
+    patterns.append({
+        "name": "Nested Loops",
+        "expr": "<<R1 [L1]> [L2]>",
+        "json": loop(loop(task()))
+    })
+    
+    # 21. Nature containing Parallel
+    # Expression: ^[N1] ((R1 || R2), R3)
+    patterns.append({
+        "name": "Nature containing Parallel",
+        "expr": "^[N1] ((R1 || R2), R3)",
+        "json": nature([parallel([task(), task()]), task()], distribution=[0.6, 0.4])
+    })
+    
+    # 22. Nature containing Choice
+    # Expression: ^[N1] ((R1 /[C1] R2), R3)
+    patterns.append({
+        "name": "Nature containing Choice",
+        "expr": "^[N1] ((R1 /[C1] R2), R3)",
+        "json": nature([choice([task(), task()]), task()], distribution=[0.5, 0.5])
+    })
+    
+    # 23. Nature containing Loop
+    # Expression: ^[N1] (<R1 [L1]>, R2)
+    patterns.append({
+        "name": "Nature containing Loop",
+        "expr": "^[N1] (<R1 [L1]>, R2)",
+        "json": nature([loop(task()), task()], distribution=[0.7, 0.3])
+    })
+    
+    # 24. Choice containing Nature
+    # Expression: ^[N1](R1, R2) /[C1] R3
+    patterns.append({
+        "name": "Choice containing Nature",
+        "expr": "^[N1](R1, R2) /[C1] R3",
+        "json": choice([nature([task(), task()], distribution=[0.5, 0.5]), task()])
+    })
+    
+    # 25. Choice containing Loop
+    # Expression: <R1 [L1]> /[C1] R2
+    patterns.append({
+        "name": "Choice containing Loop",
+        "expr": "<R1 [L1]> /[C1] R2",
+        "json": choice([loop(task()), task()])
+    })
+    
+    # 26. Parallel Three Branches
+    # Expression: R1 || R2 || R3
+    patterns.append({
+        "name": "Parallel Three Branches",
+        "expr": "R1 || R2 || R3",
+        "json": parallel([task(), task(), task()])
+    })
+    
+    # 27. Parallel in Loop in Sequence
+    # Expression: R1, <(R2 || R3) [L1]>, R4
+    patterns.append({
+        "name": "Parallel in Loop in Sequence",
+        "expr": "R1, <(R2 || R3) [L1]>, R4",
+        "json": sequential([
+            task(),
+            sequential([
+                loop(parallel([task(), task()])),
+                task()
+            ])
+        ])
+    })
+    
+    # 28. Parallel containing Nature
+    # Expression: R1 || ^[N1](R2, R3)
+    patterns.append({
+        "name": "Parallel containing Nature",
+        "expr": "R1 || ^[N1](R2, R3)",
+        "json": parallel([
+            task(),
+            nature([task(), task()], distribution=[0.5, 0.5])
+        ])
+    })
+    
+    # 29. Nested Parallel
+    # Expression: (R1 || R2) || R3
+    patterns.append({
+        "name": "Nested Parallel",
+        "expr": "(R1 || R2) || R3",
+        "json": parallel([
+            parallel([task(), task()]),
             task()
         ])
-    ])
-})
-
-# 11. Complex Parallel
-# Expression: R1, ((R2 /[C1] R3) || <R4 [L1]>), R5
-patterns.append({
-    "name": "Complex Parallel",
-    "expr": "R1, ((R2 /[C1] R3) || <R4 [L1]>), R5",
-    "json": sequential([
-        task(),
-        sequential([
-            parallel([
-                choice([task(), task()]),
-                loop(task())
-            ]),
+    })
+    
+    # 30. Choice containing Sequential
+    # Expression: (R1, R2) /[C1] R3
+    patterns.append({
+        "name": "Choice containing Sequential",
+        "expr": "(R1, R2) /[C1] R3",
+        "json": choice([
+            sequential([task(), task()]),
             task()
         ])
-    ])
-})
+    })
+    
+    # 31. Nature containing Sequential
+    # Expression: ^[N1]((R1, R2), R3)
+    patterns.append({
+        "name": "Nature containing Sequential",
+        "expr": "^[N1]((R1, R2), R3)",
+        "json": nature([
+            sequential([task(), task()]),
+            task()
+        ], distribution=[0.6, 0.4])
+    })
+    
+    # 32. Loop containing Sequential
+    # Expression: <(R1, R2) [L1]>
+    patterns.append({
+        "name": "Loop containing Sequential",
+        "expr": "<(R1, R2) [L1]>",
+        "json": loop(sequential([task(), task()]))
+    })
+    
+    # 33. Nested Nature
+    # Expression: ^[N1](^[N2](R1, R2), R3)
+    patterns.append({
+        "name": "Nested Nature",
+        "expr": "^[N1](^[N2](R1, R2), R3)",
+        "json": nature([
+            nature([task(), task()], distribution=[0.5, 0.5]),
+            task()
+        ], distribution=[0.7, 0.3])
+    })
 
-# 12. Parallel Choice Simple
-# Expression: ((R2 /[C1] R3) || R4)
-patterns.append({
-    "name": "Parallel Choice Simple",
-    "expr": "((R2 /[C1] R3) || R4)",
-    "json": parallel([
-        choice([task(), task()]),
-        task()
-    ])
-})
+    # =========================================================================
+    # STRESS TESTS (Limit Cases)
+    # =========================================================================
+    
+    # 34. Massive Parallel (Vertical Stress)
+    # 8 branches to test vertical expansion and gateway connection routing
+    patterns.append({
+        "name": "Massive Parallel",
+        "expr": "Massive Parallel (8 branches)",
+        "json": parallel([task() for _ in range(8)])
+    })
+    
+    # 35. Deep Sequence (Horizontal Stress)
+    # 10 tasks in sequence to test horizontal expansion
+    patterns.append({
+        "name": "Deep Sequence",
+        "expr": "T1 -> T2 -> ... -> T10",
+        "json": sequential([task() for _ in range(10)])
+    })
+    
+    # 36. Wide Parallel (Content Stress)
+    # Parallel where one branch is very wide (sequence)
+    patterns.append({
+        "name": "Wide Parallel",
+        "expr": "(T1->...->T5) || T6",
+        "json": parallel([
+            sequential([task() for _ in range(5)]),
+            task()
+        ])
+    })
+    
+    # 37. Kitchen Sink (Nesting Stress)
+    # Loop containing Nature containing Choice containing Parallel containing Sequence
+    patterns.append({
+        "name": "Kitchen Sink",
+        "expr": "< ^[N]( [C]( (T||T), T ), T ) [L] >",
+        "json": loop(
+            nature([
+                choice([
+                    parallel([task(), task()]),
+                    task()
+                ]),
+                task()
+            ], distribution=[0.8, 0.2])
+        )
+    })
 
-# 13. Choice of Parallels
-# Expression: (R1 || R2) /[C1] (R3 || R4)
-patterns.append({
-    "name": "Choice of Parallels",
-    "expr": "(R1 || R2) /[C1] (R3 || R4)",
-    "json": choice([
-        parallel([task(), task()]),
-        parallel([task(), task()])
-    ])
-})
-
-# 14. Parallel with Loop
-# Expression: R1 || <R2 [L1]>
-patterns.append({
-    "name": "Parallel with Loop",
-    "expr": "R1 || <R2 [L1]>",
-    "json": parallel([
-        task(),
-        loop(task())
-    ])
-})
-
-# 15. Sequential in Parallel
-# Expression: (R1, R2) || (R3, R4)
-patterns.append({
-    "name": "Sequential in Parallel",
-    "expr": "(R1, R2) || (R3, R4)",
-    "json": parallel([
-        sequential([task(), task()]),
-        sequential([task(), task()])
-    ])
-})
-
-# 16. Nested Choice
-# Expression: (R1 /[C1] R2) /[C2] R3
-patterns.append({
-    "name": "Nested Choice",
-    "expr": "(R1 /[C1] R2) /[C2] R3",
-    "json": choice([
-        choice([task(), task()]),
-        task()
-    ])
-})
+    # 38. Deep Loop Nesting (Header Stress)
+    # Loop inside Loop inside Loop to test heuristic header spacing
+    patterns.append({
+        "name": "Deep Loop Nesting",
+        "expr": "L3(L2(L1(T)))",
+        "json": loop(loop(loop(task())))
+    })
+    
+    return patterns
 
 
 def create_notebook(pattern_list):
@@ -383,6 +598,7 @@ display(SVG(svg_out))
     return notebook
 
 if __name__ == "__main__":
+    patterns = get_patterns()
     print(f"Generating notebook with {len(patterns)} patterns...")
     nb_data = create_notebook(patterns)
     

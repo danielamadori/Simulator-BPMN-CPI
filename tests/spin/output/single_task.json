@@ -1,0 +1,9 @@
+{
+  "id": "0",
+  "type": "task",
+  "label": "T1",
+  "duration": 1.0,
+  "impacts": [
+    1.0
+  ]
+}

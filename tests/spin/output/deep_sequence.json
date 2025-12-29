@@ -1,0 +1,96 @@
+{
+  "id": "178",
+  "type": "sequential",
+  "children": [
+    {
+      "id": "168",
+      "type": "task",
+      "label": "T99",
+      "duration": 1.0,
+      "impacts": [
+        1.0
+      ]
+    },
+    {
+      "id": "169",
+      "type": "task",
+      "label": "T100",
+      "duration": 1.0,
+      "impacts": [
+        1.0
+      ]
+    },
+    {
+      "id": "170",
+      "type": "task",
+      "label": "T101",
+      "duration": 1.0,
+      "impacts": [
+        1.0
+      ]
+    },
+    {
+      "id": "171",
+      "type": "task",
+      "label": "T102",
+      "duration": 1.0,
+      "impacts": [
+        1.0
+      ]
+    },
+    {
+      "id": "172",
+      "type": "task",
+      "label": "T103",
+      "duration": 1.0,
+      "impacts": [
+        1.0
+      ]
+    },
+    {
+      "id": "173",
+      "type": "task",
+      "label": "T104",
+      "duration": 1.0,
+      "impacts": [
+        1.0
+      ]
+    },
+    {
+      "id": "174",
+      "type": "task",
+      "label": "T105",
+      "duration": 1.0,
+      "impacts": [
+        1.0
+      ]
+    },
+    {
+      "id": "175",
+      "type": "task",
+      "label": "T106",
+      "duration": 1.0,
+      "impacts": [
+        1.0
+      ]
+    },
+    {
+      "id": "176",
+      "type": "task",
+      "label": "T107",
+      "duration": 1.0,
+      "impacts": [
+        1.0
+      ]
+    },
+    {
+      "id": "177",
+      "type": "task",
+      "label": "T108",
+      "duration": 1.0,
+      "impacts": [
+        1.0
+      ]
+    }
+  ]
+}
