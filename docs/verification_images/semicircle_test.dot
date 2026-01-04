@@ -1,0 +1,78 @@
+digraph G {
+    rankdir=LR;
+    splines=line;
+    nodesep=0.2;
+    ranksep=0.4;
+    compound=true;
+    node [fontname="Arial"];
+    edge [fontname="Arial"];
+
+    // Start place (outside all regions)
+    start [shape=circle label="▷" fontsize=20 style="filled" fillcolor="white" width=0.5];
+
+    // OUTER REGION: The Sequence region containing R1 and R2
+    subgraph cluster_Sequence {
+        label="R (Sequence)";
+        style="rounded";
+        color="blue";
+        bgcolor="#f5f5ff";
+        penwidth=2;
+        margin=10;
+        
+        // Inner Region R1
+        subgraph cluster_R1 {
+            label="R1";
+            style="rounded";
+            color="black";
+            bgcolor="#f0f8ff";
+            penwidth=1.5;
+            margin=8;
+            
+            p1_entry [shape=circle label="▷" fontsize=16 style="filled" fillcolor="white" width=0.4];
+            t1 [shape=box label="R1" style="rounded,filled" fillcolor="white" penwidth=1.5];
+            
+            // Right semicircle - exit of R1
+            shared_R1 [shape=none margin=0 label=<
+                <TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0">
+                    <TR><TD><FONT POINT-SIZE="24">◗</FONT></TD></TR>
+                </TABLE>
+            >];
+            
+            p1_entry -> t1;
+            t1 -> shared_R1;
+        }
+        
+        // Inner Region R2
+        subgraph cluster_R2 {
+            label="R2";
+            style="rounded";
+            color="black";
+            bgcolor="#f0fff0";
+            penwidth=1.5;
+            margin=8;
+            
+            // Left semicircle - entry of R2
+            shared_R2 [shape=none margin=0 label=<
+                <TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0" CELLPADDING="0">
+                    <TR><TD><FONT POINT-SIZE="24">◖</FONT></TD></TR>
+                </TABLE>
+            >];
+            
+            t2 [shape=box label="R2" style="rounded,filled" fillcolor="white" penwidth=1.5];
+            p2_exit [shape=circle label="▷" fontsize=16 style="filled" fillcolor="white" width=0.4];
+            
+            shared_R2 -> t2;
+            t2 -> p2_exit;
+        }
+        
+        // Edge connecting R1 to R2 via shared semicircles
+        shared_R1 -> shared_R2 [minlen=0 weight=1000];
+    }
+
+    // End place (outside all regions)
+    end [shape=circle label="▷" fontsize=20 style="filled" fillcolor="white" width=0.5];
+    
+    // Entry/exit edges
+    start -> p1_entry [lhead=cluster_R1];
+    p2_exit -> end [ltail=cluster_R2];
+}

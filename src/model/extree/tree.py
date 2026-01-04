@@ -90,7 +90,7 @@ class ExecutionTree:
 
 		regions: dict[int, RegionModelType] = {}
 		def build_region_dict(r: RegionModelType):
-			regions[int(r.id)] = r
+			regions[r.id] = r
 			if r.children:
 				for child in r.children:
 					build_region_dict(child)
@@ -101,13 +101,13 @@ class ExecutionTree:
 		for place in ctx.net.places:
 			entry_id = getattr(place, "entry_id", None)
 			if entry_id is not None:
-				region_entry = regions.get(int(entry_id))
+				region_entry = regions.get(entry_id)
 				if region_entry and initial_marking[place].token > 0:
 					status_by_region[region_entry] = ActivityState.ACTIVE
 
 			exit_id = getattr(place, "exit_id", None)
 			if exit_id is not None:
-				region_exit = regions.get(int(exit_id))
+				region_exit = regions.get(exit_id)
 				if region_exit and region_exit.is_task():
 					item = initial_marking[place]
 					if item.token > 0 or item.visit_count > 0:

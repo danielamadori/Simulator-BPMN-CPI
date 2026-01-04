@@ -1,0 +1,55 @@
+{
+  "id": "21",
+  "type": "sequential",
+  "children": [
+    {
+      "id": "15",
+      "type": "task",
+      "label": "T11",
+      "duration": 1.0,
+      "impacts": [
+        1.0
+      ]
+    },
+    {
+      "id": "20",
+      "type": "sequential",
+      "children": [
+        {
+          "id": "18",
+          "type": "parallel",
+          "label": "P2",
+          "children": [
+            {
+              "id": "16",
+              "type": "task",
+              "label": "T12",
+              "duration": 1.0,
+              "impacts": [
+                1.0
+              ]
+            },
+            {
+              "id": "17",
+              "type": "task",
+              "label": "T13",
+              "duration": 1.0,
+              "impacts": [
+                1.0
+              ]
+            }
+          ]
+        },
+        {
+          "id": "19",
+          "type": "task",
+          "label": "T14",
+          "duration": 1.0,
+          "impacts": [
+            1.0
+          ]
+        }
+      ]
+    }
+  ]
+}

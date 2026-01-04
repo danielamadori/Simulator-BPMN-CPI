@@ -1,0 +1,29 @@
+{
+  "id": "14",
+  "type": "nature",
+  "label": "N1",
+  "children": [
+    {
+      "id": "12",
+      "type": "task",
+      "label": "T9",
+      "duration": 1.0,
+      "impacts": [
+        1.0
+      ]
+    },
+    {
+      "id": "13",
+      "type": "task",
+      "label": "T10",
+      "duration": 1.0,
+      "impacts": [
+        1.0
+      ]
+    }
+  ],
+  "distribution": [
+    0.3,
+    0.7
+  ]
+}

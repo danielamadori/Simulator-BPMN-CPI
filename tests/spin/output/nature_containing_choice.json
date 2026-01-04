@@ -1,0 +1,46 @@
+{
+  "id": "104",
+  "type": "nature",
+  "label": "N5",
+  "children": [
+    {
+      "id": "102",
+      "type": "choice",
+      "label": "C9",
+      "children": [
+        {
+          "id": "100",
+          "type": "task",
+          "label": "T57",
+          "duration": 1.0,
+          "impacts": [
+            1.0
+          ]
+        },
+        {
+          "id": "101",
+          "type": "task",
+          "label": "T58",
+          "duration": 1.0,
+          "impacts": [
+            1.0
+          ]
+        }
+      ],
+      "max_delay": 0.0
+    },
+    {
+      "id": "103",
+      "type": "task",
+      "label": "T59",
+      "duration": 1.0,
+      "impacts": [
+        1.0
+      ]
+    }
+  ],
+  "distribution": [
+    0.5,
+    0.5
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "id": "158",
+  "type": "nature",
+  "label": "N11",
+  "children": [
+    {
+      "id": "156",
+      "type": "nature",
+      "label": "N10",
+      "children": [
+        {
+          "id": "154",
+          "type": "task",
+          "label": "T88",
+          "duration": 1.0,
+          "impacts": [
+            1.0
+          ]
+        },
+        {
+          "id": "155",
+          "type": "task",
+          "label": "T89",
+          "duration": 1.0,
+          "impacts": [
+            1.0
+          ]
+        }
+      ],
+      "distribution": [
+        0.5,
+        0.5
+      ]
+    },
+    {
+      "id": "157",
+      "type": "task",
+      "label": "T90",
+      "duration": 1.0,
+      "impacts": [
+        1.0
+      ]
+    }
+  ],
+  "distribution": [
+    0.7,
+    0.3
+  ]
+}

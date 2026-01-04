@@ -1,0 +1,27 @@
+{
+  "id": "94",
+  "type": "loop",
+  "label": "L9",
+  "children": [
+    {
+      "id": "93",
+      "type": "loop",
+      "label": "L8",
+      "children": [
+        {
+          "id": "92",
+          "type": "task",
+          "label": "T53",
+          "duration": 1.0,
+          "impacts": [
+            1.0
+          ]
+        }
+      ],
+      "distribution": 0.5,
+      "bound": 5
+    }
+  ],
+  "distribution": 0.5,
+  "bound": 5
+}

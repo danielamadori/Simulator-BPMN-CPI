@@ -1,0 +1,41 @@
+{
+  "id": "144",
+  "type": "choice",
+  "label": "C12",
+  "children": [
+    {
+      "id": "142",
+      "type": "sequential",
+      "children": [
+        {
+          "id": "140",
+          "type": "task",
+          "label": "T80",
+          "duration": 1.0,
+          "impacts": [
+            1.0
+          ]
+        },
+        {
+          "id": "141",
+          "type": "task",
+          "label": "T81",
+          "duration": 1.0,
+          "impacts": [
+            1.0
+          ]
+        }
+      ]
+    },
+    {
+      "id": "143",
+      "type": "task",
+      "label": "T82",
+      "duration": 1.0,
+      "impacts": [
+        1.0
+      ]
+    }
+  ],
+  "max_delay": 0.0
+}

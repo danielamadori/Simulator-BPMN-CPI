@@ -1,0 +1,24 @@
+{
+  "id": "3",
+  "type": "sequential",
+  "children": [
+    {
+      "id": "1",
+      "type": "task",
+      "label": "T2",
+      "duration": 1.0,
+      "impacts": [
+        1.0
+      ]
+    },
+    {
+      "id": "2",
+      "type": "task",
+      "label": "T3",
+      "duration": 1.0,
+      "impacts": [
+        1.0
+      ]
+    }
+  ]
+}

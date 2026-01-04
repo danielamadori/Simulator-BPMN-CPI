@@ -1,0 +1,33 @@
+{
+  "id": "153",
+  "type": "loop",
+  "label": "L13",
+  "children": [
+    {
+      "id": "152",
+      "type": "sequential",
+      "children": [
+        {
+          "id": "150",
+          "type": "task",
+          "label": "T86",
+          "duration": 1.0,
+          "impacts": [
+            1.0
+          ]
+        },
+        {
+          "id": "151",
+          "type": "task",
+          "label": "T87",
+          "duration": 1.0,
+          "impacts": [
+            1.0
+          ]
+        }
+      ]
+    }
+  ],
+  "distribution": 0.5,
+  "bound": 5
+}

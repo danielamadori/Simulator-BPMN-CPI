@@ -1,0 +1,26 @@
+{
+  "id": "6",
+  "type": "choice",
+  "label": "C1",
+  "children": [
+    {
+      "id": "4",
+      "type": "task",
+      "label": "T4",
+      "duration": 1.0,
+      "impacts": [
+        1.0
+      ]
+    },
+    {
+      "id": "5",
+      "type": "task",
+      "label": "T5",
+      "duration": 1.0,
+      "impacts": [
+        1.0
+      ]
+    }
+  ],
+  "max_delay": 0.0
+}

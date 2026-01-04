@@ -1,0 +1,41 @@
+{
+  "id": "139",
+  "type": "parallel",
+  "label": "P15",
+  "children": [
+    {
+      "id": "137",
+      "type": "parallel",
+      "label": "P14",
+      "children": [
+        {
+          "id": "135",
+          "type": "task",
+          "label": "T77",
+          "duration": 1.0,
+          "impacts": [
+            1.0
+          ]
+        },
+        {
+          "id": "136",
+          "type": "task",
+          "label": "T78",
+          "duration": 1.0,
+          "impacts": [
+            1.0
+          ]
+        }
+      ]
+    },
+    {
+      "id": "138",
+      "type": "task",
+      "label": "T79",
+      "duration": 1.0,
+      "impacts": [
+        1.0
+      ]
+    }
+  ]
+}

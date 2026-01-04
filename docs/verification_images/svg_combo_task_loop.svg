@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300">
+<style>
+  .place { fill: white; stroke: black; stroke-width: 1.5; }
+  .transition { fill: white; stroke: black; stroke-width: 1.5; }
+  .region { fill: none; stroke: black; stroke-width: 2; rx: 10; }
+  .arc { fill: none; stroke: black; stroke-width: 1; marker-end: url(#arrowhead); }
+  .label { font-family: Arial; font-size: 12px; text-anchor: middle; dominant-baseline: middle; }
+</style>
+<defs>
+  <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+    <polygon points="0 0, 10 3.5, 0 7" fill="black" />
+  </marker>
+</defs>
+<rect x="0" y="20" width="900" height="180" rx="10" style="fill: none; stroke: black; stroke-width: 2" />
+<text x="20" y="45" class="label" style="font-size: 18px; font-style: italic">R</text>
+<rect x="450" y="110" width="200" height="80" rx="10" class="region" />
+<text x="550.0" y="105" class="label">R2</text>
+<rect x="50" y="110" width="200" height="80" rx="10" class="region" />
+<text x="150.0" y="105" class="label">R1</text>
+<path d="M670.0,150.0 L720,150" class="arc" />
+<path d="M570,150 L620.0,150.0" class="arc" />
+<path d="M470.0,150.0 L520,150" class="arc" />
+<path d="M270.0,150.0 L320,150" class="arc" />
+<path d="M170,150 L220.0,150.0" class="arc" />
+<path d="M370,150 L420.0,150.0" class="arc" />
+<path d="M650,130 Q650,70 565.0,70" class="arc" />
+<path d="M770,150 L820.0,150.0" class="arc" />
+<path d="M70.0,150.0 L120,150" class="arc" />
+<path d="M535.0,70 Q450,70 450,120" class="arc" />
+<circle cx="850" cy="150" r="20" class="place" />
+<polygon points="838,138 862,150 838,162" style="fill: black; stroke: black" />
+<text x="875" y="175" class="label" style="font-style: italic; font-size: 14px">R</text>
+<circle cx="250" cy="150" r="20" class="place" />
+<polygon points="238,138 262,150 238,162" style="fill: none; stroke: black; stroke-width: 1.5" />
+<circle cx="650" cy="150" r="20" class="place" />
+<polygon points="638,138 662,150 638,162" style="fill: black; stroke: black" />
+<circle cx="50" cy="150" r="20" class="place" />
+<polygon points="38,138 62,150 38,162" style="fill: none; stroke: black; stroke-width: 1.5" />
+<text x="75" y="175" class="label" style="font-style: italic; font-size: 14px">R</text>
+<circle cx="450" cy="150" r="20" class="place" />
+<polygon points="438,138 462,150 438,162" style="fill: none; stroke: black; stroke-width: 1.5" />
+<polygon points="535.0,55 565.0,70 535.0,85" style="fill: none; stroke: #2E7D32; stroke-width: 2" />
+<text x="550.0" y="70" class="label">0.7</text>
+<rect x="510" y="124" width="80" height="52" rx="5" class="transition" />
+<text x="550" y="136.0" class="label">R2</text>
+<text x="550" y="150.0" class="label">d=3.0</text>
+<text x="550" y="164.0" class="label">[1.0]</text>
+<polygon points="335,135 365,150 335,165" style="fill: #2E7D32; stroke: #2E7D32" />
+<rect x="110" y="124" width="80" height="52" rx="5" class="transition" />
+<text x="150" y="136.0" class="label">R1</text>
+<text x="150" y="150.0" class="label">d=2.0</text>
+<text x="150" y="164.0" class="label">[0.5]</text>
+<polygon points="735,135 765,150 735,165" style="fill: none; stroke: #2E7D32; stroke-width: 2" />
+<text x="750" y="150" class="label">0.3</text>
+</svg>

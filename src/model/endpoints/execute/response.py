@@ -14,7 +14,6 @@ if TYPE_CHECKING:
 
 logger = logging_utils.get_logger(__name__)
 
-
 class ExecuteResponse(BaseModel):
     """
     Represents the response structure for an execution request.
@@ -22,6 +21,7 @@ class ExecuteResponse(BaseModel):
     bpmn: RegionModel
     petri_net: PetriNetModel
     petri_net_dot: str | None = None
+    spin_svg: str | None = None
     execution_tree: ExecutionTreeModel
 
 
@@ -33,9 +33,19 @@ def create_response(region: RegionModelType, petri_net: PetriNetType, im: Markin
     logger.debug("Creating response")
     petri_net_model = petri_net_to_model(petri_net, im, fm)
     execution_tree_model = extree_to_model(extree)
+    
+    # Generate SPIN SVG visualization
+    try:
+        from svg_viz import spin_to_svg
+        spin_svg = spin_to_svg(petri_net, width=800, height=400, region=region)
+    except Exception as e:
+        import traceback
+        logger.error(f"Failed to generate SVG: {e}\n{traceback.format_exc()}")
+        spin_svg = None
 
     return ExecuteResponse(bpmn=region, petri_net=petri_net_model,
                            petri_net_dot=petri_net_to_dot(petri_net, extree.current_node.snapshot.marking, fm.tokens),
+                           spin_svg=spin_svg,
                            execution_tree=execution_tree_model)
 
 

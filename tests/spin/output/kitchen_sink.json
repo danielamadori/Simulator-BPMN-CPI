@@ -1,0 +1,71 @@
+{
+  "id": "194",
+  "type": "loop",
+  "label": "L14",
+  "children": [
+    {
+      "id": "193",
+      "type": "nature",
+      "label": "N12",
+      "children": [
+        {
+          "id": "191",
+          "type": "choice",
+          "label": "C13",
+          "children": [
+            {
+              "id": "189",
+              "type": "parallel",
+              "label": "P18",
+              "children": [
+                {
+                  "id": "187",
+                  "type": "task",
+                  "label": "T115",
+                  "duration": 1.0,
+                  "impacts": [
+                    1.0
+                  ]
+                },
+                {
+                  "id": "188",
+                  "type": "task",
+                  "label": "T116",
+                  "duration": 1.0,
+                  "impacts": [
+                    1.0
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "190",
+              "type": "task",
+              "label": "T117",
+              "duration": 1.0,
+              "impacts": [
+                1.0
+              ]
+            }
+          ],
+          "max_delay": 0.0
+        },
+        {
+          "id": "192",
+          "type": "task",
+          "label": "T118",
+          "duration": 1.0,
+          "impacts": [
+            1.0
+          ]
+        }
+      ],
+      "distribution": [
+        0.8,
+        0.2
+      ]
+    }
+  ],
+  "distribution": 0.5,
+  "bound": 5
+}

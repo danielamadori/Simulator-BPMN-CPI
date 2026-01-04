@@ -1,0 +1,34 @@
+{
+  "id": "121",
+  "type": "parallel",
+  "label": "P11",
+  "children": [
+    {
+      "id": "118",
+      "type": "task",
+      "label": "T67",
+      "duration": 1.0,
+      "impacts": [
+        1.0
+      ]
+    },
+    {
+      "id": "119",
+      "type": "task",
+      "label": "T68",
+      "duration": 1.0,
+      "impacts": [
+        1.0
+      ]
+    },
+    {
+      "id": "120",
+      "type": "task",
+      "label": "T69",
+      "duration": 1.0,
+      "impacts": [
+        1.0
+      ]
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="530" viewBox="0 0 1400 530">
+<style>
+  .place { fill: white; stroke: black; stroke-width: 1.5; }
+  .transition { fill: white; stroke: black; stroke-width: 1.5; }
+  .region { fill: none; stroke: black; stroke-width: 2; rx: 10; }
+  .arc { fill: none; stroke: black; stroke-width: 1; marker-end: url(#arrowhead); }
+  .label { font-family: Arial; font-size: 12px; text-anchor: middle; dominant-baseline: middle; }
+</style>
+<defs>
+  <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+    <polygon points="0 0, 10 3.5, 0 7" fill="black" />
+  </marker>
+</defs>
+<rect x="250" y="150.0" width="200" height="80" rx="10" class="region"  />
+<text x="350.0" y="145.0" class="label" style="font-size: 10px;">R1</text>
+<rect x="450" y="150.0" width="200" height="80" rx="10" class="region"  />
+<text x="550.0" y="145.0" class="label" style="font-size: 10px;">R2</text>
+<rect x="250" y="390.0" width="200" height="80" rx="10" class="region"  />
+<text x="350.0" y="385.0" class="label" style="font-size: 10px;">R3</text>
+<rect x="450" y="390.0" width="200" height="80" rx="10" class="region"  />
+<text x="550.0" y="385.0" class="label" style="font-size: 10px;">R4</text>
+<path d="M370.0,430.0 L420.0,430.0" class="arc" />
+<path d="M570.0,430.0 L620.0,430.0" class="arc" />
+<path d="M668.0963740440199,198.5159407265976 L875.0,310.0" class="arc" />
+<path d="M270.0,190.0 L320.0,190.0" class="arc" />
+<path d="M668.0963740440199,421.4840592734024 L875.0,310.0" class="arc" />
+<path d="M270.0,430.0 L320.0,430.0" class="arc" />
+<path d="M70.0,310.0 L65.0,310.0" class="arc" />
+<path d="M470.0,190.0 L520.0,190.0" class="arc" />
+<path d="M470.0,430.0 L520.0,430.0" class="arc" />
+<path d="M925.0,310.0 L920.0,310.0" class="arc" />
+<path d="M570.0,190.0 L620.0,190.0" class="arc" />
+<path d="M115.0,310.0 L227.5777204394902,410.0690848351024" class="arc" />
+<path d="M370.0,190.0 L420.0,190.0" class="arc" />
+<path d="M115.0,310.0 L227.5777204394902,209.93091516489758" class="arc" />
+<circle cx="950" cy="310.0" r="20" class="place" />
+<polygon points="938,298.0 962,310.0 938,322.0" style="fill: black; stroke: black" />
+<text x="975" y="335.0" class="label" style="font-style: italic; font-size: 14px">R</text>
+<circle cx="450" cy="190.0" r="20" class="place" />
+<polygon points="438,178.0 462,190.0 438,202.0" style="fill: black; stroke: black" />
+<circle cx="650" cy="190.0" r="20" class="place" />
+<polygon points="638,178.0 662,190.0 638,202.0" style="fill: black; stroke: black" />
+<circle cx="650" cy="430.0" r="20" class="place" />
+<polygon points="638,418.0 662,430.0 638,442.0" style="fill: black; stroke: black" />
+<circle cx="450" cy="430.0" r="20" class="place" />
+<polygon points="438,418.0 462,430.0 438,442.0" style="fill: black; stroke: black" />
+<circle cx="250" cy="430.0" r="20" class="place" />
+<circle cx="50" cy="310.0" r="20" class="place" />
+<polygon points="38,298.0 62,310.0 38,322.0" style="fill: none; stroke: black; stroke-width: 1.5" />
+<text x="75" y="335.0" class="label" style="font-style: italic; font-size: 14px">R</text>
+<circle cx="250" cy="190.0" r="20" class="place" />
+<rect x="510.0" y="405.0" width="80" height="50" rx="5" class="transition" />
+<text x="550.0" y="423.0" class="label">R4</text>
+<text x="550.0" y="437.0" class="label">d=2.5</text>
+<rect x="510.0" y="165.0" width="80" height="50" rx="5" class="transition" />
+<text x="550.0" y="183.0" class="label">R2</text>
+<text x="550.0" y="197.0" class="label">d=1.5</text>
+<rect x="310.0" y="405.0" width="80" height="50" rx="5" class="transition" />
+<text x="350.0" y="423.0" class="label">R3</text>
+<text x="350.0" y="437.0" class="label">d=3.0</text>
+<polygon points="80.0,295.0 110.0,310.0 80.0,325.0" style="fill: none; stroke: black; stroke-width: 2" />
+<text x="95.0" y="310.0" class="label">+</text>
+<polygon points="890.0,295.0 920.0,310.0 890.0,325.0" style="fill: black; stroke: black" />
+<text x="905.0" y="310.0" class="label">+</text>
+<rect x="310.0" y="165.0" width="80" height="50" rx="5" class="transition" />
+<text x="350.0" y="183.0" class="label">R1</text>
+<text x="350.0" y="197.0" class="label">d=2.0</text>
+</svg>
