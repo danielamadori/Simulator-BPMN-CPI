@@ -517,7 +517,9 @@ def create_notebook(pattern_list):
             "import sys\n",
             "import os\n",
             "import importlib\n",
-            "from IPython.display import SVG, display\n",
+            "import graphviz\n",
+            "import pm4py\n",
+            "from IPython.display import SVG, display, HTML, Image\n",
             "\n",
             "# Ensure src path is available\n",
             "sys.path.append(os.path.abspath(os.path.join(os.getcwd(), 'src')))\n",
@@ -528,11 +530,14 @@ def create_notebook(pattern_list):
             "importlib.reload(svg_viz)  # Force reload to get latest changes\n",
             "from svg_viz import spin_to_svg\n",
             "\n",
+            "# Import DOT generator for BPMN only\n",
+            "from dot import wrap_to_dot\n",
+            "\n",
             "# Also reload converter\n",
             "from converter import spin\n",
             "importlib.reload(spin)\n",
             "\n",
-            "print(\"Imports successful! (modules reloaded)\")\n"
+            "print(\"Imports successful! (modules reloaded)\")"
         ]
     })
     
@@ -557,7 +562,21 @@ region_model = RegionModel.model_validate(region_json)
 # 2. Convert to Petri Net
 net, im, fm = from_region(region_model)
 
-# 3. Generate SVG
+# === VISUALIZATION 1: BPMN DOT ===
+print("=== BPMN Diagram ===")
+bpmn_dot = wrap_to_dot(region_json, impacts_names=["I1"], active_regions=set())
+display(graphviz.Source(bpmn_dot))
+
+# === VISUALIZATION 2: PETRI NET (PM4PY Standard) ===
+print("\\n=== Petri Net (PM4PY Standard) ===")
+# Use PM4PY's visualization - save to temp file and display
+import tempfile
+with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
+    pm4py.save_vis_petri_net(net, im.tokens, fm.tokens, tmp.name)
+    display(Image(filename=tmp.name))
+
+# === VISUALIZATION 3: SPIN SVG ===
+print("\\n=== SPIN Visualization (Custom SVG) ===")
 svg_out = spin_to_svg(net, width=1000, height=500, region=region_model)
 display(SVG(svg_out))
 """
