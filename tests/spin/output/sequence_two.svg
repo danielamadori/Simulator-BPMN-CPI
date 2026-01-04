@@ -23,10 +23,10 @@
 <text x="150.0" y="75.0" class="label" style="font-size: 10px;">T2</text>
 <rect x="250" y="80.0" width="200" height="80" rx="10" style="fill: none; stroke: black; stroke-width: 2; " />
 <text x="350.0" y="75.0" class="label" style="font-size: 10px;">T3</text>
-<path d="M370.0,120.0 L430.0,120.0" class="arc" />
-<path d="M270.0,120.0 L330.0,120.0" class="arc-white" />
 <path d="M170.0,120.0 L230.0,120.0" class="arc" />
+<path d="M370.0,120.0 L430.0,120.0" class="arc" />
 <path d="M70.0,120.0 L130.0,120.0" class="arc-white" />
+<path d="M270.0,120.0 L330.0,120.0" class="arc-white" />
 <circle cx="450" cy="120.0" r="20" class="place" />
 <polygon points="438,108.0 462,120.0 438,132.0" style="fill: black; stroke: black" />
 <text x="475" y="145.0" class="label" style="font-style: italic; font-size: 14px">2</text>
