@@ -61,7 +61,7 @@ def execute(data: ExecuteRequest):
 						build_region_dict(child)
 			build_region_dict(region)
 
-			new_status = {regions[r_id] : r_status for r_id, r_status in current_status.items() }
+			new_status = {regions[int(r_id)] : r_status for r_id, r_status in current_status.items() }
 
 			current_marking = extree.current_node.snapshot.marking
 			previous_time = extree.current_node.snapshot.execution_time  # Get previous cumulative time
