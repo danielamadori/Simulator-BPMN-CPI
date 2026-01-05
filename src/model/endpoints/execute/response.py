@@ -36,8 +36,9 @@ def create_response(region: RegionModelType, petri_net: PetriNetType, im: Markin
     
     # Generate SPIN SVG visualization
     try:
-        from svg_viz import spin_to_svg
-        spin_svg = spin_to_svg(petri_net, width=800, height=400, region=region)
+        from spin_visualizzation import spin_to_svg
+        spin_svg = spin_to_svg(petri_net, width=800, height=400, region=region,
+                               marking=extree.current_node.snapshot.marking)
     except Exception as e:
         import traceback
         logger.error(f"Failed to generate SVG: {e}\n{traceback.format_exc()}")
@@ -58,7 +59,9 @@ def petri_net_to_model(petri_net: PetriNetType, im: MarkingType, fm: MarkingType
                                             region_id=t.region_id,
                                             region_type=t.region_type,
                                             probability=t.probability,
-                                            stop=t.stop
+                                            stop=t.stop,
+                                            duration=getattr(t, "duration", None),
+                                            impacts=getattr(t, "impacts", None),
                                             )
         transitions.append(obj)
 

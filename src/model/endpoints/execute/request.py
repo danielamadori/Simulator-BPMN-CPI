@@ -56,6 +56,8 @@ class PetriNetModel(pydantic.BaseModel):
 		region_type: RegionType = None
 		probability: float = 1
 		stop: bool = False
+		duration: float | None = None
+		impacts: list[float] | None = None
 
 	class PlaceModel(BaseModel):
 		""" Represents a place in a Petri net.
@@ -254,6 +256,8 @@ class ExecuteRequest(pydantic.BaseModel):
 			net_transition.region_label = transition.label
 			net_transition.probability = transition.probability
 			net_transition.stop = transition.stop
+			net_transition.duration = transition.duration
+			net_transition.impacts = transition.impacts
 
 			transitions[transition.id] = net_transition
 			petri_net.transitions.add(net_transition)

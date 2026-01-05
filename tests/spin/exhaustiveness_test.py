@@ -9,7 +9,7 @@ from generate_json_test_nb import get_patterns
 from model.region import RegionModel
 from converter.spin import from_region
 
-from svg_viz import spin_to_svg
+from spin_visualizzation import spin_to_svg
 
 # Get all patterns
 patterns = get_patterns()

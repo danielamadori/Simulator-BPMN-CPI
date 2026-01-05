@@ -630,7 +630,7 @@ def draw_hierarchical_regions(node, svg_parts, depth=0):
                 stroke_dash = 'stroke-dasharray: 5, 2;' # Different dash for sequential
                 
             # Label
-            label_y = y - 5
+            label_y = y - 7
             label = node.label
             
             # Apply style (no class to avoid CSS override)
@@ -648,7 +648,7 @@ def draw_hierarchical_regions(node, svg_parts, depth=0):
 # HELPER DRAWING FUNCTIONS
 # =============================================================================
 
-def draw_place(px, py, place, place_radius, incoming, outgoing, svg_parts):
+def draw_place(px, py, place, place_radius, incoming, outgoing, svg_parts, marking=None):
     """
     Draw a single place (circle) with its internal content.
     
@@ -660,8 +660,33 @@ def draw_place(px, py, place, place_radius, incoming, outgoing, svg_parts):
         outgoing: Dict of outgoing connections
         svg_parts: List to append SVG elements to
     """
+    def token_from_marking_item(item):
+        if item is None:
+            return 0
+        if hasattr(item, "token"):
+            return item.token
+        try:
+            return item[0]
+        except Exception:
+            return 0
+
+    token_value = 0
+    if marking is not None:
+        try:
+            token_value = token_from_marking_item(marking[place])
+        except Exception:
+            try:
+                token_value = token_from_marking_item(marking[place.name])
+            except Exception:
+                token_value = 0
+    elif hasattr(place, 'has_token') and place.has_token:
+        token_value = 1
+
+    has_token = token_value > 0
+    place_class = "place token" if has_token else "place"
+
     # Draw the circle
-    svg_parts.append(f'<circle cx="{px}" cy="{py}" r="{place_radius}" class="place" />')
+    svg_parts.append(f'<circle cx="{px}" cy="{py}" r="{place_radius}" class="{place_class}" />')
     
     triangle_size = 12  # Inscribed in circle of radius 20
     
@@ -688,7 +713,7 @@ def draw_place(px, py, place, place_radius, incoming, outgoing, svg_parts):
         # Region ID - show if present (don't restrict to true start)
         region_id = getattr(place, 'entry_id', None) or getattr(place, 'region_id', None)
         if region_id:
-             svg_parts.append(f'<text x="{px + 25}" y="{py + 25}" class="label" style="font-style: italic; font-size: 14px">{region_id}</text>')
+             svg_parts.append(f'<text x="{px + 25}" y="{py + 10}" class="label" style="font-style: italic; font-size: 14px; text-anchor: start;">{region_id}</text>')
             
     elif is_exit_style:
         # Exit triangle - always FILLED for exit places (including tasks)
@@ -702,9 +727,9 @@ def draw_place(px, py, place, place_radius, incoming, outgoing, svg_parts):
         # Region ID - show if present (don't restrict to true end)
         region_id = getattr(place, 'exit_id', None) or getattr(place, 'region_id', None)
         if region_id:
-            svg_parts.append(f'<text x="{px + 25}" y="{py + 25}" class="label" style="font-style: italic; font-size: 14px">{region_id}</text>')
+            svg_parts.append(f'<text x="{px + 25}" y="{py + 10}" class="label" style="font-style: italic; font-size: 14px; text-anchor: start;">{region_id}</text>')
             
-    elif hasattr(place, 'has_token') and place.has_token:
+    elif has_token:
         svg_parts.append(f'<circle cx="{px}" cy="{py}" r="8" style="fill: black" />')
 
 
@@ -736,7 +761,9 @@ def draw_task_transition(tx, ty, transition, svg_parts):
     # Label REMOVED from here - drawn by draw_hierarchical_regions near border
     # if label:
     #    svg_parts.append(f'<text x="{tx}" y="{ty + triangle_size + 15}" class="label" style="font-size: 12px; font-style: italic">{label}</text>')
-    
+
+    formula_shift = -20
+
     
     # Helper to draw small entry place symbol (circle with inscribed outline triangle)
     def draw_small_place_symbol(cx, cy, size=6):
@@ -751,6 +778,32 @@ def draw_task_transition(tx, ty, transition, svg_parts):
         p3 = f"{cx - ts},{cy + ts}"
         parts.append(f'<polygon points="{p1} {p2} {p3}" style="fill: none; stroke: black; stroke-width: 0.8" />')
         return "".join(parts)
+
+    def normalize_duration(value):
+        if value is None:
+            return None
+        if isinstance(value, (list, tuple)):
+            if not value:
+                return None
+            return max(value)
+        return value
+
+    def estimate_text_width(text, font_size):
+        if not text:
+            return 0
+        return len(str(text)) * font_size * 0.6
+
+    def closing_paren_x(open_paren_x, symbol_cx, symbol_radius, subscript_text, subscript_x, min_group_width=24, padding=-3):
+        subscript_width = estimate_text_width(subscript_text, 7)
+        left_group_right = max(symbol_cx + symbol_radius, subscript_x + subscript_width)
+        group_width = left_group_right - open_paren_x
+        return open_paren_x + max(group_width + padding, min_group_width)
+
+    def layout_paren_group(open_paren_x, symbol_radius, subscript_offset=8, paren_width=4, gap=1):
+        symbol_left_x = open_paren_x + paren_width + gap
+        symbol_cx = symbol_left_x + symbol_radius
+        subscript_x = symbol_cx + subscript_offset
+        return symbol_cx, subscript_x
     
     # I⃗(place_symbol_t) = [values] - vector notation with arrow above
     # Position TOP (Impacts)
@@ -762,36 +815,59 @@ def draw_task_transition(tx, ty, transition, svg_parts):
         if region_id is None:
             region_id = 't'  # Fallback
         # Draw: I with arrow ( [small place] region_id ) = [values]
+        impact_shift = -3
+        open_paren_x = tx - 47 + formula_shift + impact_shift
+        impact_symbol_gap = 6  # distance between I and '('
         # Draw I with arrow using SVG (arrow above the letter)
-        i_x = tx - 60  # Moved left (-15 more, total -25)
+        i_x = open_paren_x - impact_symbol_gap
         svg_parts.append(f'<text x="{i_x}" y="{text_y}" class="label" style="font-size: 10px; font-style: italic">I</text>')
         # Arrow above I: small line with arrowhead pointing right
         svg_parts.append(f'<line x1="{i_x - 3}" y1="{text_y - 10}" x2="{i_x + 5}" y2="{text_y - 10}" style="stroke: black; stroke-width: 0.8" />')
         svg_parts.append(f'<polygon points="{i_x + 5},{text_y - 10} {i_x + 2},{text_y - 12} {i_x + 2},{text_y - 8}" style="fill: black" />')
         # Opening parenthesis
-        svg_parts.append(f'<text x="{tx - 47}" y="{text_y}" class="label" style="font-size: 10px">(</text>')  # Moved left (-15)
+        symbol_cx, subscript_x = layout_paren_group(open_paren_x, 5)
+        svg_parts.append(f'<text x="{open_paren_x}" y="{text_y}" class="label" style="font-size: 10px; text-anchor: start;">(</text>')  # Moved left (-15)
         # Small place symbol centered between parentheses (moved slightly left)
-        svg_parts.append(draw_small_place_symbol(tx - 38, text_y - 3, size=5))  # Moved left (-15)
+        svg_parts.append(draw_small_place_symbol(symbol_cx, text_y - 3, size=5))  # Moved left (-15)
         # Subscript with region ID (positioned as subscript relative to place symbol)
-        svg_parts.append(f'<text x="{tx - 30}" y="{text_y + 2}" class="label" style="font-size: 7px; font-style: italic">{region_id}</text>')  # Moved left (-15)
-        # Closing parenthesis and equals (moved right for more spacing)
-        svg_parts.append(f'<text x="{tx - 10}" y="{text_y}" class="label" style="font-size: 10px">) = [{impact_str}]</text>')  # Moved left (-15)
+        subscript_text = str(region_id)
+        svg_parts.append(f'<text x="{subscript_x}" y="{text_y + 2}" class="label" style="font-size: 7px; font-style: italic; text-anchor: start;">{subscript_text}</text>')  # Moved left (-15)
+        # Closing parenthesis and equals (dynamic spacing based on left group width)
+        close_x = closing_paren_x(open_paren_x, symbol_cx, 5, subscript_text, subscript_x)
+        svg_parts.append(f'<text x="{close_x}" y="{text_y}" class="label" style="font-size: 10px; text-anchor: start;">) = [{impact_str}]</text>')  # Moved left (-15)
     
     # 🕐(place_symbol_region_id) = d - clock symbol for time/duration
     # Position BOTTOM (Duration)
-    if duration is not None:
+    duration_value = normalize_duration(duration)
+    if duration_value is not None:
         text_y = ty + 30  # Near bottom border (moved down to 30)
         region_id = getattr(transition, 'region_id', None)
         if region_id is None:
             region_id = 't'  # Fallback
-        # Clock symbol
-        svg_parts.append(f'<text x="{tx - 53}" y="{text_y}" class="label" style="font-size: 10px">🕐(</text>')  # Moved left (-15)
+        # Clock icon (inline SVG)
+        clock_x = tx - 65 + formula_shift
+        clock_y = text_y - 9
+        svg_parts.append(
+            f'<svg x="{clock_x}" y="{clock_y}" width="16" height="16" '
+            f'viewBox="-0.55 -0.55 1.1 1.1" fill="none" stroke="currentColor" '
+            f'stroke-width="0.04" stroke-linecap="round" stroke-linejoin="round" '
+            f'style="color:black">'
+            f'<circle cx="0" cy="0" r="0.4"/>'
+            f'<line x1="0" y1="0" x2="0" y2="-0.3"/>'
+            f'<line x1="0" y1="0" x2="0.2" y2="0.2"/>'
+            f'</svg>'
+        )
+        open_paren_x = tx - 47 + formula_shift
+        symbol_cx, subscript_x = layout_paren_group(open_paren_x, 5)
+        svg_parts.append(f'<text x="{open_paren_x}" y="{text_y}" class="label" style="font-size: 10px; text-anchor: start;">(</text>')
         # Small place symbol centered (moved slightly left)
-        svg_parts.append(draw_small_place_symbol(tx - 38, text_y - 3, size=5))  # Moved left (-15)
+        svg_parts.append(draw_small_place_symbol(symbol_cx, text_y - 3, size=5))  # Moved left (-15)
         # Subscript with region ID
-        svg_parts.append(f'<text x="{tx - 30}" y="{text_y + 2}" class="label" style="font-size: 7px; font-style: italic">{region_id}</text>')  # Moved left (-15)
-        # Closing parenthesis and equals (moved right for more spacing)
-        svg_parts.append(f'<text x="{tx - 10}" y="{text_y}" class="label" style="font-size: 10px">) = {duration}</text>')  # Moved left (-15)
+        subscript_text = str(region_id)
+        svg_parts.append(f'<text x="{subscript_x}" y="{text_y + 2}" class="label" style="font-size: 7px; font-style: italic; text-anchor: start;">{subscript_text}</text>')  # Moved left (-15)
+        # Closing parenthesis and equals (dynamic spacing based on left group width)
+        close_x = closing_paren_x(open_paren_x, symbol_cx, 5, subscript_text, subscript_x)
+        svg_parts.append(f'<text x="{close_x}" y="{text_y}" class="label" style="font-size: 10px; text-anchor: start;">) = {duration_value}</text>')  # Moved left (-15)
 
 
 def draw_gateway_transition(tx, ty, transition, svg_parts):
@@ -1286,7 +1362,7 @@ def layout_petri_net(petri_net, width, height):
 # MAIN FUNCTION
 # =============================================================================
 
-def petri_net_to_svg(petri_net, width=800, height=400, region_tree=None):
+def petri_net_to_svg(petri_net, width=800, height=400, region_tree=None, marking=None):
     """
     Generate SVG code for the Petri net with custom visualization.
     Uses recursive drawing functions for nested structures.
@@ -1296,6 +1372,7 @@ def petri_net_to_svg(petri_net, width=800, height=400, region_tree=None):
         width: SVG width in pixels
         height: SVG height in pixels
         region_tree: Optional RegionNode tree for hierarchical region boxes
+        marking: Optional TimeMarking for token visualization
     
     Returns:
         SVG string
@@ -1394,6 +1471,7 @@ def petri_net_to_svg(petri_net, width=800, height=400, region_tree=None):
     svg_parts.append(f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">')
     svg_parts.append('<style>')
     svg_parts.append('  .place { fill: white; stroke: black; stroke-width: 1.5; }')
+    svg_parts.append('  .place.token { fill: rgba(0, 0, 0, 0.12); }')
     svg_parts.append('  .transition { fill: white; stroke: black; stroke-width: 1.5; }')
     svg_parts.append('  .region { fill: none; stroke: black; stroke-width: 2; rx: 10; }')
     svg_parts.append('  .arc { fill: none; stroke: black; stroke-width: 1; marker-end: url(#doubleArrowhead); }')
@@ -1448,7 +1526,7 @@ def petri_net_to_svg(petri_net, width=800, height=400, region_tree=None):
     for place in places:
         if place.name in positions:
             px, py = positions[place.name]
-            draw_place(px, py, place, place_radius, incoming, outgoing, svg_parts)
+            draw_place(px, py, place, place_radius, incoming, outgoing, svg_parts, marking=marking)
     
     # Draw transitions using helper function
     for t in transitions:
@@ -1491,20 +1569,30 @@ def region_model_to_region_node(region, depth: int = 0):
     
     # Get label with smart fallback
     explicit_label = getattr(region, 'label', None)
-    if explicit_label:
-        label = explicit_label
-    elif node_type == 'sequential':
-        # User request: "first label followed by , and then the second label"
-        # Concatenate labels of all children
+    rid = getattr(region, 'id', depth)
+    if node_type in ['sequential', 'parallel']:
+        # Concatenate labels of all children for sequential/parallel
         child_labels = [child.label for child in children if child.label]
-        label = ", ".join(child_labels)
-        if not label:
-            # Fallback if no children labels
-            rid = getattr(region, 'id', depth)
-            label = f"R{rid}"
+        separator = ", " if node_type == 'sequential' else " || "
+        label = separator.join(child_labels)
+        if label:
+            label = f"({label})"
+        else:
+            label = f"{'R' if node_type == 'sequential' else 'P'}{rid}"
+    elif node_type in ['choice', 'nature']:
+        # Choice/Nature: combine children with operator and include tag in brackets
+        child_labels = [child.label for child in children if child.label]
+        tag = explicit_label or f"{'C' if node_type == 'choice' else 'N'}{rid}"
+        if child_labels:
+            op = "/" if node_type == 'choice' else "^"
+            joiner = f" {op} [{tag}] "
+            label = f"({joiner.join(child_labels)})"
+        else:
+            label = f"{'C' if node_type == 'choice' else 'N'}{rid}"
+    elif explicit_label:
+        label = explicit_label
     else:
         # Generate label based on type
-        rid = getattr(region, 'id', depth)
         prefix_map = {
             'nature': 'N',
             'choice': 'C',
@@ -1543,7 +1631,7 @@ def find_node_by_id(root, target_id):
     return None
 
 
-def spin_to_svg(net, width=800, height=400, region=None):
+def spin_to_svg(net, width=800, height=400, region=None, marking=None):
     """
     Generate SVG visualization for a SPIN (Petri net) model.
     
@@ -1554,6 +1642,7 @@ def spin_to_svg(net, width=800, height=400, region=None):
         width: SVG width in pixels
         height: SVG height in pixels
         region: Optional RegionModel for hierarchical layout
+        marking: Optional TimeMarking for token visualization
     
     Returns:
         SVG string
@@ -1590,7 +1679,7 @@ def spin_to_svg(net, width=800, height=400, region=None):
                 if node:
                     node.add_element(p.name)
     
-    return petri_net_to_svg(net, width, height, region_tree)
+    return petri_net_to_svg(net, width, height, region_tree, marking=marking)
 
 
 def save_svg(svg_content, filepath):
