@@ -12,7 +12,7 @@ PWD = pathlib.Path(__file__).parent.parent.parent.absolute()
 
 @pytest.fixture
 def region_model():
-    """Fixture per caricare il modello di regione"""
+    """Fixture to load the region model"""
     with open(os.path.join(PWD, "tests/input_data/bpmn_nature.json")) as f:
         from model.region import RegionModel
 
@@ -47,25 +47,25 @@ def time_marking(marking):
 class TestTimeMarking:
 
     def test_eq(self, time_marking):
-        """Test per verificare l'uguaglianza tra due oggetti TimeMarking"""
-        # Crea un altro TimeMarking uguale
+        """Test to verify equality between two TimeMarking objects"""
+        # Create another identical TimeMarking
         # marking = time_marking.tokens
         # other_time_marking = TimeMarking(marking, {})
         #
-        # # Verifica che i due oggetti siano uguali
+        # # Verify the two objects are equal
         # # self.assertEqual(self.time_marking, other_time_marking)
-        # assert time_marking == other_time_marking, "Dovrebbero essere uguali"
+        # assert time_marking == other_time_marking, "They should be equal"
         #
-        # # Verifica che non siano più uguali se uno dei valori cambia
-        # # Nota che TimeMarking è immutabile, quindi non puoi modificarlo direttamente, ma dobbiamo testare
-        # # che non siano uguali se le chiavi o i valori cambiano.
+        # # Verify they are no longer equal if one of the values changes
+        # # Note that TimeMarking is immutable, so you can't modify it directly, but we need to test
+        # # that they are not equal if keys or values change.
         # modified_age = {WrapperPetriNet.Place(name="1"): 5, "b": 2, "c": 0, "d": 0}
         # modified_time_marking = TimeMarking(marking, modified_age)
         #
         # assert time_marking != modified_time_marking
 
     def test_immutability(self, time_marking):
-        """Test per verificare che non si possono cambiare i valori di TimeMarking"""
+        """Test to verify that TimeMarking values cannot be changed"""
         # copy_marking = time_marking.tokens
         # copy_marking["a"] = 15
         #

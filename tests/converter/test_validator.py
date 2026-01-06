@@ -3,7 +3,7 @@ from model.region import RegionType
 from tests.converter.region_factory import region_factory
 
 """
-Esiste una regionFactory che crea regioni valide, per evitare duplicazione generarle da li e modificare i campi di interesse
+There is a regionFactory that creates valid regions; to avoid duplication, generate them from there and modify the fields of interest
 """
 
 # VALIDATOR
@@ -13,56 +13,56 @@ TASKS
 """
 
 
-# NOT validità explore per id
+# INVALID: explore by id
 def test_validator_valid():
     region = region_factory(RegionType.TASK)
     region.id = ""
     assert region_validator(region) is False
 
 
-# validità task per la durata
+# VALID: task duration
 def test_task_valid():
     region = region_factory(RegionType.TASK)
     region.duration = 5
     assert region_validator(region) is True
 
 
-# NOT validità task per durata
+# INVALID: task duration
 def test_task_invalid_duration():
     region = region_factory(RegionType.TASK)
     region.duration = -5
     assert region_validator(region) is False
 
 
-# NOT validità per lunghezza diversa degli impatti dei task
+# INVALID: different task impacts length
 def test_task_invalid_impacts_length():
     parent = region_factory(RegionType.SEQUENTIAL)
-    # di default il task ha come impatti un vettore di 3 elementi
+    # by default the task has a 3-element impacts vector
     parent.children[1].impacts = [1, 2]
     assert region_validator(parent) is False
 
 
-# validità per lunghezza uguale degli impatti dei task
+# VALID: matching task impacts length
 def test_task_valid_impacts_length():
     region = region_factory(RegionType.SEQUENTIAL)
     assert region_validator(region) is True
 
 
-# NOT validità per valore impatti < 0
+# INVALID: impacts value < 0
 def test_task_invalid_impacts_values():
     parent = region_factory(RegionType.SEQUENTIAL)
     parent.children[0].impacts = [0, 0, -1]
     assert region_validator(parent) is False
 
 
-# NOT validità per task con children
+# INVALID: task with children
 def test_task_invalid_has_children():
     parent = region_factory(RegionType.SEQUENTIAL)
     parent.children[0].children = region_factory(RegionType.TASK)
     assert region_validator(parent) is False
 
 
-# NOT validità per task con distribuzione
+# INVALID: task with distribution
 def test_task_invalid_with_distribution():
     parent = region_factory(RegionType.SEQUENTIAL)
     parent.children[0].distribution = [0.7, 0.2, 0.1]
@@ -80,21 +80,21 @@ def test_sequential_valid_with_children():
     assert region_validator(region) is True
 
 
-# NOT validità per sequential con meno di 2 children
+# INVALID: sequential with fewer than 2 children
 def test_sequential_invalid_with_children():
     parent = region_factory(RegionType.SEQUENTIAL)
     del parent.children[1]
     assert region_validator(parent) is False
 
 
-# NOT validità per sequential con impatti
+# INVALID: sequential with impacts
 def test_sequential_invalid_impacts():
     region = region_factory(RegionType.SEQUENTIAL)
     region.impacts = [1, 2, 3]
     assert region_validator(region) is False
 
 
-# NOT validità per sequential con distribuzione di probabilità
+# INVALID: sequential with probability distribution
 def test_sequential_invalid_distribution():
     region = region_factory(RegionType.SEQUENTIAL)
     region.distribution = [0.2, 0.4, 0.4]

@@ -50,7 +50,7 @@ def region_factory(region_type: RegionType, id: str = None) -> RegionModel:
             impacts=None,
             duration=0,
             children=[child1, child2],
-            distribution=[],  # opzionale per CHOICE
+            distribution=[],  # optional for CHOICE
         )
 
-    raise ValueError(f"Tipo di regione non supportato: {region_type}")
+    raise ValueError(f"Unsupported region type: {region_type}")

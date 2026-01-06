@@ -61,11 +61,26 @@ def task(label=None, duration=1.0, impacts=None):
     }
 
 def sequential(children):
-    return {
-        "id": new_id(),
-        "type": "sequential",
-        "children": children
-    }
+    if not children:
+        return {
+            "id": new_id(),
+            "type": "sequential",
+            "children": []
+        }
+    if len(children) <= 2:
+        return {
+            "id": new_id(),
+            "type": "sequential",
+            "children": children
+        }
+    current = children[0]
+    for child in children[1:]:
+        current = {
+            "id": new_id(),
+            "type": "sequential",
+            "children": [current, child]
+        }
+    return current
 
 def parallel(children, label=None):
     if label is None: label = _next_parallel_label()

@@ -50,7 +50,7 @@ class TimeMarking:
             self.__visit_count[place] = visit_count[place]
 
     def __getitem__(self, key: str | PlaceType) -> MarkingItem:
-        # Se `key` è una stringa, cerca la corrispondenza tra le chiavi(place) usando l'id
+        # If `key` is a string, match against place keys using the id
         if isinstance(key, str):
             for place in self.keys():
                 if place.name == key:
@@ -97,11 +97,11 @@ class TimeMarking:
         for key in self.__tokens:
             m[key] = self[key].token
 
-        return m  # Restituisce una copia per mantenere l'immutabilità
+        return m  # Return a copy to preserve immutability
 
     @property
     def age(self) -> dict[PlaceType, float]:
-        return copy.copy(self.__age)  # Restituisce una copia per mantenere l'immutabilità
+        return copy.copy(self.__age)  # Return a copy to preserve immutability
 
     @property
     def visit_count(self) -> dict[PlaceType, int]:
@@ -112,8 +112,8 @@ class TimeMarking:
 
     def add_time(self, time: float):
         """
-        Aggiunge un tempo specificato a tutte le età dei posti nel marking.
-        Ritorna una nuova istanza di TimeMarkign con le età aggiornate.
+        Adds the specified time to all place ages in the marking.
+        Returns a new TimeMarking instance with updated ages.
         """
         new_age = self.age
         for key in self.__tokens:
@@ -125,8 +125,8 @@ class TimeMarking:
 
     def increase_visit_count(self, places: PlaceType | list[PlaceType]):
         """
-        Incrementa il contatore di visita per i posti specificati.
-        Ritorna una nuova istanza di TimeMarking con i contatori aggiornati.
+        Increments the visit counter for the specified places.
+        Returns a new TimeMarking instance with updated counters.
         """
         if isinstance(places, WrapperPetriNet.Place):
             places = [places]

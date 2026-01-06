@@ -44,7 +44,7 @@ class ExecutionTree:
 	__root: NodeType
 	__id_generator: Iterator[int]
 
-	# Struttura Node: name[facoltativo],id,snapshot[oggetto di interesse]
+	# Node structure: name[optional],id,snapshot[object of interest]
 	def __init__(self, root: SnapshotType | NodeType, generator: Iterator[int] = None):
 		self.__id_generator = generator or serial_generator()
 		if root is None:

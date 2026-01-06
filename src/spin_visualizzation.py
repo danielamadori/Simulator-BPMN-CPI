@@ -48,6 +48,7 @@ LAYOUT_SPACING_X = 100
 LAYOUT_SPACING_Y = 60  # Vertical spacing between parallel branches
 TASK_WIDTH = 200
 TASK_HEIGHT = 80
+TRANSITION_TRIANGLE_SIZE = 15
 GATEWAY_WIDTH = 50  # Split/Join width
 LOOP_TOP_MARGIN = 120 # Space for t_back above child
 LOOP_BOTTOM_MARGIN = 20
@@ -743,7 +744,7 @@ def draw_task_transition(tx, ty, transition, svg_parts):
         transition: Transition object
         svg_parts: List to append SVG elements to
     """
-    triangle_size = 15
+    triangle_size = TRANSITION_TRIANGLE_SIZE
     
     # Right-pointing outline triangle
     p1 = f"{tx - triangle_size},{ty - triangle_size}"
@@ -793,11 +794,12 @@ def draw_task_transition(tx, ty, transition, svg_parts):
             return 0
         return len(str(text)) * font_size * 0.6
 
-    def closing_paren_x(open_paren_x, symbol_cx, symbol_radius, subscript_text, subscript_x, min_group_width=24, padding=-3):
+    def closing_paren_x(open_paren_x, symbol_cx, symbol_radius, subscript_text, subscript_x, min_group_width=24, gap_after=1):
         subscript_width = estimate_text_width(subscript_text, 7)
         left_group_right = max(symbol_cx + symbol_radius, subscript_x + subscript_width)
-        group_width = left_group_right - open_paren_x
-        return open_paren_x + max(group_width + padding, min_group_width)
+        min_close = open_paren_x + min_group_width
+        content_close = left_group_right + gap_after
+        return max(min_close, content_close)
 
     def layout_paren_group(open_paren_x, symbol_radius, subscript_offset=8, paren_width=4, gap=1):
         symbol_left_x = open_paren_x + paren_width + gap
@@ -879,7 +881,7 @@ def draw_gateway_transition(tx, ty, transition, svg_parts):
         transition: Transition object with region_type
         svg_parts: List to append SVG elements to
     """
-    triangle_size = 15
+    triangle_size = TRANSITION_TRIANGLE_SIZE
     region_type_raw = transition.get_region_type() if hasattr(transition, 'get_region_type') else None
     # Handle Enum types - extract .value if it's an enum
     if region_type_raw and hasattr(region_type_raw, 'value'):
@@ -1075,7 +1077,7 @@ def draw_arc(arc, positions, places, transitions, place_radius, transition_width
             else:
                 x1_adj, y1_adj = x1, y1
         else:
-            x1_adj = x1 + transition_width // 2
+            x1_adj = x1 + TRANSITION_TRIANGLE_SIZE
             y1_adj = y1
     
     # Target point calculation
@@ -1111,7 +1113,7 @@ def draw_arc(arc, positions, places, transitions, place_radius, transition_width
             else:
                 x2_adj, y2_adj = x2, y2
         else:
-            x2_adj = x2 - transition_width // 2
+            x2_adj = x2 - TRANSITION_TRIANGLE_SIZE
             y2_adj = y2
     
     # Determine style

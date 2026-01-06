@@ -233,8 +233,10 @@ def _extract_metadata(node_type: str, source: Mapping[str, Any]) -> dict[str, An
 
 
 def _validate_children(node_type: str, children: List[Mapping[str, Any]]) -> None:
-	if node_type in {"sequential", "parallel"} and not children:
-		raise RegionModuleError(f"{node_type} nodes must contain at least one child")
+	if node_type == "sequential" and (not children or len(children) > 2):
+		raise RegionModuleError("Sequential nodes must contain two children")
+	if node_type == "parallel" and not children:
+		raise RegionModuleError(f"{node_type} nodes must contain at least two children")
 	if node_type in {"choice", "nature"} and len(children) < 2:
 		raise RegionModuleError(f"{node_type} nodes must contain at least two children")
 	if node_type == "loop" and len(children) != 1:
