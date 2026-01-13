@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1000" height="500" viewBox="0 0 1000 500">
 <style>
   .place { fill: white; stroke: black; stroke-width: 1.5; }
-  .place.token { fill: rgba(0, 0, 0, 0.12); }
+  .place.token { fill: rgba(220, 0, 0, 0.25); }
   .transition { fill: white; stroke: black; stroke-width: 1.5; }
   .region { fill: none; stroke: black; stroke-width: 2; rx: 10; }
   .arc { fill: none; stroke: black; stroke-width: 1; marker-end: url(#doubleArrowhead); }

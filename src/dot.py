@@ -4,6 +4,44 @@
 ACTIVE_BORDER_COLOR = "red"
 ACTIVE_BORDER_WIDTH = 4
 ACTIVE_STYLE = "solid"
+TASK_COLOR_PENDING = "lightblue"
+TASK_COLOR_COMPLETED = "palegreen2"
+TASK_COLOR_SKIPPED = "lightgray"
+TASK_DASHED_STYLE = "dashed"
+
+STATUS_WAITING = 0
+STATUS_ACTIVE = 1
+STATUS_COMPLETED = 2
+STATUS_COMPLETED_WITHOUT_PASSING_OVER = 3
+STATUS_WILL_NOT_BE_EXECUTED = -1
+
+
+def _normalize_status(value):
+	if value is None:
+		return None
+	if hasattr(value, "value"):
+		value = value.value
+	try:
+		return int(value)
+	except (TypeError, ValueError):
+		return None
+
+
+def _lookup_status(status_by_id, region_id):
+	if not status_by_id:
+		return None
+	if region_id in status_by_id:
+		return _normalize_status(status_by_id[region_id])
+	region_id_str = str(region_id)
+	if region_id_str in status_by_id:
+		return _normalize_status(status_by_id[region_id_str])
+	try:
+		region_id_int = int(region_id)
+	except (TypeError, ValueError):
+		region_id_int = None
+	if region_id_int is not None and region_id_int in status_by_id:
+		return _normalize_status(status_by_id[region_id_int])
+	return None
 
 
 def node_to_dot(_id, shape, label, style, fillcolor, border_color=None, border_size=None):
@@ -47,7 +85,8 @@ def loop_gateway_to_dot(_id, label, style, border_color=None, border_size=None):
 	return gateway_to_dot(_id, label, style, "yellowgreen", border_color, border_size)
 
 
-def task_to_dot(_id, name, style, impacts, duration, impacts_names, border_color=None, border_size=None):
+def task_to_dot(_id, name, style, impacts, duration, impacts_names, border_color=None, border_size=None,
+				fillcolor=TASK_COLOR_PENDING):
 	additional_label = ""
 	if impacts:
 		tmp = ", ".join(f"\\n{key}: {value}" for key, value in zip(impacts_names, impacts))
@@ -65,7 +104,7 @@ def task_to_dot(_id, name, style, impacts, duration, impacts_names, border_color
 		"rectangle",
 		f"{name}{additional_label}",
 		style,
-		"lightblue",
+		fillcolor,
 		border_color,
 		border_size
 	)
@@ -78,12 +117,14 @@ def arc_to_dot(from_id, to_id, label=None):
 		return f'\nnode_{from_id} -> node_{to_id}[label="{label}"];\n'
 
 
-def wrap_to_dot(region_root, impacts_names, active_regions=None):
+def wrap_to_dot(region_root, impacts_names, active_regions=None, status_by_id=None):
+	if active_regions is None:
+		active_regions = set()
 	code = "digraph G {\n"
 	code += "rankdir=LR;\n"
 	code += 'start[label="" style="filled" shape=circle fillcolor=palegreen1]\n'
 	code += 'end[label="" style="filled" shape=doublecircle fillcolor=orangered] \n'
-	other_code, entry_id, exit_id = region_to_dot(region_root, impacts_names, active_regions)
+	other_code, entry_id, exit_id = region_to_dot(region_root, impacts_names, active_regions, status_by_id)
 	code += other_code
 	code += f'start -> node_{entry_id};\n'
 	code += f'node_{exit_id} -> end;\n'
@@ -103,19 +144,39 @@ def serial_generator():
 id_generator = serial_generator()
 
 
-def region_to_dot(region_root, impacts_names, active_regions):
+def region_to_dot(region_root, impacts_names, active_regions, status_by_id=None):
+	if active_regions is None:
+		active_regions = set()
 	is_active = region_root.get('id') in active_regions
 	if region_root.get("type") == 'task':
+		status_value = _lookup_status(status_by_id, region_root.get('id'))
+		task_fillcolor = TASK_COLOR_PENDING
+		task_style = None
+		if status_value in (STATUS_COMPLETED, STATUS_COMPLETED_WITHOUT_PASSING_OVER):
+			task_fillcolor = TASK_COLOR_COMPLETED
+		elif status_value in (STATUS_WAITING, STATUS_ACTIVE):
+			task_style = TASK_DASHED_STYLE
+		elif status_value == STATUS_WILL_NOT_BE_EXECUTED:
+			task_fillcolor = TASK_COLOR_SKIPPED
+			task_style = TASK_DASHED_STYLE
+
+		style_parts = []
+		if task_style:
+			style_parts.append(task_style)
+		elif is_active:
+			style_parts.append(ACTIVE_STYLE)
+		task_style = ",".join(style_parts) if style_parts else None
 		_id = next(id_generator)
 		return task_to_dot(
 			_id,
 			region_root.get('label'),
-			ACTIVE_STYLE if is_active else None,
+			task_style,
 			region_root.get('impacts', []),
 			region_root.get('duration'),
 			impacts_names,
 			border_color=ACTIVE_BORDER_COLOR if is_active else None,
-			border_size=ACTIVE_BORDER_WIDTH if is_active else None
+			border_size=ACTIVE_BORDER_WIDTH if is_active else None,
+			fillcolor=task_fillcolor
 		), _id, _id
 	elif region_root.get("type") == 'loop':
 		entry_id = next(id_generator)
@@ -139,7 +200,7 @@ def region_to_dot(region_root, impacts_names, active_regions):
 
 		# Child
 		other_code, child_entry_id, child_exit_id = region_to_dot(region_root.get('children')[0], impacts_names,
-																  active_regions)
+																  active_regions, status_by_id)
 		code += other_code
 		p = region_root.get('distribution')
 		code += arc_to_dot(entry_id, child_entry_id, p)
@@ -168,7 +229,7 @@ def region_to_dot(region_root, impacts_names, active_regions):
 
 		# Children
 		for child in region_root.get('children', []):
-			child_code, child_entry_id, child_exit_id = region_to_dot(child, impacts_names, active_regions)
+			child_code, child_entry_id, child_exit_id = region_to_dot(child, impacts_names, active_regions, status_by_id)
 			code += child_code
 			code += arc_to_dot(entry_id, child_entry_id)
 			code += arc_to_dot(child_exit_id, last_exit_id)
@@ -194,7 +255,7 @@ def region_to_dot(region_root, impacts_names, active_regions):
 
 		# Children
 		for child in region_root.get('children', []):
-			child_code, child_entry_id, child_exit_id = region_to_dot(child, impacts_names, active_regions)
+			child_code, child_entry_id, child_exit_id = region_to_dot(child, impacts_names, active_regions, status_by_id)
 			code += child_code
 			code += arc_to_dot(entry_id, child_entry_id)
 			code += arc_to_dot(child_exit_id, last_exit_id)
@@ -222,7 +283,7 @@ def region_to_dot(region_root, impacts_names, active_regions):
 
 		# Children
 		for child, p in zip(region_root.get('children', []), region_root.get("distribution", [])):
-			child_code, child_entry_id, child_exit_id = region_to_dot(child, impacts_names, active_regions)
+			child_code, child_entry_id, child_exit_id = region_to_dot(child, impacts_names, active_regions, status_by_id)
 			code += child_code
 			code += arc_to_dot(entry_id, child_entry_id, p)
 			code += arc_to_dot(child_exit_id, last_exit_id)
@@ -234,7 +295,7 @@ def region_to_dot(region_root, impacts_names, active_regions):
 		last_exit_id = None
 
 		for i, child in enumerate(region_root.get('children', [])):
-			child_code, child_entry_id, child_exit_id = region_to_dot(child, impacts_names, active_regions)
+			child_code, child_entry_id, child_exit_id = region_to_dot(child, impacts_names, active_regions, status_by_id)
 			code += child_code
 
 			arc = arc_to_dot(last_exit_id, child_entry_id) if last_exit_id is not None else ""

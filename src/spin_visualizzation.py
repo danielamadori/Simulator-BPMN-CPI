@@ -709,7 +709,7 @@ def draw_place(px, py, place, place_radius, incoming, outgoing, svg_parts, marki
             svg_parts.append(f'<text x="{px + 25}" y="{py + 10}" class="label" style="font-style: italic; font-size: 14px; text-anchor: start;">{region_id}</text>')
             
     if has_token:
-        svg_parts.append(f'<circle cx="{px}" cy="{py}" r="8" style="fill: black" />')
+        svg_parts.append(f'<circle cx="{px}" cy="{py}" r="8" style="fill: rgba(220, 0, 0, 0.75)" />')
 
 
 def draw_task_transition(tx, ty, transition, svg_parts):
@@ -1452,7 +1452,7 @@ def petri_net_to_svg(petri_net, width=800, height=400, region_tree=None, marking
     svg_parts.append(f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">')
     svg_parts.append('<style>')
     svg_parts.append('  .place { fill: white; stroke: black; stroke-width: 1.5; }')
-    svg_parts.append('  .place.token { fill: rgba(0, 0, 0, 0.12); }')
+    svg_parts.append('  .place.token { fill: rgba(220, 0, 0, 0.25); }')
     svg_parts.append('  .transition { fill: white; stroke: black; stroke-width: 1.5; }')
     svg_parts.append('  .region { fill: none; stroke: black; stroke-width: 2; rx: 10; }')
     svg_parts.append('  .arc { fill: none; stroke: black; stroke-width: 1; marker-end: url(#doubleArrowhead); }')

@@ -47,6 +47,12 @@ def execute(data: ExecuteRequest):
 			if not all(decisions):
 				raise ValueError("One or more decisions are not valid transitions in the Petri net.")
 
+			if data.preview:
+				logger.info("Preview requested. Returning current state without consuming decisions.")
+				return create_response(region, net, im, fm, extree).model_dump(
+					exclude_unset=True, exclude_none=True, exclude_defaults=True
+				)
+
 			logger.info("Net defined, using provided markings and execution tree.")
 			ctx = NetContext(region=region, net=net, im=im, fm=fm)
 

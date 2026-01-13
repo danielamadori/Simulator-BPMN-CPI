@@ -133,6 +133,7 @@ class ExecuteRequest(pydantic.BaseModel):
 	execution_tree: ExecutionTreeModel | None = None
 	choices: list[str] | None = None
 	time_step: float | None = None  # Time step for TimeStrategy (None = use saturation/CounterExecution)
+	preview: bool = False  # When True, return current state without consuming decisions
 
 	model_config = ConfigDict(use_enum_values=True)
 
