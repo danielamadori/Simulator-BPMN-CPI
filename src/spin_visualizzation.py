@@ -240,17 +240,12 @@ def layout_node_recursive(node, x, y, positions, transitions, places):
     elif node.node_type == 'sequential':
         # Layout children left to right
         current_x = x
-        
-        # Calculate max height of children derived from node.size
-        # node.h = max_h + 60 (30 top + 30 bottom)
-        max_h = h - 60
-        content_start_y = y + 30
+        baseline_y = y + node.baseline_offset
         
         for i, child in enumerate(node.children):
             cw, ch = child.size
-            # Center child vertically relative to the CONTENT block (max_h)
-            # This aligns centers of all items, but shifted down by TOP_MARGIN
-            child_y = content_start_y + (max_h - ch) / 2
+            # Align child baseline with this sequential node baseline.
+            child_y = baseline_y - child.baseline_offset
             
             layout_node_recursive(child, current_x, child_y, positions, transitions, places)
             
@@ -688,15 +683,11 @@ def draw_place(px, py, place, place_radius, incoming, outgoing, svg_parts, marki
 
     # Draw the circle
     svg_parts.append(f'<circle cx="{px}" cy="{py}" r="{place_radius}" class="{place_class}" />')
-    
-    triangle_size = 12  # Inscribed in circle of radius 20
-    
+
     # Check if this is a true start (no incoming) or end (no outgoing) place
     has_incoming = place.name in incoming and len(incoming[place.name]) > 0
     has_outgoing = place.name in outgoing and len(outgoing[place.name]) > 0
-    is_true_start = not has_incoming
-    is_true_end = not has_outgoing
-    
+
     # Logical checks based on name
     is_logical_start = any(k in place.name for k in ['start', 'entry', 'pre'])
     is_logical_end = any(k in place.name for k in ['end', 'exit', 'post'])
@@ -706,31 +697,18 @@ def draw_place(px, py, place, place_radius, incoming, outgoing, svg_parts, marki
     is_exit_style = (hasattr(place, 'exit_id') and place.exit_id) or (is_logical_end and not is_logical_start)
     
     if is_entry_style:
-        # Inscribed outline triangle pointing right
-        p1 = f"{px - triangle_size},{py - triangle_size}"
-        p2 = f"{px + triangle_size},{py}"
-        p3 = f"{px - triangle_size},{py + triangle_size}"
-        svg_parts.append(f'<polygon points="{p1} {p2} {p3}" style="fill: none; stroke: black; stroke-width: 1.5" />')
         # Region ID - show if present (don't restrict to true start)
         region_id = getattr(place, 'entry_id', None) or getattr(place, 'region_id', None)
         if region_id:
              svg_parts.append(f'<text x="{px + 25}" y="{py + 10}" class="label" style="font-style: italic; font-size: 14px; text-anchor: start;">{region_id}</text>')
             
     elif is_exit_style:
-        # Exit triangle - always FILLED for exit places (including tasks)
-        p1 = f"{px - triangle_size},{py - triangle_size}"
-        p2 = f"{px + triangle_size},{py}"
-        p3 = f"{px - triangle_size},{py + triangle_size}"
-        
-        # Filled triangle for all exit places
-        svg_parts.append(f'<polygon points="{p1} {p2} {p3}" style="fill: black; stroke: black" />')
-        
         # Region ID - show if present (don't restrict to true end)
         region_id = getattr(place, 'exit_id', None) or getattr(place, 'region_id', None)
         if region_id:
             svg_parts.append(f'<text x="{px + 25}" y="{py + 10}" class="label" style="font-style: italic; font-size: 14px; text-anchor: start;">{region_id}</text>')
             
-    elif has_token:
+    if has_token:
         svg_parts.append(f'<circle cx="{px}" cy="{py}" r="8" style="fill: black" />')
 
 
@@ -952,7 +930,8 @@ def draw_gateway_transition(tx, ty, transition, svg_parts):
              except (ValueError, TypeError):
                  pass
     if label:
-        svg_parts.append(f'<text x="{tx}" y="{ty}" class="label">{label}</text>')
+        label_y = ty + triangle_size + 12
+        svg_parts.append(f'<text x="{tx}" y="{label_y}" class="label">{label}</text>')
 
 
 def draw_transition(tx, ty, transition, svg_parts):
@@ -1581,6 +1560,14 @@ def region_model_to_region_node(region, depth: int = 0):
             label = f"({label})"
         else:
             label = f"{'R' if node_type == 'sequential' else 'P'}{rid}"
+    elif node_type == 'loop':
+        # Loop: show full expression with loop tag
+        child_label = children[0].label if children else ""
+        tag = explicit_label or f"L{rid}"
+        if child_label:
+            label = f"<{child_label} [{tag}]>"
+        else:
+            label = f"<[{tag}]>"
     elif node_type in ['choice', 'nature']:
         # Choice/Nature: combine children with operator and include tag in brackets
         child_labels = [child.label for child in children if child.label]

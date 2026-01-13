@@ -179,6 +179,8 @@ def from_region(region: RegionModel):
             for i in range(len(__region.children)):
                 child = __region.children[i]
                 child_entry, child_exit = rec(child)
+                base_label = __region.label or __region.type.value
+                branch_label = f"{base_label}_{i}"
 
                 # Entry transition for a child (split)
                 entry_child_trans_id = str(next(id_generator))
@@ -190,6 +192,8 @@ def from_region(region: RegionModel):
                     ),
                     stop=True,
                 )
+                entry_child_trans.label = branch_label
+                entry_child_trans.region_label = branch_label
                 entry_child_trans.gateway_role = "split"
                 net.transitions.add(entry_child_trans)
 
@@ -200,6 +204,8 @@ def from_region(region: RegionModel):
                     __region,
                     1,
                 )
+                exit_child_trans.label = branch_label
+                exit_child_trans.region_label = branch_label
                 exit_child_trans.gateway_role = "join"
                 net.transitions.add(exit_child_trans)
 
