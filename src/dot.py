@@ -110,11 +110,14 @@ def task_to_dot(_id, name, style, impacts, duration, impacts_names, border_color
 	)
 
 
-def arc_to_dot(from_id, to_id, label=None):
-	if label is None:
-		return f'\nnode_{from_id} -> node_{to_id};\n'
-	else:
-		return f'\nnode_{from_id} -> node_{to_id}[label="{label}"];\n'
+def arc_to_dot(from_id, to_id, label=None, style=None):
+	attrs = []
+	if label is not None:
+		attrs.append(f'label="{label}"')
+	if style is not None:
+		attrs.append(f"style={style}")
+	attrs_code = f"[{' '.join(attrs)}]" if attrs else ""
+	return f'\nnode_{from_id} -> node_{to_id}{attrs_code};\n'
 
 
 def wrap_to_dot(region_root, impacts_names, active_regions=None, status_by_id=None):
@@ -231,8 +234,9 @@ def region_to_dot(region_root, impacts_names, active_regions, status_by_id=None)
 		for child in region_root.get('children', []):
 			child_code, child_entry_id, child_exit_id = region_to_dot(child, impacts_names, active_regions, status_by_id)
 			code += child_code
-			code += arc_to_dot(entry_id, child_entry_id)
-			code += arc_to_dot(child_exit_id, last_exit_id)
+			edge_style = "dashed" if (child_index % 2 == 0) else None
+			code += arc_to_dot(entry_id, child_entry_id, style=edge_style)
+			code += arc_to_dot(child_exit_id, last_exit_id, style=edge_style)
 
 		return code, entry_id, last_exit_id
 	elif region_root.get("type") == 'parallel':
