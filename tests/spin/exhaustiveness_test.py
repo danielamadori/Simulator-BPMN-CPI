@@ -2,10 +2,13 @@ import pytest
 import sys
 import os
 
-# Ensure src is in path to import modules
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../src')))
+BASE_DIR = os.path.dirname(__file__)
 
-from generate_json_test_nb import get_patterns
+# Ensure src is in path to import modules
+sys.path.append(os.path.abspath(os.path.join(BASE_DIR, '../../src')))
+sys.path.append(BASE_DIR)
+
+from patterns import get_patterns
 from model.region import RegionModel
 from converter.spin import from_region
 

@@ -2,7 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
+output/time_steps/
 # C extensions
 *.so
 

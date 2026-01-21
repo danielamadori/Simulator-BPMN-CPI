@@ -666,20 +666,40 @@ def draw_place(px, py, place, place_radius, incoming, outgoing, svg_parts, marki
         except Exception:
             return 0
 
+    def visit_count_from_marking_item(item):
+        if item is None:
+            return 0
+        if hasattr(item, "visit_count"):
+            return item.visit_count
+        try:
+            return item[2]
+        except Exception:
+            return 0
+
     token_value = 0
+    visit_count = 0
     if marking is not None:
         try:
-            token_value = token_from_marking_item(marking[place])
+            item = marking[place]
+            token_value = token_from_marking_item(item)
+            visit_count = visit_count_from_marking_item(item)
         except Exception:
             try:
-                token_value = token_from_marking_item(marking[place.name])
+                item = marking[place.name]
+                token_value = token_from_marking_item(item)
+                visit_count = visit_count_from_marking_item(item)
             except Exception:
                 token_value = 0
+                visit_count = 0
     elif hasattr(place, 'has_token') and place.has_token:
         token_value = 1
 
     has_token = token_value > 0
-    place_class = "place token" if has_token else "place"
+    place_class = "place"
+    if visit_count > 0:
+        place_class += " visited"
+    if has_token:
+        place_class += " token"
 
     # Draw the circle
     svg_parts.append(f'<circle cx="{px}" cy="{py}" r="{place_radius}" class="{place_class}" />')
@@ -1452,6 +1472,7 @@ def petri_net_to_svg(petri_net, width=800, height=400, region_tree=None, marking
     svg_parts.append(f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">')
     svg_parts.append('<style>')
     svg_parts.append('  .place { fill: white; stroke: black; stroke-width: 1.5; }')
+    svg_parts.append('  .place.visited { fill: #d9d9d9; stroke: #666666; }')
     svg_parts.append('  .place.token { fill: rgba(220, 0, 0, 0.25); }')
     svg_parts.append('  .transition { fill: white; stroke: black; stroke-width: 1.5; }')
     svg_parts.append('  .region { fill: none; stroke: black; stroke-width: 2; rx: 10; }')

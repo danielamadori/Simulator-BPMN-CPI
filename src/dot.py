@@ -7,12 +7,14 @@ ACTIVE_STYLE = "solid"
 TASK_COLOR_PENDING = "lightblue"
 TASK_COLOR_COMPLETED = "palegreen2"
 TASK_COLOR_SKIPPED = "lightgray"
+TASK_COLOR_PATH = "gray80"
 TASK_DASHED_STYLE = "dashed"
 
 STATUS_WAITING = 0
 STATUS_ACTIVE = 1
 STATUS_COMPLETED = 2
 STATUS_COMPLETED_WITHOUT_PASSING_OVER = 3
+STATUS_PATH = 4
 STATUS_WILL_NOT_BE_EXECUTED = -1
 
 
@@ -155,7 +157,9 @@ def region_to_dot(region_root, impacts_names, active_regions, status_by_id=None)
 		status_value = _lookup_status(status_by_id, region_root.get('id'))
 		task_fillcolor = TASK_COLOR_PENDING
 		task_style = None
-		if status_value in (STATUS_COMPLETED, STATUS_COMPLETED_WITHOUT_PASSING_OVER):
+		if status_value == STATUS_PATH:
+			task_fillcolor = TASK_COLOR_PATH
+		elif status_value in (STATUS_COMPLETED, STATUS_COMPLETED_WITHOUT_PASSING_OVER):
 			task_fillcolor = TASK_COLOR_COMPLETED
 		elif status_value in (STATUS_WAITING, STATUS_ACTIVE):
 			task_style = TASK_DASHED_STYLE
@@ -231,7 +235,7 @@ def region_to_dot(region_root, impacts_names, active_regions, status_by_id=None)
 		)
 
 		# Children
-		for child in region_root.get('children', []):
+		for child_index, child in enumerate(region_root.get('children', [])):
 			child_code, child_entry_id, child_exit_id = region_to_dot(child, impacts_names, active_regions, status_by_id)
 			code += child_code
 			edge_style = "dashed" if (child_index % 2 == 0) else None
