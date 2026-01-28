@@ -8,6 +8,7 @@ from pm4py import Marking
 from model.context import NetContext
 from model.region import RegionModel
 from model.petri_net.time_spin import TimeMarking
+from model.status import ActivityState
 
 PWD = pathlib.Path(__file__).parent.parent.parent.absolute()
 
@@ -40,11 +41,31 @@ def nature_ctx():
 
     return NetContext.from_region(model)
 
+def build_regions_status(root):
+    regions = {}
+    status = {}
+
+    def visit(region):
+        status[region] = ActivityState.WAITING
+        try:
+            regions[int(region.id)] = region
+        except (TypeError, ValueError):
+            pass
+        if region.children:
+            for child in region.children:
+                visit(child)
+
+    visit(root)
+    if 0 not in regions:
+        regions[0] = root
+    return regions, status
+
 
 def test_saturate(nature_ctx):
     strategy = nature_ctx.strategy
     net, im, fm = nature_ctx.net, nature_ctx.initial_marking, nature_ctx.final_marking
-    sat_m, delta = strategy.saturate(nature_ctx, im)
+    regions, status = build_regions_status(nature_ctx.region)
+    sat_m, _p, _i, delta = strategy.saturate(nature_ctx, im, regions, status)
 
     assert sat_m == im
     assert delta == 0
@@ -54,7 +75,7 @@ def test_saturate(nature_ctx):
         sat_m = sem.fire(net, t, sat_m)
         break
 
-    sat_m, delta = strategy.saturate(nature_ctx, sat_m)
+    sat_m, _p, _i, delta = strategy.saturate(nature_ctx, sat_m, regions, status)
 
     assert sat_m != im
     assert delta != 0
@@ -64,6 +85,7 @@ def test_consume(ctx, saturated_initial_marking):
     _net, _, fm = ctx.net, ctx.initial_marking, ctx.final_marking
 
     strategy = ctx.strategy
+    regions, status = build_regions_status(ctx.region)
     choices = []
     for t in _net.transitions:
         if t.region_id == "6":
@@ -79,8 +101,8 @@ def test_consume(ctx, saturated_initial_marking):
             if list(t.out_arcs)[0].target.entry_id == "12":
                 choices.append(t)
 
-    bho = strategy.consume(ctx, saturated_initial_marking, choices)
-    consumed_m, _p, _i, _t = bho
+    bho = strategy.consume(ctx, saturated_initial_marking, regions, status, choices)
+    consumed_m, _p, _i, _t, _choices = bho
 
     assert type(_i) == list
 

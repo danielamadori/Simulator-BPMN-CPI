@@ -16,7 +16,7 @@ TASKS
 # INVALID: explore by id
 def test_validator_valid():
     region = region_factory(RegionType.TASK)
-    region.id = ""
+    region.id = None
     assert region_validator(region) is False
 
 

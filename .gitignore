@@ -179,3 +179,5 @@ qodana.yaml
 
 # Test Jupyter Notebook
 src/test.ipynb
+
+.vscode/

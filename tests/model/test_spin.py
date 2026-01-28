@@ -98,5 +98,5 @@ class TestTimeMarking:
             new_marking.age == tmp
         ), "Age should be updated correctly after adding time"
         assert (
-            new_marking.age[first_key_not_active] == 0
+            new_marking.age.get(first_key_not_active, 0) == 0
         ), "Age for inactive places should be set to 0"

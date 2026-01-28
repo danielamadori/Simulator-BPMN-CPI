@@ -20,4 +20,5 @@ def test_from_region(iron_region):
     assert ctx.final_marking is not None and isinstance(ctx.final_marking, TimeMarking)
 
 def test_tree_from_context(iron_region):
-    tree = ExecutionTree.from_context(NetContext.from_region(iron_region))
+    ctx = NetContext.from_region(iron_region)
+    tree = ExecutionTree.from_context(ctx, iron_region)

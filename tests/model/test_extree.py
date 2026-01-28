@@ -4,6 +4,7 @@ import pytest
 from model.extree import ExecutionTree
 from model.extree.node import Snapshot
 from strategy.execution import ClassicExecution, get_default_choices
+from utils.net_utils import get_empty_impacts
 
 PWD = pathlib.Path(__file__).parent.parent.parent.absolute()
 
@@ -32,7 +33,7 @@ def ctx(region_model):
 
 @pytest.fixture
 def initial_snapshot(ctx):
-    return Snapshot(ctx.initial_marking, 1, [0, 0], 0)
+    return Snapshot(ctx.initial_marking, 1, [0, 0], 0, {}, [], [])
 
 
 @pytest.fixture
@@ -45,12 +46,16 @@ def extree(initial_snapshot):
 def saturated_snapshot(ctx, initial_snapshot):
     """Create a saturated snapshot based on the initial snapshot"""
     saturated_marking, delta = ctx.strategy.saturate(ctx, initial_snapshot.marking)
-    # Consuming the initial marking to create a saturated snapshot
-    saturated_marking, probability, impacts, delta = ctx.strategy.consume(
-        ctx, saturated_marking
-    )
+    choices = get_default_choices(ctx, saturated_marking)
+    if choices:
+        transition = choices[0]
+        saturated_marking = ctx.semantic.execute(ctx.net, transition, saturated_marking)
+        probability = transition.probability
+    else:
+        probability = 1
+    impacts = get_empty_impacts(ctx.net)
 
-    return Snapshot(saturated_marking, probability, impacts, delta)
+    return Snapshot(saturated_marking, probability, impacts, delta, {}, [], [])
 
 
 def test_add(ctx, extree, saturated_snapshot, initial_snapshot):
