@@ -114,7 +114,7 @@ def execute(data: ExecuteRequest):
 			for r, s in new_status.items():
 				status[r.id] = s
 				label = get_formatted_label(r)
-				print(label, ": ", s)
+				# print(label, ": ", s)
 
 
 			new_snapshot = Snapshot(

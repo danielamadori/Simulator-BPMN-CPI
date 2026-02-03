@@ -61,7 +61,7 @@ def __switch_case(region: RegionModel, expected_impact_length: int = None):
     validator_fn = switch.get(region.type)
 
     if not validator_fn:
-        print(
+        logger.error(
             f"Unsupported region type: {region.type} in region {region.label} with id: {region.id}"
         )
         return False, None
