@@ -13,6 +13,21 @@ from model.status import ActivityState
 PWD = pathlib.Path(__file__).parent.parent.parent.absolute()
 
 
+def _build_regions_and_status(region):
+    regions = {}
+    status = {}
+
+    def _walk(r):
+        regions[int(r.id)] = r
+        status[r] = ActivityState.WAITING
+        if r.children:
+            for child in r.children:
+                _walk(child)
+
+    _walk(region)
+    return regions, status
+
+
 @pytest.fixture
 def ctx():
     with open(os.path.join(PWD, "tests/iron.json")) as f:
@@ -41,31 +56,12 @@ def nature_ctx():
 
     return NetContext.from_region(model)
 
-def build_regions_status(root):
-    regions = {}
-    status = {}
-
-    def visit(region):
-        status[region] = ActivityState.WAITING
-        try:
-            regions[int(region.id)] = region
-        except (TypeError, ValueError):
-            pass
-        if region.children:
-            for child in region.children:
-                visit(child)
-
-    visit(root)
-    if 0 not in regions:
-        regions[0] = root
-    return regions, status
-
 
 def test_saturate(nature_ctx):
     strategy = nature_ctx.strategy
     net, im, fm = nature_ctx.net, nature_ctx.initial_marking, nature_ctx.final_marking
-    regions, status = build_regions_status(nature_ctx.region)
-    sat_m, _p, _i, delta = strategy.saturate(nature_ctx, im, regions, status)
+    regions, status = _build_regions_and_status(nature_ctx.region)
+    sat_m, _, _, delta = strategy.saturate(nature_ctx, im, regions, status)
 
     assert sat_m == im
     assert delta == 0
@@ -75,7 +71,7 @@ def test_saturate(nature_ctx):
         sat_m = sem.fire(net, t, sat_m)
         break
 
-    sat_m, _p, _i, delta = strategy.saturate(nature_ctx, sat_m, regions, status)
+    sat_m, _, _, delta = strategy.saturate(nature_ctx, sat_m, regions, status)
 
     assert sat_m != im
     assert delta != 0
@@ -85,7 +81,7 @@ def test_consume(ctx, saturated_initial_marking):
     _net, _, fm = ctx.net, ctx.initial_marking, ctx.final_marking
 
     strategy = ctx.strategy
-    regions, status = build_regions_status(ctx.region)
+    regions, status = _build_regions_and_status(ctx.region)
     choices = []
     for t in _net.transitions:
         if t.region_id == "6":
@@ -102,7 +98,7 @@ def test_consume(ctx, saturated_initial_marking):
                 choices.append(t)
 
     bho = strategy.consume(ctx, saturated_initial_marking, regions, status, choices)
-    consumed_m, _p, _i, _t, _choices = bho
+    consumed_m, _p, _i, _t, _decisions = bho
 
     assert type(_i) == list
 

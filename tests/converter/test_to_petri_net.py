@@ -1,3 +1,5 @@
+import os
+import pathlib
 from typing import Collection
 
 import pytest
@@ -7,10 +9,12 @@ from model.petri_net.wrapper import WrapperPetriNet
 from model.region import RegionModel, RegionType
 from utils.net_utils import PropertiesKeys
 
+PWD = pathlib.Path(__file__).parent.parent.parent.absolute()
+
 
 @pytest.fixture()
 def task():
-    with open("tests/input_data/bpmn_task.json") as f:
+    with open(os.path.join(PWD, "tests/input_data/bpmn_task.json")) as f:
         _json = f.read()
     _t = RegionModel.model_validate_json(_json)
     yield _t
@@ -19,7 +23,7 @@ def task():
 
 @pytest.fixture()
 def parallel():
-    with open("tests/input_data/bpmn_parallel.json") as f:
+    with open(os.path.join(PWD, "tests/input_data/bpmn_parallel.json")) as f:
         _json = f.read()
     _t = RegionModel.model_validate_json(_json)
     yield _t
@@ -28,7 +32,7 @@ def parallel():
 
 @pytest.fixture()
 def choice():
-    with open("tests/input_data/bpmn_choice.json") as f:
+    with open(os.path.join(PWD, "tests/input_data/bpmn_choice.json")) as f:
         _json = f.read()
     _t = RegionModel.model_validate_json(_json)
     yield _t
@@ -37,7 +41,7 @@ def choice():
 
 @pytest.fixture()
 def nature():
-    with open("tests/input_data/bpmn_nature.json") as f:
+    with open(os.path.join(PWD, "tests/input_data/bpmn_nature.json")) as f:
         _json = f.read()
     _t = RegionModel.model_validate_json(_json)
     yield _t

@@ -10,7 +10,7 @@ def region_validator(region: RegionModel):
     def explore(_r: RegionModel, expected_impact_length: int = None):
         # logger.debug(f"Exploring the Region: {_r.label} id:{_r.id}")
         # checks for all region types
-        if _r.id is None or not isinstance(_r.type, RegionType):
+        if _r.id is None or (isinstance(_r.id, str) and _r.id.strip() == "") or not isinstance(_r.type, RegionType):
             logger.error(
                 f"Region id or type {region.label} id:{region.id} is None or empty"
             )

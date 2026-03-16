@@ -4,7 +4,6 @@ import pytest
 from model.extree import ExecutionTree
 from model.extree.node import Snapshot
 from strategy.execution import ClassicExecution, get_default_choices
-from utils.net_utils import get_empty_impacts
 
 PWD = pathlib.Path(__file__).parent.parent.parent.absolute()
 
@@ -33,7 +32,15 @@ def ctx(region_model):
 
 @pytest.fixture
 def initial_snapshot(ctx):
-    return Snapshot(ctx.initial_marking, 1, [0, 0], 0, {}, [], [])
+    return Snapshot(
+        ctx.initial_marking,
+        1,
+        [0, 0],
+        0,
+        status={},
+        decisions=[],
+        choices=[],
+    )
 
 
 @pytest.fixture
@@ -46,16 +53,20 @@ def extree(initial_snapshot):
 def saturated_snapshot(ctx, initial_snapshot):
     """Create a saturated snapshot based on the initial snapshot"""
     saturated_marking, delta = ctx.strategy.saturate(ctx, initial_snapshot.marking)
-    choices = get_default_choices(ctx, saturated_marking)
-    if choices:
-        transition = choices[0]
-        saturated_marking = ctx.semantic.execute(ctx.net, transition, saturated_marking)
-        probability = transition.probability
-    else:
-        probability = 1
-    impacts = get_empty_impacts(ctx.net)
+    # Consuming the initial marking to create a saturated snapshot
+    saturated_marking, probability, impacts, delta = ctx.strategy.consume(
+        ctx, saturated_marking
+    )
 
-    return Snapshot(saturated_marking, probability, impacts, delta, {}, [], [])
+    return Snapshot(
+        saturated_marking,
+        probability,
+        impacts,
+        delta,
+        status={},
+        decisions=[],
+        choices=[],
+    )
 
 
 def test_add(ctx, extree, saturated_snapshot, initial_snapshot):
@@ -65,8 +76,7 @@ def test_add(ctx, extree, saturated_snapshot, initial_snapshot):
     choices = get_default_choices(ctx, saturated_marking)
 
     parent_node = extree.current_node
-    new_node = extree.add_snapshot(ctx, saturated_snapshot, choices)
-    sat_marking, _ = ctx.strategy.saturate(ctx, ctx.initial_marking)
+    new_node = extree.add_snapshot(ctx, saturated_snapshot)
 
     assert new_node in extree
     assert len(extree) == 2
@@ -76,5 +86,5 @@ def test_add(ctx, extree, saturated_snapshot, initial_snapshot):
     assert extree.current_node == parent_node
 
     # Check adding the same snapshot again does not create a new node
-    assert extree.add_snapshot(ctx, saturated_snapshot, choices) == new_node
+    assert extree.add_snapshot(ctx, saturated_snapshot) == new_node
     assert len(extree) == 2
