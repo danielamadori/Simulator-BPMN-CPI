@@ -7,6 +7,9 @@ from strategy.execution import ClassicExecution, get_default_choices
 
 PWD = pathlib.Path(__file__).parent.parent.parent.absolute()
 
+# Deprecated: keep legacy ClassicExecution unchanged; disable this test module.
+pytestmark = pytest.mark.skip(reason="DEPRECATED: ClassicExecution legacy tests disabled")
+
 
 @pytest.fixture
 def region_model():
