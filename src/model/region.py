@@ -41,7 +41,7 @@ class RegionModel(BaseModel):
         bound (int | None): Bound for loop regions, default is None.
     """
 
-    id: str | int
+    id: int
     type: RegionType
     label: str | None = None
     duration: float = 0

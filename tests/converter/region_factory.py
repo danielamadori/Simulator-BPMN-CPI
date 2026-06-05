@@ -1,11 +1,17 @@
+import itertools
 import random
-from uuid import uuid4
 from model.region import RegionModel, RegionType
 
+_id_counter = itertools.count()
 
-def region_factory(region_type: RegionType, id: str = None) -> RegionModel:
-    if not id:
-        id = uuid4().hex
+
+def _next_id() -> int:
+    return next(_id_counter)
+
+
+def region_factory(region_type: RegionType, id: int = None) -> RegionModel:
+    if id is None:
+        id = _next_id()
 
     if region_type == RegionType.TASK:
         return RegionModel(
@@ -18,8 +24,8 @@ def region_factory(region_type: RegionType, id: str = None) -> RegionModel:
         )
 
     elif region_type == RegionType.SEQUENTIAL or region_type == RegionType.PARALLEL:
-        child1 = region_factory(RegionType.TASK, f"{id}_child1")
-        child2 = region_factory(RegionType.TASK, f"{id}_child2")
+        child1 = region_factory(RegionType.TASK, _next_id())
+        child2 = region_factory(RegionType.TASK, _next_id())
         return RegionModel(
             id=id,
             type=region_type,
@@ -30,8 +36,8 @@ def region_factory(region_type: RegionType, id: str = None) -> RegionModel:
         )
 
     elif region_type == RegionType.NATURE:
-        child1 = region_factory(RegionType.TASK, f"{id}_c1")
-        child2 = region_factory(RegionType.TASK, f"{id}_c2")
+        child1 = region_factory(RegionType.TASK, _next_id())
+        child2 = region_factory(RegionType.TASK, _next_id())
         return RegionModel(
             id=id,
             type=region_type,
@@ -42,8 +48,8 @@ def region_factory(region_type: RegionType, id: str = None) -> RegionModel:
         )
 
     elif region_type == RegionType.CHOICE:
-        child1 = region_factory(RegionType.TASK, f"{id}_c1")
-        child2 = region_factory(RegionType.TASK, f"{id}_c2")
+        child1 = region_factory(RegionType.TASK, _next_id())
+        child2 = region_factory(RegionType.TASK, _next_id())
         return RegionModel(
             id=id,
             type=region_type,

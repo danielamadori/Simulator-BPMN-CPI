@@ -69,8 +69,6 @@ class CounterExecution:
                          status[region] = ActivityState.COMPLETED
                          
         propagate_status(regions[0], status)
-                         
-        propagate_status(regions[0], status)
 
         logger.debug(
             f"Saturation complete. Final marking {current_marking}, probability {probability}, impacts {impacts}, execution_time {execution_time}")
